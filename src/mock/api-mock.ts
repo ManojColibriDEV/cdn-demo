@@ -1,0 +1,50 @@
+// https://dev-idb.colibrirealestate.com/brands/colibrirealestate/tenantdetail.json
+export const getTenantDetailMock = {
+  TenantId: 3,
+  SubsidiaryId: 3,
+  Host: "dev-idb",
+  Domain: "colibrirealestate.com",
+  PhoneUs: "866.739.7277",
+  PhoneOutsideUs: null,
+  PhoneEnrollments: "844.701.2946",
+  BrandFullName: "Colibri Real Estate",
+  TenantDescription: "Colibri Real Estate",
+  ShowFullBrandNameOnHeader: false,
+  UseFullRegistration: true,
+  CheckAvailabilityInCommonDb: true,
+  Address: {
+    Address1: "399 South Spring Avenue",
+    Address2: null,
+    City: "St. Louis",
+    State: "MO",
+    PostalCode: "63110",
+    Country: "US",
+  },
+  Email: "customercare@colibrirealestate.com",
+  ContactUsUrl: "https://www.colibrirealestate.com/contact-us/",
+  AllowCreateIdentity: false,
+  AllowCreateIdentityEx: true,
+  TermsOfServiceUrl: "https://www.colibrirealestate.com/terms-conditions/",
+  PrivacyPolicyUrl: "https://www.colibrirealestate.com/privacy-policy/",
+  ConsentPreferenceCenterUrl: null,
+  DefaultRoute: "/route/checkoutsignin",
+  RegistrationConsent:
+    'By creating an account, you agree to {{BrandFullName}}’s Privacy Policy and Terms of Service. By providing my personal information, including phone number, I consent to receive email messages, auto-dialed calls, texts, and prerecorded messages from {{BrandFullName}} with information and offers, including current and possible future services, customer service and billing and agree to the <a href="{{TermsOfServiceUrl}}" target="_blank">Terms of Service</a> & <a href="{{PrivacyPolicyUrl}}" target="_blank">Privacy Policy</a>. If, at any time, you wish to opt out of electronic or text communications, reply STOP to cancel, HELP for help. Msg & data rates may apply.  I understand that my consent is not required to purchase, and that cancellation of purchase does not automatically revoke this consent.',
+
+  ShowNameBreakdownOnConfirmationPage: false,
+  ShowMobileNumberOnConfirmationPage: true,
+  MaskMobileNumberOnConfirmationPage: true,
+  ShowProfessionalDesignationsOnConfirmationPage: false,
+
+  EnableEmailOTP: false,
+  EnableMobileNumberOTP: false,
+  CustomRegistrationOptions: {
+    CountriesSupported: "US,CA",
+    PrimaryInterestOptions: [],
+    ShowCountryDropdown: true,
+    CountryRequired: false,
+
+    ShowDateOfBirth: true,
+    DateOfBirthRequired: false,
+  },
+};
