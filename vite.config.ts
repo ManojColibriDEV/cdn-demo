@@ -25,6 +25,12 @@ export default defineConfig({
         secure: true,
         rewrite: (path) => path.replace(/^\/register/, "/register"),
       },
+      "/keycloak": {
+        target: "https://dev-keycloak.colibricore.io",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/keycloak/, ""),
+      },
     },
   },
   define: {

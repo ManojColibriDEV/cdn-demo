@@ -40,12 +40,24 @@ if (renderMode === 'TEST') {
       this.root?.unmount();
     }
 
+    private handleRedirect = (url: string) => {
+      // Dispatch custom event to host page
+      this.dispatchEvent(
+        new CustomEvent("redirect", {
+          detail: { url },
+          bubbles: true,
+          composed: true
+        })
+      );
+    }
+
     private getProps() {
       return {
         redirectUrl: this.getAttribute("redirectUrl") || "/",
         environment: this.getAttribute("environment") || "test",
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
+        onRedirect: this.handleRedirect,
       };
     }
 

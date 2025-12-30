@@ -23,10 +23,21 @@
   </head>
   <body>
     <keycloak-widget
-      navigatePath="/dashboard"
+      id="auth"
+      redirectUrl="http://localhost:5173/"
     >
     </keycloak-widget>
 
     <script src="./dist/keycloak-widget.umd.js"></script>
+    
+    <script>
+      // Listen for redirect event from the widget
+      document.getElementById("auth")
+        .addEventListener("redirect", function(e) {
+          console.log("Redirect event received:", e.detail.url);
+          // Handle the redirect in your application
+          window.location.href = e.detail.url;
+        });
+    </script>
   </body>
 </html>

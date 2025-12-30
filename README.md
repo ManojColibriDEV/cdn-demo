@@ -1,6 +1,62 @@
-# React + Vite
+# Colibri Identity Login Widget
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A reusable web component for authentication with Colibri Identity/Keycloak. Easily embed in any website, WordPress, or web application.
+
+## Quick Start
+
+### Basic Usage
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@main/dist/login-widget.css" />
+  </head>
+  <body>
+    <!-- Add the widget -->
+    <keycloak-widget 
+      id="auth"
+      redirectUrl="/dashboard"
+    ></keycloak-widget>
+
+    <!-- Load the script -->
+    <script src="https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@main/dist/keycloak-widget.umd.js"></script>
+    
+    <!-- Listen for redirect events (BEST PRACTICE) -->
+    <script>
+      document.getElementById("auth")
+        .addEventListener("redirect", function(e) {
+          console.log("Redirecting to:", e.detail.url);
+          window.location.href = e.detail.url;
+        });
+    </script>
+  </body>
+</html>
+```
+
+### Why Use Event Listeners?
+
+The widget dispatches a `redirect` event after successful login instead of navigating directly. This approach:
+
+✅ **Avoids iframe/popup blocking issues**  
+✅ **Works in WordPress, SPAs, and all platforms**  
+✅ **Provides clean separation between widget and host**  
+✅ **Allows custom logic before redirect** (analytics, loading states, etc.)
+
+See [example-redirect-event.html](example-redirect-event.html) for a complete working example.
+
+## Documentation
+
+- **[Usage Guide](docs/USAGE.md)** - Integration examples and common patterns
+- **[API Reference](docs/API-REFERENCE.md)** - Complete API documentation
+- **[Web Component Guide](docs/WEB-COMPONENT.md)** - Deep dive into web component implementation
+- **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development setup and workflow
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Deployment instructions
+
+---
+
+# Development
 
 ## Project README
 

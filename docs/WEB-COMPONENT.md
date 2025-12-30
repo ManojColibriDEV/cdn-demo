@@ -414,12 +414,81 @@ document.addEventListener('login-success', (event) => {
 
 | Event Name | Detail | Description |
 |------------|--------|-------------|
+| `redirect` ✅ | `{ url: string }` | **IMPLEMENTED** - Widget needs to redirect after login |
 | `login-success` | `{ user, token }` | User successfully logged in |
 | `login-error` | `{ error, message }` | Login failed |
 | `register-success` | `{ user }` | User successfully registered |
 | `register-error` | `{ error, message }` | Registration failed |
 | `modal-open` | `{}` | Login modal opened |
 | `modal-close` | `{}` | Login modal closed |
+
+### Redirect Event Pattern (Best Practice)
+
+The widget dispatches a `redirect` event after successful authentication instead of directly navigating. This provides clean separation and avoids iframe/popup blocking issues.
+
+**Implementation**:
+
+```javascript
+// In the widget (main.tsx)
+class KeycloakWidget extends HTMLElement {
+  private handleRedirect = (url: string) => {
+    this.dispatchEvent(
+      new CustomEvent("redirect", {
+        detail: { url },
+        bubbles: true,
+        composed: true
+      })
+    );
+  }
+}
+```
+
+**Usage in Host Page**:
+
+```html
+<keycloak-widget 
+  id="auth"
+  redirectUrl="/dashboard"
+></keycloak-widget>
+
+<script>
+  document.getElementById("auth")
+    .addEventListener("redirect", function(e) {
+      console.log("Redirecting to:", e.detail.url);
+      
+      // You control the redirect
+      window.location.href = e.detail.url;
+    });
+</script>
+```
+
+**Advanced Example with SPA Router**:
+
+```javascript
+// For React Router
+widget.addEventListener("redirect", (e) => {
+  const targetUrl = e.detail.url;
+  
+  // Use React Router instead of full page reload
+  if (targetUrl.startsWith('/')) {
+    navigate(targetUrl); // React Router
+  } else {
+    window.location.href = targetUrl;
+  }
+});
+
+// For Vue Router
+widget.addEventListener("redirect", (e) => {
+  router.push(e.detail.url);
+});
+```
+
+**Benefits**:
+- ✅ Works perfectly in WordPress, iframes, and all CMS platforms
+- ✅ No popup blocking issues
+- ✅ Full control over navigation behavior
+- ✅ Easy to add analytics or custom logic
+- ✅ Clean separation between widget and host page
 
 ---
 

@@ -277,6 +277,66 @@ console.log(state);
 
 All events are **CustomEvent** instances with `detail` property containing event data.
 
+### `redirect` ✅ **IMPLEMENTED**
+
+Fired when the widget needs to redirect the user after successful authentication.
+
+**This is the recommended way to handle post-login navigation** - it provides clean separation between the widget and your application, avoiding iframe and popup blocking issues.
+
+```javascript
+const widget = document.querySelector('keycloak-widget');
+widget.addEventListener('redirect', (event) => {
+  console.log('Redirecting to:', event.detail.url);
+  
+  // Handle redirect in your application
+  window.location.href = event.detail.url;
+});
+```
+
+**Event Detail**:
+```typescript
+{
+  url: string;  // The URL to redirect to (from redirectUrl attribute)
+}
+```
+
+**Complete Example**:
+
+```html
+<keycloak-widget 
+  id="auth"
+  redirectUrl="/dashboard"
+></keycloak-widget>
+
+<script>
+  document.getElementById("auth")
+    .addEventListener("redirect", function(e) {
+      const targetUrl = e.detail.url;
+      
+      // Optional: Add analytics tracking
+      gtag('event', 'login_success', {
+        'redirect_url': targetUrl
+      });
+      
+      // Perform the redirect
+      window.location.href = targetUrl;
+    });
+</script>
+```
+
+**Properties**:
+- **Bubbles**: `true` - Event propagates up the DOM tree
+- **Cancelable**: `false` - Event cannot be canceled
+- **Composed**: `true` - Event crosses shadow DOM boundaries
+
+**Use Cases**:
+- Custom redirect logic with analytics tracking
+- SPA route navigation instead of page reload
+- Conditional redirects based on user roles
+- Custom loading states before redirect
+
+---
+
 ### `login-success`
 
 **Status**: 🚧 Planned
