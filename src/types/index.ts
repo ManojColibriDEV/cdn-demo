@@ -40,6 +40,37 @@ export interface OAuthTokenResponse {
   error_description?: string;
 }
 
+/**
+ * OIDC Token Response from Keycloak
+ * Standard OpenID Connect token endpoint response
+ */
+export interface OIDCTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  id_token?: string;
+  token_type: string;
+  expires_in: number;
+  refresh_expires_in?: number;
+  scope?: string;
+  session_state?: string;
+  error?: string;
+  error_description?: string;
+}
+
+/**
+ * User info from OIDC userinfo endpoint
+ */
+export interface OIDCUserInfo {
+  sub: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  preferred_username?: string;
+  [key: string]: any;
+}
+
 export interface LoginResponse extends OAuthTokenResponse {
   status?: "SUCCESS" | "FAILED";
   message?: string;
@@ -62,6 +93,8 @@ export interface LoginModalProps {
   open: boolean;
   onClose: () => void;
   redirectUrl?: string;
+  environment?: string;
+  onRedirect?: (url: string) => void;
 }
 
 // Extended ActiveTab type to include 'upgrade'
@@ -73,6 +106,8 @@ export interface LoginSubmitProps {
   password: string;
   showPassword: boolean;
   redirectUrl?: string;
+  environment?: string;
+  onRedirect?: (url: string) => void;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   setShowPassword: (show: boolean) => void;
@@ -129,6 +164,8 @@ export interface HandleSubmitProps {
   email: string;
   password: string;
   redirectUrl?: string;
+  environment?: string;
+  onRedirect?: (url: string) => void;
   setLoginError: (error: string | null) => void;
   setLoginLoading: (loading: boolean) => void;
 }

@@ -8,6 +8,8 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
     password,
     showPassword,
     redirectUrl,
+    environment,
+    onRedirect,
     setEmail,
     setPassword,
     setShowPassword,
@@ -25,6 +27,8 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
           email,
           password,
           redirectUrl,
+          environment,
+          onRedirect,
           setLoginError,
           setLoginLoading,
         })

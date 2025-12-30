@@ -113,6 +113,94 @@ The widget accepts these HTML attributes for configuration:
 
 ---
 
+## Event Handling
+
+The widget dispatches custom events that allow your application to respond to user actions. This is the **recommended best practice** for handling redirects and maintaining clean separation between the widget and your application.
+
+### Redirect Event
+
+After successful authentication, the widget dispatches a `redirect` event instead of automatically navigating. This gives you full control over the post-login behavior.
+
+**Basic Example**:
+
+```html
+<keycloak-widget 
+  id="auth"
+  redirectUrl="/dashboard"
+></keycloak-widget>
+
+<script>
+  document.getElementById("auth")
+    .addEventListener("redirect", function(e) {
+      // e.detail.url contains the redirect URL
+      console.log("Redirecting to:", e.detail.url);
+      window.location.href = e.detail.url;
+    });
+</script>
+```
+
+**Event Details**:
+- **Event name**: `redirect`
+- **Event detail**: `{ url: string }`
+- **Bubbles**: `true`
+- **Composed**: `true` (crosses shadow DOM boundaries)
+
+**Advanced Example - Custom Logic**:
+
+```html
+<script>
+  document.getElementById("auth")
+    .addEventListener("redirect", function(e) {
+      const targetUrl = e.detail.url;
+      
+      // Add custom logic before redirect
+      if (targetUrl.includes('/dashboard')) {
+        // Track analytics
+        gtag('event', 'login_success', {
+          'redirect_url': targetUrl
+        });
+        
+        // Show loading state
+        document.body.classList.add('redirecting');
+        
+        // Small delay for UX
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 500);
+      } else {
+        // Immediate redirect for other URLs
+        window.location.href = targetUrl;
+      }
+    });
+</script>
+```
+
+**WordPress/CMS Integration**:
+
+```html
+<keycloak-widget 
+  id="auth"
+  redirectUrl="<?php echo home_url('/member-dashboard'); ?>"
+></keycloak-widget>
+
+<script>
+  document.getElementById("auth")
+    .addEventListener("redirect", function(e) {
+      // You can integrate with WordPress AJAX or other CMS features
+      window.location.href = e.detail.url;
+    });
+</script>
+```
+
+**Benefits of Event-Based Approach**:
+- ✅ No iframe or popup blocking issues
+- ✅ Clean separation of concerns
+- ✅ Full control over navigation
+- ✅ Easy to add analytics, logging, or custom logic
+- ✅ Works perfectly with SPAs and traditional websites
+
+---
+
 ## Common Use Cases
 
 ### 1. Simple Login Widget

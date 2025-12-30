@@ -5,7 +5,7 @@ import {
 } from "../functions";
 import type { LoginModalProps, ActiveTab } from "../types/index";
 
-const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl }) => {
+const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environment, onRedirect }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
   const [email, setEmail] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -95,6 +95,8 @@ const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl }) => {
           setLoginError={setLoginError}
           setLoginLoading={setLoginLoading}
           redirectUrl={redirectUrl}
+          environment={environment}
+          onRedirect={onRedirect}
         />
       </div>
     </div>
