@@ -12,7 +12,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App redirectUrl="https://www.alliedschools.com/" />
+        <App />
       </StrictMode>
     </BrowserRouter>
   );
@@ -40,11 +40,11 @@ if (renderMode === 'TEST') {
       this.root?.unmount();
     }
 
-    private handleRedirect = (url: string) => {
-      // Dispatch custom event to host page
+    private handleRedirect = (url: string, userSession?: any) => {
+      // Dispatch custom event to host page with URL and user session
       this.dispatchEvent(
         new CustomEvent("redirect", {
-          detail: { url },
+          detail: { url, userSession },
           bubbles: true,
           composed: true
         })
@@ -70,9 +70,9 @@ if (renderMode === 'TEST') {
 
       this.root.render(
         <StrictMode>
-          <MemoryRouter>
+          <BrowserRouter>
             <App {...this.getProps()} />
-          </MemoryRouter>
+          </BrowserRouter>
         </StrictMode>
       );
     }

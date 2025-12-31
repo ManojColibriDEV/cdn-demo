@@ -24,7 +24,7 @@
   <body>
     <keycloak-widget
       id="auth"
-      redirectUrl="http://localhost:5173/"
+      redirectUrl="http://127.0.0.1:5500/widget-test.html"
     >
     </keycloak-widget>
 
@@ -35,8 +35,14 @@
       document.getElementById("auth")
         .addEventListener("redirect", function(e) {
           console.log("Redirect event received:", e.detail.url);
+          console.log("User session:", e.detail.userSession);
+          
+          // User session is already saved in localStorage with key "user_session"
+          // You can also access it from the event
+          const userSession = e.detail.userSession;
+          
           // Handle the redirect in your application
-          window.location.href = e.detail.url;
+          // window.location.href = e.detail.url;
         });
     </script>
   </body>

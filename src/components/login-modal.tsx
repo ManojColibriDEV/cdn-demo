@@ -7,11 +7,8 @@ import type { LoginModalProps, ActiveTab } from "../types/index";
 
 const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environment, onRedirect }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
-  const [email, setEmail] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [requiresUpgrade] = useState(false);
 
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -84,12 +81,6 @@ const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environme
         )}
         <LoginSubmit
           handleSubmit={handleSubmit}
-          email={email}
-          password={password}
-          showPassword={showPassword}
-          setEmail={setEmail}
-          setPassword={setPassword}
-          setShowPassword={setShowPassword}
           loginError={loginError}
           loginLoading={loginLoading}
           setLoginError={setLoginError}
