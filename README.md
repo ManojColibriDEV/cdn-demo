@@ -48,6 +48,7 @@ See [example-redirect-event.html](example-redirect-event.html) for a complete wo
 ## Documentation
 
 - **[Usage Guide](docs/USAGE.md)** - Integration examples and common patterns
+- **[Callback Configuration](docs/CALLBACK-CONFIGURATION.md)** - Configure callback URLs for third-party sites
 - **[API Reference](docs/API-REFERENCE.md)** - Complete API documentation
 - **[Web Component Guide](docs/WEB-COMPONENT.md)** - Deep dive into web component implementation
 - **[Architecture](docs/ARCHITECTURE.md)** - Technical architecture details

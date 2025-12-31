@@ -7,11 +7,17 @@ let userManagerCache: { [key: string]: UserManager } = {};
  * Get OIDC settings based on environment
  */
 function getOidcSettings(environment: string = 'development'): UserManagerSettings {
+  // Get custom callback URL from localStorage (set via web component attribute)
+  const customCallbackUrl = localStorage.getItem('callbackUrl');
+  
+  // Use custom callback URL if provided, otherwise default to origin/callback
+  const redirect_uri = customCallbackUrl || `${window.location.origin}/callback`;
+  
   const configs = {
     development: {
       authority: 'https://dev-keycloak.colibricore.io/realms/allied',
       client_id: 'colibricore',
-      redirect_uri: `${window.location.origin}/callback`,
+      redirect_uri,
       post_logout_redirect_uri: window.location.origin,
       response_type: 'code',
       scope: 'openid profile email',
@@ -30,7 +36,7 @@ function getOidcSettings(environment: string = 'development'): UserManagerSettin
     staging: {
       authority: 'https://staging-keycloak.colibricore.io/realms/allied',
       client_id: 'colibricore',
-      redirect_uri: `${window.location.origin}/callback`,
+      redirect_uri,
       post_logout_redirect_uri: window.location.origin,
       response_type: 'code',
       scope: 'openid profile email',
@@ -49,7 +55,7 @@ function getOidcSettings(environment: string = 'development'): UserManagerSettin
     production: {
       authority: 'https://keycloak.colibricore.io/realms/allied',
       client_id: 'colibricore',
-      redirect_uri: `${window.location.origin}/callback`,
+      redirect_uri,
       post_logout_redirect_uri: window.location.origin,
       response_type: 'code',
       scope: 'openid profile email',

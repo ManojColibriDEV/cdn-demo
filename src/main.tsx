@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { createRoot, Root } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
 
@@ -23,7 +22,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["environment", "subsidiary", "theme"];
+      return ["environment", "subsidiary", "theme", "callbackUrl"];
     }
 
     connectedCallback() {
@@ -57,6 +56,7 @@ if (renderMode === 'TEST') {
         environment: this.getAttribute("environment") || "test",
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
+        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}/callback`,
         onRedirect: this.handleRedirect,
       };
     }
