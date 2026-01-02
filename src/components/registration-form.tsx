@@ -783,7 +783,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
               Reset
             </button>
             <button
-              className="flex-[2_1_60%] bg-teal text-white border-none rounded-lg py-3 px-4 text-[1.05rem] font-bold cursor-pointer disabled:bg-teal-light disabled:cursor-not-allowed"
+              className="flex-[2_1_60%] bg-[#bdbdbd] enabled:bg-[#a24796] text-white border-none rounded-lg py-3 px-4 text-[1.05rem] font-bold cursor-pointer disabled:bg-teal-light disabled:cursor-not-allowed"
               type="submit"
               // disabled={!isContinueEnabled}
             >

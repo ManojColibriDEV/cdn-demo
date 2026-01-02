@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { createRoot, Root } from 'react-dom/client';
-import { MemoryRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
 
@@ -12,7 +11,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App redirectUrl="https://www.alliedschools.com/" />
+        <App isShowToggle={"true"} callbackUrl="http://localhost:5173/" />
       </StrictMode>
     </BrowserRouter>
   );
@@ -23,7 +22,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["environment", "subsidiary", "theme"];
+      return ["environment", "subsidiary", "theme", "callbackUrl"];
     }
 
     connectedCallback() {
@@ -40,11 +39,11 @@ if (renderMode === 'TEST') {
       this.root?.unmount();
     }
 
-    private handleRedirect = (url: string) => {
-      // Dispatch custom event to host page
+    private handleRedirect = (url: string, userSession?: any) => {
+      // Dispatch custom event to host page with URL and user session
       this.dispatchEvent(
         new CustomEvent("redirect", {
-          detail: { url },
+          detail: { url, userSession },
           bubbles: true,
           composed: true
         })
@@ -53,10 +52,11 @@ if (renderMode === 'TEST') {
 
     private getProps() {
       return {
-        redirectUrl: this.getAttribute("redirectUrl") || "/",
         environment: this.getAttribute("environment") || "test",
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
+        isShowToggle: this.getAttribute("isShowToggle") === "false",
+        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         onRedirect: this.handleRedirect,
       };
     }
@@ -70,9 +70,9 @@ if (renderMode === 'TEST') {
 
       this.root.render(
         <StrictMode>
-          <MemoryRouter>
+          <BrowserRouter>
             <App {...this.getProps()} />
-          </MemoryRouter>
+          </BrowserRouter>
         </StrictMode>
       );
     }

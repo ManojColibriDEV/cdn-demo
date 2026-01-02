@@ -91,10 +91,9 @@ export interface CheckMigrationStatusResponse {
 
 export interface LoginModalProps {
   open: boolean;
+  isShowToggle: string;
   onClose: () => void;
-  redirectUrl?: string;
   environment?: string;
-  onRedirect?: (url: string) => void;
 }
 
 // Extended ActiveTab type to include 'upgrade'
@@ -102,15 +101,7 @@ export type ActiveTab = "signin" | "signup" | "upgrade";
 
 export interface LoginSubmitProps {
   handleSubmit: (props: HandleSubmitProps) => Promise<void>;
-  email: string;
-  password: string;
-  showPassword: boolean;
-  redirectUrl?: string;
   environment?: string;
-  onRedirect?: (url: string) => void;
-  setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
-  setShowPassword: (show: boolean) => void;
   loginError: string | null;
   loginLoading: boolean;
   setLoginError: (error: string | null) => void;
@@ -161,9 +152,8 @@ export interface PasswordChecks {
 
 export interface HandleSubmitProps {
   e: React.FormEvent<HTMLFormElement>;
-  email: string;
-  password: string;
-  redirectUrl?: string;
+  email?: string;
+  password?: string;
   environment?: string;
   onRedirect?: (url: string) => void;
   setLoginError: (error: string | null) => void;

@@ -270,7 +270,7 @@ Backend Authentication
     ↓
 JWT Token Received
     ↓
-localStorage/sessionStorage
+localStorage/localStorage
     ↓
 Redirect to redirectUrl
 ```
@@ -507,7 +507,7 @@ interface RegistrationPayload {
 ### Authentication
 
 - JWT token-based
-- Tokens stored in localStorage/sessionStorage
+- Tokens stored in localStorage/localStorage
 - Automatic token refresh (if implemented)
 - Secure HTTP-only cookies (backend)
 

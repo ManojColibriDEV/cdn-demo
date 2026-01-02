@@ -1,94 +1,30 @@
 import { updatePasswordObtainToken } from "../services/index";
-import { authenticateWithOIDC, getUserInfo } from "../services/oidc";
+import { signIn } from "../auth/oidcService";
 import type {
   HandleSubmitProps,
   HandleUpdatePasswordProps,
   UpgradeUser,
   PasswordChecks,
-  OIDCTokenResponse,
-  OIDCUserInfo,
 } from "../types/index";
-import { jwtDecode } from "jwt-decode";
 
 /**
- * Store OIDC tokens and user information in localStorage
- * @param tokenResponse - OIDC token response from Keycloak
- * @param userInfo - Optional user info from userinfo endpoint
- */
-function storeTokens(tokenResponse: OIDCTokenResponse, userInfo?: OIDCUserInfo): void {
-  const { access_token, refresh_token, expires_in, id_token } = tokenResponse;
-
-  // Store tokens in localStorage (consider using secure cookie in production)
-  localStorage.setItem("access_token", access_token);
-  if (refresh_token) {
-    localStorage.setItem("refresh_token", refresh_token);
-  }
-  if (id_token) {
-    localStorage.setItem("id_token", id_token);
-  }
-
-  // Store expiration time
-  const expiresAt = Date.now() + (expires_in * 1000);
-  localStorage.setItem("token_expires_at", expiresAt.toString());
-
-  // Decode JWT to get basic user info
-  const decoded: any = jwtDecode(access_token);
-  
-  // Merge decoded token info with userInfo if available
-  const userState = {
-    ...decoded,
-    ...(userInfo || {})
-  };
-  
-  localStorage.setItem("user_state", JSON.stringify(userState));
-}
-
-/**
- * Handle login form submission
- * Validates credentials, obtains token, and handles password upgrade flow
+ * Handle login form submission - triggers SSO authorization code flow
  */
 export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
-  const { e, email, password, redirectUrl, onRedirect, environment, setLoginError, setLoginLoading } =
-    props;
+  const { e, environment, setLoginError, setLoginLoading } = props;
   e.preventDefault();
   setLoginError(null);
-  if (!email || !password) return;
   setLoginLoading(true);
   
   try {
     // Get environment from localStorage if not provided
     const env = environment || localStorage.getItem("environment") || "development";
     
-    // Authenticate with OIDC
-    const tokenResponse = await authenticateWithOIDC(email.trim(), password, env);
-    
-    // Optionally fetch user info from userinfo endpoint
-    let userInfo: OIDCUserInfo | undefined;
-    try {
-      userInfo = await getUserInfo(tokenResponse.access_token, env);
-    } catch (err) {
-      console.warn("Failed to fetch user info, using token claims only", err);
-    }
-    
-    // Store tokens and user information
-    storeTokens(tokenResponse, userInfo);
-    setLoginLoading(false);
-    
-    // Trigger redirect event
-    if (redirectUrl && onRedirect) {
-      onRedirect(redirectUrl);
-    }
+    // Trigger SSO login with authorization code flow
+    await signIn(env);
   } catch (err) {
-    // Prefer backend error message if present
-    const e = err as {
-      response?: { data?: { message?: string; error_description?: string; error?: string } };
-      message?: string;
-    };
-    const backendMsg =
-      e?.response?.data?.error_description || 
-      e?.response?.data?.message || 
-      e?.response?.data?.error;
-    setLoginError(backendMsg || e?.message || "Sign in failed");
+    const e = err as { message?: string };
+    setLoginError(e?.message || "Sign in failed");
     setLoginLoading(false);
   }
 };
