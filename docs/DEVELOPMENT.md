@@ -288,6 +288,31 @@ const response: ApiResponse<UserData> = await fetchUser();
 
 ## Styling with Tailwind CSS
 
+### Important Configuration
+
+The widget uses a scoped `important` selector to ensure styles work when embedded in external sites:
+
+```javascript
+// tailwind.config.js
+export default {
+  important: '#auth', // Scopes all utilities to widget container
+  // ...
+}
+```
+
+**Why?**
+- ✅ Prevents conflicts with host page styles
+- ✅ Ensures widget styles take precedence
+- ✅ Works in WordPress, CMSs, and other platforms
+- ✅ Avoids global `!important` pollution
+
+**Usage**: The widget container must have `id="auth"`:
+```html
+<keycloak-widget id="auth"></keycloak-widget>
+```
+
+**Note**: Do NOT use `important: true` as it causes issues in production builds.
+
 ### Common Patterns
 
 **Layout**:
@@ -627,6 +652,8 @@ main              # Production-ready code
 
 ### Commit Convention
 
+Follow **Conventional Commits** for clear history:
+
 ```bash
 # Format: type(scope): message
 
@@ -635,9 +662,64 @@ fix(button): correct hover state styling
 docs(readme): update installation instructions
 refactor(api): simplify error handling
 test(login): add unit tests for validation
+chore(deps): update dependencies
+perf(bundle): reduce bundle size
 ```
 
-### Before Committing
+**Common Types**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `refactor`: Code refactoring
+- `test`: Adding tests
+- `chore`: Build process, dependencies
+- `perf`: Performance improvements
+- `style`: Code style/formatting
+
+### Commit Workflow
+
+#### 1. Stage Changes
+
+```bash
+# Check status
+git status
+
+# Stage specific files
+git add src/components/login-modal.tsx
+
+# Stage all changes
+git add .
+
+# Stage interactively
+git add -p
+```
+
+#### 2. Commit Changes
+
+```bash
+# Commit with message
+git commit -m "feat(auth): add OAuth callback handling"
+
+# Commit with detailed description
+git commit -m "feat(auth): add OAuth callback handling" -m "- Implement callback URL parsing
+- Add token exchange logic
+- Update documentation"
+```
+
+#### 3. Push Changes
+
+```bash
+# Push to current branch
+git push
+
+# Push to specific branch
+git push origin feature/oauth-callback
+
+# Force push (use with caution)
+git push --force-with-lease
+```
+
+### Before Committing Checklist
 
 ```bash
 # 1. Lint code
@@ -651,6 +733,182 @@ npm run build
 
 # 4. Test manually
 npm run dev
+```
+
+---
+
+## Release Process
+
+### Version Numbering (Semantic Versioning)
+
+Follow **SemVer** (MAJOR.MINOR.PATCH):
+
+```
+v1.2.3
+│ │ └─── PATCH: Bug fixes, minor changes
+│ └───── MINOR: New features (backward compatible)
+└─────── MAJOR: Breaking changes
+```
+
+**Examples**:
+- `v1.0.0` → `v1.0.1` - Bug fix
+- `v1.0.1` → `v1.1.0` - New feature
+- `v1.1.0` → `v2.0.0` - Breaking change
+
+### Step-by-Step Release
+
+#### 1. Prepare Release
+
+```bash
+# Ensure on main branch
+git checkout main
+git pull origin main
+
+# Run final tests
+npm run lint
+npm run build
+
+# Test the build
+npm run dev
+```
+
+#### 2. Update Version
+
+```bash
+# Update package.json version
+npm version patch   # 1.0.0 → 1.0.1 (bug fixes)
+npm version minor   # 1.0.0 → 1.1.0 (new features)
+npm version major   # 1.0.0 → 2.0.0 (breaking changes)
+
+# Or manually edit package.json
+{
+  "version": "1.2.3"
+}
+```
+
+#### 3. Create and Push Git Tag
+
+```bash
+# Create annotated tag
+git tag -a v1.2.3 -m "Release v1.2.3 - Add authority auto-detection"
+
+# Push commits
+git push origin main
+
+# Push tag
+git push origin v1.2.3
+
+# Or push all tags
+git push --tags
+```
+
+#### 4. Create GitHub Release
+
+**Option A: GitHub CLI**
+```bash
+gh release create v1.2.3 \
+  --title "v1.2.3 - Authority Auto-Detection" \
+  --notes "### Features
+- Auto-detect environment from domain
+- Simplified authority configuration
+- New environment shortcuts
+
+### Bug Fixes
+- Fix Tailwind important selector issue
+
+### Documentation
+- Update API reference
+- Add authority configuration guide"
+```
+
+**Option B: GitHub Web UI**
+1. Go to: https://github.com/ManojColibriDEV/cdn-demo/releases/new
+2. Choose tag: `v1.2.3`
+3. Add release title: `v1.2.3 - Authority Auto-Detection`
+4. Add release notes (see template below)
+5. Click "Publish release"
+
+#### 5. Verify CDN Deployment
+
+Wait 5-10 minutes for jsDelivr to update, then verify:
+
+```bash
+# Check specific version
+curl -I https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.2.3/dist/keycloak-widget.umd.js
+
+# Purge cache if needed
+curl https://purge.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.2.3/dist/keycloak-widget.umd.js
+```
+
+### Release Notes Template
+
+```markdown
+## v1.2.3 - Authority Auto-Detection
+
+**Release Date**: January 3, 2026
+
+### ✨ New Features
+- 🚀 Auto-detect environment from domain URL
+- 🎯 Simplified authority configuration with shortcuts (dev/staging/prod)
+- 📝 New `resolveAuthority` utility
+
+### 🐛 Bug Fixes
+- Fixed Tailwind `important` selector causing production build issues
+- Resolved TypeScript `import.meta.env` type errors
+
+### 📚 Documentation
+- Added Authority Configuration Guide
+- Updated API Reference with new attributes
+- Enhanced Development Guide with Tailwind notes
+
+### 🔄 Breaking Changes
+None - Fully backward compatible
+
+### 📦 Migration Guide
+```html
+<!-- Old (still works) -->
+<keycloak-widget authority="https://dev-keycloak.colibricore.io"></keycloak-widget>
+
+<!-- New (recommended) -->
+<keycloak-widget authority="dev"></keycloak-widget>
+```
+
+### 🔗 Links
+- [Full Changelog](https://github.com/ManojColibriDEV/cdn-demo/compare/v1.2.2...v1.2.3)
+- [Documentation](https://github.com/ManojColibriDEV/cdn-demo/blob/main/README.md)
+```
+
+### Quick Release Commands
+
+```bash
+# Complete release workflow (example)
+git checkout main
+git pull origin main
+npm run lint
+npm run build
+npm version minor  # Creates commit and tag
+git push origin main
+git push origin v1.2.0
+gh release create v1.2.0 --title "v1.2.0" --notes "Release notes here"
+```
+
+### Rollback a Release
+
+If you need to rollback:
+
+```bash
+# Delete remote tag
+git push --delete origin v1.2.3
+
+# Delete local tag
+git tag -d v1.2.3
+
+# Delete GitHub release (use web UI or gh CLI)
+gh release delete v1.2.3
+
+# Revert commits if needed
+git revert <commit-hash>
+git push origin main
 ```
 
 ---

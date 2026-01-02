@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { createRoot, Root } from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { resolveAuthority } from './utils/authorityResolver';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
@@ -22,7 +23,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["environment", "subsidiary", "theme", "callbackUrl"];
+      return ["authority", "subsidiary", "theme", "callbackUrl", "isShowToggle"];
     }
 
     connectedCallback() {
@@ -52,10 +53,10 @@ if (renderMode === 'TEST') {
 
     private getProps() {
       return {
-        environment: this.getAttribute("environment") || "test",
+        authority: resolveAuthority(this.getAttribute("authority")),
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
-        isShowToggle: this.getAttribute("isShowToggle") === "false",
+        isShowToggle: this.getAttribute("isShowToggle") || "true",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         onRedirect: this.handleRedirect,
       };

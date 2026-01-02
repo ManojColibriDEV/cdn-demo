@@ -16,7 +16,9 @@ A reusable web component for authentication with Colibri Identity/Keycloak. Easi
     <!-- Add the widget -->
     <keycloak-widget 
       id="auth"
-      redirectUrl="/dashboard"
+      authority="dev"
+      subsidiary="allied"
+      callbackUrl="http://localhost:3000/"
     ></keycloak-widget>
 
     <!-- Load the script -->
@@ -48,6 +50,7 @@ See [example-redirect-event.html](example-redirect-event.html) for a complete wo
 ## Documentation
 
 - **[Usage Guide](docs/USAGE.md)** - Integration examples and common patterns
+- **[Authority Configuration](docs/AUTHORITY-CONFIGURATION.md)** - Configure environment shortcuts and auto-detection
 - **[Callback Configuration](docs/CALLBACK-CONFIGURATION.md)** - Configure callback URLs for third-party sites
 - **[API Reference](docs/API-REFERENCE.md)** - Complete API documentation
 - **[Web Component Guide](docs/WEB-COMPONENT.md)** - Deep dive into web component implementation
@@ -107,6 +110,46 @@ Preview built output
 npm run preview
 ```
 
+---
+
+## Quick Commands Reference
+
+### Development
+```bash
+npm install          # Install dependencies
+npm run dev          # Start dev server
+npm run build        # Production build
+npm run lint         # Run linter
+```
+
+### Git & Release
+```bash
+# Commit changes
+git add .
+git commit -m "feat(scope): description"
+git push origin main
+
+# Create release
+npm version patch    # Bug fixes (1.0.0 → 1.0.1)
+npm version minor    # New features (1.0.0 → 1.1.0)
+npm version major    # Breaking changes (1.0.0 → 2.0.0)
+git push origin main
+git push --tags
+
+# Create GitHub release
+gh release create v1.2.3 --title "v1.2.3" --notes "Release notes"
+```
+
+### Verify CDN Deployment
+```bash
+# Wait 5-10 minutes after tagging, then:
+curl -I https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.2.3/dist/keycloak-widget.umd.js
+```
+
+---
+
+## Project Structure
+
 TypeScript & shared types
 
 - Shared types live in `src/types/index.ts`.
@@ -137,6 +180,14 @@ Example:
 
 ```
 ID_165 - UPDATE: implement login widget UI and connect it with backend auth APIs
+```
+
+**OR use Conventional Commits** (recommended for releases):
+
+```bash
+feat(auth): add OAuth callback handling
+fix(button): correct hover state styling
+docs(readme): update installation instructions
 ```
 
 Guidelines:

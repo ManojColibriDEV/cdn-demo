@@ -8,14 +8,14 @@
 <body>
   <h1>Colibri Identity Widget - Local Test</h1>
 
-  <!-- Widget with custom callback URL -->
-  <keycloak-widget id="auth" environment="development" subsidiary="allied"
-  isShowToggle="false"
+  <!-- Widget with simplified authority - just pass "dev", "staging", or "prod" -->
+  <!-- Or omit authority to auto-detect from domain -->
+  <keycloak-widget id="auth" authority="dev" subsidiary="allied" isShowToggle="false"
     callbackUrl="http://127.0.0.1:5500/widget-test.html">
   </keycloak-widget>
 
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.1.5/dist/login-widget.css" />
-  <script src="https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.1.5/dist/keycloak-widget.umd.js"></script>
+  <link rel="stylesheet" href="./dist/login-widget.css" />
+  <script src="./dist/keycloak-widget.umd.js"></script>
 
   <script>
     // Listen for redirect event from the widget

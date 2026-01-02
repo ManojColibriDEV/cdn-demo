@@ -334,6 +334,71 @@ wrangler pages deploy dist --project-name=colibri-widget
 
 ### Semantic Versioning
 
+Follow **SemVer** (MAJOR.MINOR.PATCH):
+
+```
+v1.2.3
+│ │ └─── PATCH: Bug fixes, minor changes (1.2.3 → 1.2.4)
+│ └───── MINOR: New features, backward compatible (1.2.3 → 1.3.0)
+└─────── MAJOR: Breaking changes (1.2.3 → 2.0.0)
+```
+
+### Creating a Release
+
+#### Complete Release Workflow
+
+```bash
+# 1. Ensure clean state
+git checkout main
+git pull origin main
+
+# 2. Validate build
+npm run lint
+npm run build
+npm run dev  # Manual test
+
+# 3. Update version in package.json
+npm version patch   # 1.0.0 → 1.0.1
+# OR
+npm version minor   # 1.0.0 → 1.1.0
+# OR
+npm version major   # 1.0.0 → 2.0.0
+
+# 4. Push changes and tags
+git push origin main
+git push --tags
+
+# 5. Create GitHub release (triggers CDN deployment)
+gh release create v1.2.3 \
+  --title "v1.2.3 - Feature Description" \
+  --notes "Release notes here"
+
+# 6. Verify CDN (wait 5-10 minutes)
+curl -I https://cdn.jsdelivr.net/gh/ManojColibriDEV/cdn-demo@v1.2.3/dist/keycloak-widget.umd.js
+```
+
+### Version Tagging Best Practices
+
+**Tag Format**: Always use `v` prefix (e.g., `v1.2.3`)
+
+```bash
+# Create annotated tag (recommended)
+git tag -a v1.2.3 -m "Release v1.2.3: Add authority auto-detection"
+
+# Lightweight tag (not recommended)
+git tag v1.2.3
+
+# Push specific tag
+git push origin v1.2.3
+
+# Push all tags
+git push --tags
+```
+
+### jsDelivr CDN Integration
+
+### Semantic Versioning
+
 Follow [semver](https://semver.org/):
 
 ```

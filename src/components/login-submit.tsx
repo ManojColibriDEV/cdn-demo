@@ -4,7 +4,7 @@ import type { LoginSubmitProps } from "../types/index";
 const LoginSubmit: FC<LoginSubmitProps> = (props) => {
   const {
     handleSubmit,
-    environment,
+    authority,
     loginError,
     loginLoading,
     setLoginError,
@@ -18,7 +18,7 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
           e,
           email: '',
           password: '',
-          environment,
+          authority,
           setLoginError,
           setLoginLoading,
         })

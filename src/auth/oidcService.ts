@@ -1,116 +1,73 @@
 import { UserManager, WebStorageStateStore, User, UserManagerSettings } from 'oidc-client-ts';
 import { jwtDecode } from "jwt-decode";
+import { resolveAuthority } from '../utils/authorityResolver';
 
 let userManagerCache: { [key: string]: UserManager } = {};
 
 /**
- * Get OIDC settings based on environment
+ * Get OIDC settings based on authority and subsidiary
  */
-function getOidcSettings(environment: string = 'development'): UserManagerSettings {
+function getOidcSettings(authority?: string): UserManagerSettings {
+  // Resolve authority (handles env shortcuts and auto-detection)
+  const resolvedAuthority = resolveAuthority(authority);
+  
+  // Get subsidiary (realm) from localStorage, default to 'allied'
+  const subsidiary = localStorage.getItem('subsidiary') || 'allied';
+  
   // Get custom callback URL from localStorage (set via web component attribute)
   const customCallbackUrl = localStorage.getItem('callbackUrl');
   
   // Fallback to current page URL if localStorage is cleared
   const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
   
-  console.log('[OIDC] Using redirect_uri:', redirect_uri);
-  
-  const configs = {
-    development: {
-      authority: 'https://dev-keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://dev-keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
-    },
-    staging: {
-      authority: 'https://staging-keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://staging-keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
-    },
-    production: {
-      authority: 'https://keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
+  return {
+    authority: `${resolvedAuthority}/realms/${subsidiary}`,
+    client_id: 'colibricore',
+    redirect_uri,
+    post_logout_redirect_uri: window.location.origin,
+    response_type: 'code',
+    scope: 'openid profile email',
+    automaticSilentRenew: false,
+    filterProtocolClaims: true,
+    loadUserInfo: true,
+    metadata: {
+      issuer: `${resolvedAuthority}/realms/${subsidiary}`,
+      authorization_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/auth`,
+      token_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/token`,
+      userinfo_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/userinfo`,
+      end_session_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/logout`,
+      jwks_uri: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/certs`,
     },
   };
-
-  return configs[environment as keyof typeof configs] || configs.development;
 }
 
 /**
- * Get UserManager instance (cached per environment)
+ * Get UserManager instance (cached per authority)
  */
-function getUserManager(environment: string = 'development'): UserManager {
-  const env = environment || 'development';
+function getUserManager(authority?: string): UserManager {
+  const auth = resolveAuthority(authority);
   
-  if (!userManagerCache[env]) {
-    const settings = getOidcSettings(env);
+  if (!userManagerCache[auth]) {
+    const settings = getOidcSettings(authority);
     
-    userManagerCache[env] = new UserManager({
+    userManagerCache[auth] = new UserManager({
       ...settings,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     });
 
-    console.log('[OIDC] UserManager initialized for environment:', env);
+    console.log('[OIDC] UserManager initialized for authority:', auth);
   }
   
-  return userManagerCache[env];
+  return userManagerCache[auth];
 }
 
 /**
  * Sign in redirect to Keycloak
  */
-export async function signIn(environment?: string): Promise<void> {
-  const manager = getUserManager(environment);
-  
-  // // Store redirect URL for after login
-  // if (redirectUrl) {
-  //   localStorage.setItem('post_login_redirect', redirectUrl);
-  // }
+export async function signIn(authority?: string): Promise<void> {
+  const manager = getUserManager(authority);
 
   try {
-    console.log('[OIDC] Initiating sign-in redirect...');
     await manager.signinRedirect();
   } catch (error) {
     console.error('[OIDC] Sign in error:', error);
@@ -121,8 +78,8 @@ export async function signIn(environment?: string): Promise<void> {
 /**
  * Handle sign-in callback
  */
-export async function handleSignInCallback(environment?: string): Promise<any> {
-  const manager = getUserManager(environment);
+export async function handleSignInCallback(authority?: string): Promise<any> {
+  const manager = getUserManager(authority);
   
   try {
     const user = await manager.signinRedirectCallback();
@@ -162,8 +119,8 @@ export async function isAuthenticated(): Promise<boolean> {
 /**
  * Sign out
  */
-export async function signOut(environment?: string): Promise<void> {
-  const manager = getUserManager(environment);
+export async function signOut(authority?: string): Promise<void> {
+  const manager = getUserManager(authority);
   
   try {
     console.log('[OIDC] Signing out...');

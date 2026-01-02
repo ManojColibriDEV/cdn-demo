@@ -28,10 +28,12 @@ The main custom HTML element for the login widget.
 **Example**:
 ```html
 <keycloak-widget 
-  redirectUrl="/dashboard"
-  environment="production"
+  id="auth"
+  authority="dev"
   subsidiary="allied"
+  callbackUrl="/dashboard"
   theme="light"
+  isShowToggle="true"
 ></keycloak-widget>
 ```
 
@@ -65,28 +67,62 @@ All attributes are **optional** and have default values.
 
 ---
 
-### `environment`
+### `authority`
 
-**Type**: `"test" | "staging" | "production"`  
-**Default**: `"test"`  
-**Description**: Environment configuration for API endpoints.
+**Type**: `string | "dev" | "staging" | "prod"`  
+**Default**: Auto-detected from domain  
+**Description**: Keycloak authority URL or environment shortcut.
 
 ```html
-<keycloak-widget environment="production"></keycloak-widget>
+<!-- Environment shortcut (recommended) -->
+<keycloak-widget authority="dev"></keycloak-widget>
+
+<!-- Auto-detect from domain (omit attribute) -->
+<keycloak-widget subsidiary="allied"></keycloak-widget>
+
+<!-- Custom URL -->
+<keycloak-widget authority="https://custom-keycloak.example.com"></keycloak-widget>
 ```
 
-**Values**:
+**Environment Shortcuts**:
 
-| Value | Description | API Base URL |
-|-------|-------------|--------------|
-| `test` | Development/testing | `https://dev-idb.colibrirealestate.com` |
-| `staging` | Staging environment | `https://staging-idb.colibrirealestate.com` |
-| `production` | Production | `https://idb.colibrirealestate.com` |
+| Shortcut | Full URL |
+|----------|----------|
+| `dev` or `development` | `https://dev-keycloak.colibricore.io` |
+| `staging` | `https://staging-keycloak.colibricore.io` |
+| `prod` or `production` | `https://keycloak.colibricore.io` |
+
+**Auto-Detection Rules**:
+- Domain contains "dev" → Uses dev environment
+- Domain contains "staging" → Uses staging environment
+- All other domains → Uses production environment
 
 **Notes**:
-- Case-insensitive
-- Invalid values fallback to `"test"`
-- Affects API calls, not UI behavior
+- See [Authority Configuration Guide](AUTHORITY-CONFIGURATION.md) for detailed usage
+- Custom URLs must start with `http://` or `https://`
+- Auto-detection provides zero-config deployment
+
+---
+
+### `callbackUrl`
+
+**Type**: `string`  
+**Default**: `window.location.origin`  
+**Description**: URL where users return after authentication.
+
+```html
+<keycloak-widget callbackUrl="http://localhost:3000/"></keycloak-widget>
+```
+
+**Valid Values**:
+- Relative paths: `/callback`, `/auth/callback`
+- Absolute URLs: `https://example.com/callback`
+- Current page: Omit attribute to use current page URL
+
+**Notes**:
+- Must be a valid URL
+- Must be registered in Keycloak client configuration
+- Use URL encoding for special characters
 
 ---
 
@@ -101,14 +137,34 @@ All attributes are **optional** and have default values.
 ```
 
 **Valid Values**:
-- `"allied"` - Allied brand
+- `"allied"` - Allied brand (Keycloak realm: allied)
 - `"north-american"` - North American brand
-- Custom values (check with backend team)
+- Custom values (must match Keycloak realm names)
 
 **Use Cases**:
 - Multi-brand deployments
 - Tenant-specific configurations
-- Custom branding
+- Keycloak realm selection
+
+---
+
+### `isShowToggle`
+
+**Type**: `"true" | "false"`  
+**Default**: `"true"`  
+**Description**: Show/hide the login/signup tab toggle.
+
+```html
+<!-- Show toggle (default) -->
+<keycloak-widget isShowToggle="true"></keycloak-widget>
+
+<!-- Hide toggle (sign-in only) -->
+<keycloak-widget isShowToggle="false"></keycloak-widget>
+```
+
+**Notes**:
+- String values "true" or "false" (HTML attribute)
+- Controls tab visibility in modal
 
 ---
 
