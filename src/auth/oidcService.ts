@@ -10,8 +10,10 @@ function getOidcSettings(environment: string = 'development'): UserManagerSettin
   // Get custom callback URL from localStorage (set via web component attribute)
   const customCallbackUrl = localStorage.getItem('callbackUrl');
   
-  // Use custom callback URL if provided, otherwise default to origin/callback
-  const redirect_uri = customCallbackUrl || `${window.location.origin}/callback`;
+  // Fallback to current page URL if localStorage is cleared
+  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
+  
+  console.log('[OIDC] Using redirect_uri:', redirect_uri);
   
   const configs = {
     development: {
@@ -99,13 +101,13 @@ function getUserManager(environment: string = 'development'): UserManager {
 /**
  * Sign in redirect to Keycloak
  */
-export async function signIn(redirectUrl?: string, environment?: string): Promise<void> {
+export async function signIn(environment?: string): Promise<void> {
   const manager = getUserManager(environment);
   
-  // Store redirect URL for after login
-  if (redirectUrl) {
-    localStorage.setItem('post_login_redirect', redirectUrl);
-  }
+  // // Store redirect URL for after login
+  // if (redirectUrl) {
+  //   localStorage.setItem('post_login_redirect', redirectUrl);
+  // }
 
   try {
     console.log('[OIDC] Initiating sign-in redirect...');
@@ -123,10 +125,7 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
   const manager = getUserManager(environment);
   
   try {
-    console.log('[OIDC] Processing sign-in callback...');
     const user = await manager.signinRedirectCallback();
-    console.log('[OIDC] Sign-in successful:', user.profile);
-    
     const decoded = jwtDecode(user.access_token);
     // Store user info in localStorage
     localStorage.setItem('user_state', 'authenticated');

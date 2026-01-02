@@ -11,7 +11,7 @@ import type {
  * Handle login form submission - triggers SSO authorization code flow
  */
 export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
-  const { e, redirectUrl, environment, setLoginError, setLoginLoading } = props;
+  const { e, environment, setLoginError, setLoginLoading } = props;
   e.preventDefault();
   setLoginError(null);
   setLoginLoading(true);
@@ -21,7 +21,7 @@ export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
     const env = environment || localStorage.getItem("environment") || "development";
     
     // Trigger SSO login with authorization code flow
-    await signIn(redirectUrl, env);
+    await signIn(env);
   } catch (err) {
     const e = err as { message?: string };
     setLoginError(e?.message || "Sign in failed");

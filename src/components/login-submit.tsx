@@ -4,9 +4,7 @@ import type { LoginSubmitProps } from "../types/index";
 const LoginSubmit: FC<LoginSubmitProps> = (props) => {
   const {
     handleSubmit,
-    redirectUrl,
     environment,
-    onRedirect,
     loginError,
     loginLoading,
     setLoginError,
@@ -20,9 +18,7 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
           e,
           email: '',
           password: '',
-          redirectUrl,
           environment,
-          onRedirect,
           setLoginError,
           setLoginLoading,
         })
@@ -42,7 +38,7 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
           type="submit"
           disabled={loginLoading}
         >
-          {loginLoading ? "Redirecting to Login..." : "Sign In with Colibri Identity"}
+          {loginLoading ? "Redirecting to Login..." : "Sign In with Keycloak SSO"}
         </button>
       </div>
     </form>

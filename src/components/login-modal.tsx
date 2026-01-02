@@ -1,18 +1,34 @@
 import { useEffect, useRef, useState, FC } from "react";
 import LoginSubmit from "./login-submit";
+import RegistrationForm from "./registration-form";
 import {
   handleSubmit,
 } from "../functions";
 import type { LoginModalProps, ActiveTab } from "../types/index";
 
-const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environment, onRedirect }) => {
+const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, environment }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [requiresUpgrade] = useState(false);
+  const [registrationData, setRegistrationData] = useState<any>(null);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  const handleRegistration = (data: any) => {
+    setRegistrationData(data);
+    // Here you would typically send the registration data to your backend
+    // For now, we'll just log it
+  };
+
+  const handleReview = (data: any) => {
+    console.log("Review data:", data);
+  };
+
+  const handleReset = () => {
+    setRegistrationData(null);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -63,7 +79,7 @@ const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environme
           </div>
         )}
 
-        {!requiresUpgrade && false && (
+        {!requiresUpgrade && isShowToggle && (
           <div className="flex gap-3 mb-4 w-full bg-[#f3f3f3] p-1.5 rounded-[10px] box-border">
             <button
               className={"flex-1 py-3 px-4 rounded-lg bg-transparent border-none text-[#6b6b6b] font-semibold cursor-pointer text-center " + (activeTab === "signin" ? "!bg-[#1866d6] !text-white shadow-none outline-none" : "")}
@@ -79,16 +95,26 @@ const LoginModal: FC<LoginModalProps> = ({ open, onClose, redirectUrl, environme
             </button>
           </div>
         )}
-        <LoginSubmit
-          handleSubmit={handleSubmit}
-          loginError={loginError}
-          loginLoading={loginLoading}
-          setLoginError={setLoginError}
-          setLoginLoading={setLoginLoading}
-          redirectUrl={redirectUrl}
-          environment={environment}
-          onRedirect={onRedirect}
-        />
+        
+        {activeTab === "signin" ? (
+          <LoginSubmit
+            handleSubmit={handleSubmit}
+            loginError={loginError}
+            loginLoading={loginLoading}
+            setLoginError={setLoginError}
+            setLoginLoading={setLoginLoading}
+            environment={environment}
+          />
+        ) : (
+          <RegistrationForm
+            onRegister={handleRegistration}
+            onReview={handleReview}
+            onReset={handleReset}
+            initialValues={registrationData}
+            loading={false}
+            error={null}
+          />
+        )}
       </div>
     </div>
   );

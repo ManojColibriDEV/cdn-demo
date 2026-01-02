@@ -11,7 +11,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App />
+        <App isShowToggle={true} callbackUrl="http://localhost:5173/" />
       </StrictMode>
     </BrowserRouter>
   );
@@ -52,11 +52,11 @@ if (renderMode === 'TEST') {
 
     private getProps() {
       return {
-        redirectUrl: this.getAttribute("redirectUrl") || "/",
         environment: this.getAttribute("environment") || "test",
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
-        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}/callback`,
+        isShowToggle: this.getAttribute("isShowToggle") || true,
+        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         onRedirect: this.handleRedirect,
       };
     }

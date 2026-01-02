@@ -4,33 +4,27 @@ import Button from "./common/ui/button";
 import LoginModal from "./components/login-modal";
 import { handleSignInCallback } from "./auth/oidcService";
 
-const OAuthCallback = ({ environment, onRedirect }: { environment?: string; onRedirect?: (url: string, userSession?: any) => void }) => {
+export interface OAuthCallbackProps {
+  environment?: string;
+  onRedirect?: (url: string, userSession?: any) => void;
+  callbackUrl: string;
+}
+const OAuthCallback = (props: OAuthCallbackProps) => {
+
+  const { environment, onRedirect, callbackUrl } = props;
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const processCallback = async () => {
       try {
-        console.log('[OAuthCallback] Starting callback processing...');
         const env = environment || localStorage.getItem('environment') || 'development';
-        console.log('[OAuthCallback] Environment:', env);
-        
-        const { userSession } = await handleSignInCallback(env);
-        console.log('[OAuthCallback] Callback successful, userSession:', userSession);
-
-        const redirectUrl = localStorage.getItem('post_login_redirect') || '/';
-        localStorage.removeItem('post_login_redirect');
-        console.log('[OAuthCallback] Redirect URL:', redirectUrl);
-        console.log('[OAuthCallback] onRedirect callback:', onRedirect ? 'exists' : 'missing');
-
+        const userSession = await handleSignInCallback(env);
         if (onRedirect) {
-          console.log('[OAuthCallback] Calling onRedirect...');
-          onRedirect(redirectUrl, userSession);
+          onRedirect(callbackUrl, userSession);
         } else {
-          console.log('[OAuthCallback] No onRedirect, using window.location.href');
-          window.location.href = redirectUrl;
+          window.location.href = callbackUrl;
         }
       } catch (err) {
-        console.error('OAuth callback error:', err);
         setError(err instanceof Error ? err.message : 'Authentication failed');
       }
     };
@@ -71,32 +65,37 @@ const OAuthCallback = ({ environment, onRedirect }: { environment?: string; onRe
 const App = (props: {
   environment?: string;
   subsidiary?: string;
-  redirectUrl?: string;
-  callbackUrl?: string;
+  isShowToggle: boolean;
+  callbackUrl: string;
   onRedirect?: (url: string, userSession?: any) => void;
 }) => {
-  const { environment, subsidiary, redirectUrl, callbackUrl, onRedirect } = props;
+  const { environment, subsidiary, isShowToggle = true, callbackUrl, onRedirect } = props;
   const [open, setOpen] = useState(false);
 
   // Check if current URL has OAuth callback parameters
   const urlParams = new URLSearchParams(window.location.search);
   const isOAuthCallback = urlParams.has('code') && urlParams.has('state');
-
   useEffect(() => {
     environment && localStorage.setItem("environment", environment);
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
-    callbackUrl && localStorage.setItem("callbackUrl", callbackUrl);
+    // Always ensure callbackUrl is in localStorage, even after page reload
+    if (callbackUrl) {
+      localStorage.setItem("callbackUrl", callbackUrl);
+    } else if (!localStorage.getItem("callbackUrl")) {
+      // If no callbackUrl prop and nothing in storage, use current page
+      localStorage.setItem("callbackUrl", callbackUrl);
+    }
   }, [environment, subsidiary, callbackUrl]);
 
   // If OAuth callback parameters are present, handle callback regardless of path
   if (isOAuthCallback) {
-    return <OAuthCallback environment={environment} onRedirect={onRedirect} />;
+    return <OAuthCallback environment={environment} callbackUrl={callbackUrl} onRedirect={onRedirect} />;
   }
 
   return (
     <Routes>
       <Route path="/callback" element={
-        <OAuthCallback environment={environment} onRedirect={onRedirect} />
+        <OAuthCallback environment={environment} onRedirect={onRedirect} callbackUrl={callbackUrl} />
       } />
       <Route path="*" element={
         <div className="max-w-7xl mx-auto p-8 text-center">
@@ -107,7 +106,7 @@ const App = (props: {
             }}
           />
 
-          {open && <LoginModal open={open} onClose={() => setOpen(false)} redirectUrl={redirectUrl} environment={environment} onRedirect={onRedirect} />}
+          {open && <LoginModal open={open} isShowToggle={isShowToggle} onClose={() => setOpen(false)} environment={environment} />}
         </div>
       } />
     </Routes>
