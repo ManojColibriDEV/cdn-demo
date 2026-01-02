@@ -91,7 +91,7 @@ export interface CheckMigrationStatusResponse {
 
 export interface LoginModalProps {
   open: boolean;
-  isShowToggle: boolean;
+  isShowToggle: string;
   onClose: () => void;
   environment?: string;
 }

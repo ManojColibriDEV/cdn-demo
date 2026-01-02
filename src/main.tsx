@@ -11,7 +11,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App isShowToggle={true} callbackUrl="http://localhost:5173/" />
+        <App isShowToggle={"true"} callbackUrl="http://localhost:5173/" />
       </StrictMode>
     </BrowserRouter>
   );
@@ -55,7 +55,7 @@ if (renderMode === 'TEST') {
         environment: this.getAttribute("environment") || "test",
         subsidiary: this.getAttribute("subsidiary") || "allied",
         theme: this.getAttribute("theme") || "light",
-        isShowToggle: this.getAttribute("isShowToggle") || true,
+        isShowToggle: this.getAttribute("isShowToggle") === "false",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         onRedirect: this.handleRedirect,
       };

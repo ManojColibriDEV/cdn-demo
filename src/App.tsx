@@ -65,11 +65,11 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
 const App = (props: {
   environment?: string;
   subsidiary?: string;
-  isShowToggle: boolean;
+  isShowToggle: string;
   callbackUrl: string;
   onRedirect?: (url: string, userSession?: any) => void;
 }) => {
-  const { environment, subsidiary, isShowToggle = true, callbackUrl, onRedirect } = props;
+  const { environment, subsidiary, isShowToggle = "true", callbackUrl, onRedirect } = props;
   const [open, setOpen] = useState(false);
 
   // Check if current URL has OAuth callback parameters

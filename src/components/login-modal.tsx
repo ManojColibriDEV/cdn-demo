@@ -79,7 +79,7 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, environm
           </div>
         )}
 
-        {!requiresUpgrade && isShowToggle && (
+        {!requiresUpgrade && isShowToggle === "true" && (
           <div className="flex gap-3 mb-4 w-full bg-[#f3f3f3] p-1.5 rounded-[10px] box-border">
             <button
               className={"flex-1 py-3 px-4 rounded-lg bg-transparent border-none text-[#6b6b6b] font-semibold cursor-pointer text-center " + (activeTab === "signin" ? "!bg-[#1866d6] !text-white shadow-none outline-none" : "")}
