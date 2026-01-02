@@ -3,8 +3,7 @@ import type {
   CheckMigrationStatusResponse,
   LoginResponse,
   CheckAvailableEmailResponse,
-  TenantDetailsResponse,
-  KeycloakLoginResponse
+  TenantDetailsResponse
 } from "../types/index";
 
 // Helper to build URLs that respect BASE
@@ -19,8 +18,6 @@ export const checkMigrationStatus = async (
   const url = apiUrl("/api/oauthproxy/checkMigrationStatus");
   const payload = { email };
   try {
-    // runtime debug to confirm which URL the client is calling
-    // eslint-disable-next-line no-console
     const response = await axios.post<CheckMigrationStatusResponse>(
       url,
       payload
@@ -29,23 +26,6 @@ export const checkMigrationStatus = async (
   } catch (error) {
     console.error("Error checking migration status:", error);
     return null;
-  }
-};
-
-// Keyclock login API [POST]
-export const keyclockLogin = async (
-  username: string,
-  password: string
-): Promise<KeycloakLoginResponse> => {
-  const url = "https://dev-demo-env.colibricore.io/api/authenticate";
-  const payload = { username, password };
-  try {
-    // eslint-disable-next-line no-console
-    const response = await axios.post<KeycloakLoginResponse>(url, payload);
-    return response.data;
-  } catch (error) {
-    console.error("Error obtaining token:", error);
-    throw error;
   }
 };
 

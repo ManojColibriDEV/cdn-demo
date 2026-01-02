@@ -3,99 +3,96 @@ import { jwtDecode } from "jwt-decode";
 
 let userManagerCache: { [key: string]: UserManager } = {};
 
-/**
- * Get OIDC settings based on environment
- */
-function getOidcSettings(environment: string = 'development'): UserManagerSettings {
-  // Get custom callback URL from localStorage (set via web component attribute)
-  const customCallbackUrl = localStorage.getItem('callbackUrl');
-  
-  // Fallback to current page URL if localStorage is cleared
-  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
-  
-  console.log('[OIDC] Using redirect_uri:', redirect_uri);
-  
-  const configs = {
-    development: {
-      authority: 'https://dev-keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://dev-keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://dev-keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
-    },
-    staging: {
-      authority: 'https://staging-keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://staging-keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://staging-keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
-    },
-    production: {
-      authority: 'https://keycloak.colibricore.io/realms/allied',
-      client_id: 'colibricore',
-      redirect_uri,
-      post_logout_redirect_uri: window.location.origin,
-      response_type: 'code',
-      scope: 'openid profile email',
-      automaticSilentRenew: false,
-      filterProtocolClaims: true,
-      loadUserInfo: true,
-      metadata: {
-        issuer: 'https://keycloak.colibricore.io/realms/allied',
-        authorization_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/auth',
-        token_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/token',
-        userinfo_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/userinfo',
-        end_session_endpoint: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/logout',
-        jwks_uri: 'https://keycloak.colibricore.io/realms/allied/protocol/openid-connect/certs',
-      },
-    },
-  };
+// Environment to Keycloak host mapping
+const ENV_HOST_MAP: Record<string, string> = {
+  'development': 'dev-keycloak.colibricore.io',
+  'dev': 'dev-keycloak.colibricore.io',
+  'staging': 'staging-keycloak.colibricore.io',
+  'production': 'keycloak.colibricore.io',
+  'prod': 'keycloak.colibricore.io',
+  'test': 'test-keycloak.colibricore.io',
+};
 
-  return configs[environment as keyof typeof configs] || configs.development;
+// Subsidiary to realm mapping (1:1)
+const SUBSIDIARY_REALM_MAP: Record<string, string> = {
+  'elite': 'elite',
+  'allied': 'allied',
+  'mckissock': 'mckissock',
+};
+
+/**
+ * Get widget attributes from DOM
+ */
+function getWidgetConfig(): { environment: string; subsidiary: string } {
+  const widget = document.querySelector('keycloak-widget');
+  return {
+    environment: widget?.getAttribute('environment') || localStorage.getItem('environment') || 'development',
+    subsidiary: widget?.getAttribute('subsidiary') || localStorage.getItem('subsidiary') || 'allied',
+  };
 }
 
 /**
- * Get UserManager instance (cached per environment)
+ * Get OIDC settings based on environment and subsidiary
  */
-function getUserManager(environment: string = 'development'): UserManager {
-  const env = environment || 'development';
-  
-  if (!userManagerCache[env]) {
-    const settings = getOidcSettings(env);
-    
-    userManagerCache[env] = new UserManager({
+function getOidcSettings(environment?: string, subsidiary?: string): UserManagerSettings {
+  // Get config from widget or use provided params
+  const widgetConfig = getWidgetConfig();
+  const env = environment || widgetConfig.environment;
+  const sub = subsidiary || widgetConfig.subsidiary;
+
+  // Resolve host and realm
+  const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
+  const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
+  const baseUrl = `https://${host}/realms/${realm}`;
+
+  // Get custom callback URL from localStorage (set via web component attribute)
+  const customCallbackUrl = localStorage.getItem('callbackUrl');
+  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
+
+  console.log('[OIDC] Config:', { env, subsidiary: sub, host, realm, redirect_uri });
+
+  return {
+    authority: baseUrl,
+    client_id: 'colibricore',
+    redirect_uri,
+    post_logout_redirect_uri: window.location.origin,
+    response_type: 'code',
+    scope: 'openid profile email',
+    automaticSilentRenew: false,
+    filterProtocolClaims: true,
+    loadUserInfo: true,
+    metadata: {
+      issuer: baseUrl,
+      authorization_endpoint: `${baseUrl}/protocol/openid-connect/auth`,
+      token_endpoint: `${baseUrl}/protocol/openid-connect/token`,
+      userinfo_endpoint: `${baseUrl}/protocol/openid-connect/userinfo`,
+      end_session_endpoint: `${baseUrl}/protocol/openid-connect/logout`,
+      jwks_uri: `${baseUrl}/protocol/openid-connect/certs`,
+    },
+  };
+}
+
+/**
+ * Get UserManager instance (cached per environment+subsidiary combo)
+ */
+function getUserManager(environment?: string, subsidiary?: string): UserManager {
+  const widgetConfig = getWidgetConfig();
+  const env = environment || widgetConfig.environment;
+  const sub = subsidiary || widgetConfig.subsidiary;
+  const cacheKey = `${env}:${sub}`;
+
+  if (!userManagerCache[cacheKey]) {
+    const settings = getOidcSettings(env, sub);
+
+    userManagerCache[cacheKey] = new UserManager({
       ...settings,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     });
 
-    console.log('[OIDC] UserManager initialized for environment:', env);
+    console.log('[OIDC] UserManager initialized:', { env, subsidiary: sub, cacheKey });
   }
-  
-  return userManagerCache[env];
+
+  return userManagerCache[cacheKey];
 }
 
 /**
@@ -119,21 +116,42 @@ export async function signIn(environment?: string): Promise<void> {
 }
 
 /**
+ * Set cookie with expiration
+ */
+function setCookie(name: string, value: string, expiresInSeconds: number): void {
+  const expires = new Date();
+  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; secure; SameSite=Strict`;
+}
+
+/**
  * Handle sign-in callback
  */
 export async function handleSignInCallback(environment?: string): Promise<any> {
   const manager = getUserManager(environment);
-  
+
   try {
     const user = await manager.signinRedirectCallback();
-    const decoded = jwtDecode(user.access_token);
+    const decoded: any = jwtDecode(user.access_token);
+
     // Store user info in localStorage
     localStorage.setItem('user_state', 'authenticated');
     localStorage.setItem('access_token', user.access_token);
     localStorage.setItem('user_session', JSON.stringify(decoded));
-    
-    return { 
-      tokens: { access_token: user.access_token }, 
+
+    // Set X-Credential cookie if present in JWT (from xCred user attribute via protocol mapper)
+    if (decoded.x_credential) {
+      setCookie('X-Credential', decoded.x_credential, user.expires_in || 300);
+      console.log('[OIDC] X-Credential cookie set from JWT');
+    }
+
+    // Also store studentId if present
+    if (decoded.student_id) {
+      localStorage.setItem('student_id', decoded.student_id);
+    }
+
+    return {
+      tokens: { access_token: user.access_token },
       userInfo: user.profile,
       userSession: decoded
     };

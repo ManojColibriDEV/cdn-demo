@@ -265,24 +265,3 @@ export type TenantDetailsResponse = {
   CustomRegistrationOptions: CustomRegistrationOptions;
 };
 
-export interface FullResponse {
-  access_token: string;
-  expires_in: number;
-  refresh_expires_in: number;
-  refresh_token: string;
-  token_type: string;
-  not_before_policy: number;
-  session_state: string;
-  scope: string;
-}
-
-export interface KeycloakLoginResponse {
-  success: boolean;
-  fullResponse: FullResponse;
-  accessToken: string;
-  refreshToken: string;
-  tokenType: string;
-  expiresIn: number;
-  studentId: string;
-  message: string;
-}
