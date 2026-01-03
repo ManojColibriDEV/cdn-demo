@@ -21,6 +21,54 @@ const SUBSIDIARY_REALM_MAP: Record<string, string> = {
 };
 
 /**
+ * Get the cookie domain for cross-subdomain support
+ * Extracts root domain (e.g., dev.elitelearning.com → .elitelearning.com)
+ * Returns empty string for localhost/IP addresses
+ */
+function getCookieDomain(): string {
+  const hostname = window.location.hostname;
+
+  // localhost or IP address - no domain restriction needed
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return '';
+  }
+
+  // Extract root domain: take last 2 parts (works for .com, .io, etc.)
+  const parts = hostname.split('.');
+  if (parts.length >= 2) {
+    return '.' + parts.slice(-2).join('.');
+  }
+
+  return '';
+}
+
+/**
+ * Set a cookie with cross-subdomain support
+ */
+function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
+  const expires = new Date();
+  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
+
+  const domain = getCookieDomain();
+  const domainAttr = domain ? `; domain=${domain}` : '';
+  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
+
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
+
+  console.log(`[OIDC] Cookie set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
+}
+
+/**
+ * Delete a cookie
+ */
+function deleteAuthCookie(name: string): void {
+  const domain = getCookieDomain();
+  const domainAttr = domain ? `; domain=${domain}` : '';
+
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${domainAttr}`;
+}
+
+/**
  * Get widget attributes from DOM
  */
 function getWidgetConfig(): { environment: string; subsidiary: string } {
@@ -35,17 +83,14 @@ function getWidgetConfig(): { environment: string; subsidiary: string } {
  * Get OIDC settings based on environment and subsidiary
  */
 function getOidcSettings(environment?: string, subsidiary?: string): UserManagerSettings {
-  // Get config from widget or use provided params
   const widgetConfig = getWidgetConfig();
   const env = environment || widgetConfig.environment;
   const sub = subsidiary || widgetConfig.subsidiary;
 
-  // Resolve host and realm
   const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
   const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
   const baseUrl = `https://${host}/realms/${realm}`;
 
-  // Get custom callback URL from localStorage (set via web component attribute)
   const customCallbackUrl = localStorage.getItem('callbackUrl');
   const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
 
@@ -100,11 +145,6 @@ function getUserManager(environment?: string, subsidiary?: string): UserManager 
  */
 export async function signIn(environment?: string): Promise<void> {
   const manager = getUserManager(environment);
-  
-  // // Store redirect URL for after login
-  // if (redirectUrl) {
-  //   localStorage.setItem('post_login_redirect', redirectUrl);
-  // }
 
   try {
     console.log('[OIDC] Initiating sign-in redirect...');
@@ -116,16 +156,7 @@ export async function signIn(environment?: string): Promise<void> {
 }
 
 /**
- * Set cookie with expiration
- */
-function setCookie(name: string, value: string, expiresInSeconds: number): void {
-  const expires = new Date();
-  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/; secure; SameSite=Strict`;
-}
-
-/**
- * Handle sign-in callback
+ * Handle sign-in callback - sets access_token as cross-subdomain cookie
  */
 export async function handleSignInCallback(environment?: string): Promise<any> {
   const manager = getUserManager(environment);
@@ -133,22 +164,21 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
   try {
     const user = await manager.signinRedirectCallback();
     const decoded: any = jwtDecode(user.access_token);
+    const expiresIn = user.expires_in || 300;
 
-    // Store user info in localStorage
+    // Set access_token as cookie (cross-subdomain for WordPress PHP access)
+    // Refresh token NOT stored - rely on Keycloak SSO session for re-auth
+    setAuthCookie('access_token', user.access_token, expiresIn);
+
+    // Minimal localStorage - only for OIDC library state and quick JS checks
     localStorage.setItem('user_state', 'authenticated');
-    localStorage.setItem('access_token', user.access_token);
-    localStorage.setItem('user_session', JSON.stringify(decoded));
 
-    // Set X-Credential cookie if present in JWT (from xCred user attribute via protocol mapper)
-    if (decoded.x_credential) {
-      setCookie('X-Credential', decoded.x_credential, user.expires_in || 300);
-      console.log('[OIDC] X-Credential cookie set from JWT');
-    }
-
-    // Also store studentId if present
-    if (decoded.student_id) {
-      localStorage.setItem('student_id', decoded.student_id);
-    }
+    console.log('[OIDC] Authentication complete:', {
+      sub: decoded.sub,
+      email: decoded.email,
+      student_id: decoded.student_id,
+      expires_in: expiresIn
+    });
 
     return {
       tokens: { access_token: user.access_token },
@@ -178,20 +208,21 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Sign out
+ * Sign out - clears cookies and OIDC state
  */
 export async function signOut(environment?: string): Promise<void> {
   const manager = getUserManager(environment);
-  
+
   try {
     console.log('[OIDC] Signing out...');
-    await manager.signoutRedirect();
-    
-    // Clear session storage
-    localStorage.removeItem('user_info');
+
+    // Clear auth cookie
+    deleteAuthCookie('access_token');
+
+    // Clear localStorage
     localStorage.removeItem('user_state');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('access_token');
+
+    await manager.signoutRedirect();
   } catch (error) {
     console.error('[OIDC] Sign out error:', error);
     throw error;
@@ -199,9 +230,37 @@ export async function signOut(environment?: string): Promise<void> {
 }
 
 /**
- * Get access token
+ * Get access token from cookie
+ */
+export function getAccessTokenFromCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * Get access token (from OIDC manager or cookie)
  */
 export async function getAccessToken(): Promise<string | null> {
+  // Try OIDC manager first
   const user = await getUser();
-  return user?.access_token || null;
+  if (user?.access_token) {
+    return user.access_token;
+  }
+
+  // Fall back to cookie
+  return getAccessTokenFromCookie();
+}
+
+/**
+ * Decode the access token to get user claims
+ */
+export function decodeAccessToken(token?: string): any | null {
+  const accessToken = token || getAccessTokenFromCookie();
+  if (!accessToken) return null;
+
+  try {
+    return jwtDecode(accessToken);
+  } catch {
+    return null;
+  }
 }
