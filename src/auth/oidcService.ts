@@ -189,7 +189,6 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
     // Minimal localStorage - only for OIDC library state and quick JS checks
     localStorage.setItem('user_state', 'authenticated');
     localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-    alert(JSON.stringify(decoded.x_credential))
 
     // Store xCredentials from JWT custom claim (claim name: x_credential)
     if (decoded.x_credential) {
