@@ -103,7 +103,7 @@ function getOidcSettings(environment?: string, subsidiary?: string): UserManager
     post_logout_redirect_uri: window.location.origin,
     response_type: 'code',
     scope: 'openid profile email',
-    automaticSilentRenew: false,
+    automaticSilentRenew: true,
     filterProtocolClaims: true,
     loadUserInfo: true,
     metadata: {
@@ -132,6 +132,23 @@ function getUserManager(environment?: string, subsidiary?: string): UserManager 
     userManagerCache[cacheKey] = new UserManager({
       ...settings,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
+    });
+
+    // Listen for token renewal events (silent refresh)
+    userManagerCache[cacheKey].events.addUserLoaded((user) => {
+      const decoded: any = jwtDecode(user.access_token);
+      const expiresIn = user.expires_in || 300;
+      
+      // Update cookie with new token
+      setAuthCookie('access_token', user.access_token, expiresIn);
+      
+      // Update localStorage and cookie for X-Credential
+      if (decoded.x_credential) {
+        localStorage.setItem('X-Credential', decoded.x_credential);
+        setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
+      }
+      
+      console.log('[OIDC] Token silently renewed');
     });
 
     console.log('[OIDC] UserManager initialized:', { env, subsidiary: sub, cacheKey });
@@ -171,11 +188,18 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
 
     // Minimal localStorage - only for OIDC library state and quick JS checks
     localStorage.setItem('user_state', 'authenticated');
+    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
+    alert(JSON.stringify(decoded.x_credential))
 
+    // Store xCredentials from JWT custom claim (claim name: x_credential)
+    if (decoded.x_credential) {
+      setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
+    }
     console.log('[OIDC] Authentication complete:', {
       sub: decoded.sub,
       email: decoded.email,
-      student_id: decoded.student_id,
+      studentId: decoded.studentId,
+      x_credential: decoded.x_credential,
       expires_in: expiresIn
     });
 
@@ -220,6 +244,7 @@ export async function signOut(environment?: string): Promise<void> {
 
     // Clear localStorage
     localStorage.removeItem('user_state');
+    localStorage.removeItem('xCredentials');
 
     await manager.signoutRedirect();
   } catch (error) {
