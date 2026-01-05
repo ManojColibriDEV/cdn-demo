@@ -1,27 +1,103 @@
 import { UserManager, WebStorageStateStore, User, UserManagerSettings } from 'oidc-client-ts';
 import { jwtDecode } from "jwt-decode";
-import { resolveAuthority } from '../utils/authorityResolver';
 
 let userManagerCache: { [key: string]: UserManager } = {};
 
+// Environment to Keycloak host mapping
+const ENV_HOST_MAP: Record<string, string> = {
+  'development': 'dev-keycloak.colibricore.io',
+  'dev': 'dev-keycloak.colibricore.io',
+  'staging': 'staging-keycloak.colibricore.io',
+  'production': 'keycloak.colibricore.io',
+  'prod': 'keycloak.colibricore.io',
+  'test': 'test-keycloak.colibricore.io',
+};
+
+// Subsidiary to realm mapping (1:1)
+const SUBSIDIARY_REALM_MAP: Record<string, string> = {
+  'elite': 'elite',
+  'allied': 'allied',
+  'mckissock': 'mckissock',
+};
+
 /**
- * Get OIDC settings based on authority and subsidiary
+ * Get the cookie domain for cross-subdomain support
+ * Extracts root domain (e.g., dev.elitelearning.com → .elitelearning.com)
+ * Returns empty string for localhost/IP addresses
  */
-function getOidcSettings(authority?: string): UserManagerSettings {
-  // Resolve authority (handles env shortcuts and auto-detection)
-  const resolvedAuthority = resolveAuthority(authority);
-  
-  // Get subsidiary (realm) from localStorage, default to 'allied'
-  const subsidiary = localStorage.getItem('subsidiary') || 'allied';
-  
-  // Get custom callback URL from localStorage (set via web component attribute)
-  const customCallbackUrl = localStorage.getItem('callbackUrl');
-  
-  // Fallback to current page URL if localStorage is cleared
-  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
-  
+function getCookieDomain(): string {
+  const hostname = window.location.hostname;
+
+  // localhost or IP address - no domain restriction needed
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return '';
+  }
+
+  // Extract root domain: take last 2 parts (works for .com, .io, etc.)
+  const parts = hostname.split('.');
+  if (parts.length >= 2) {
+    return '.' + parts.slice(-2).join('.');
+  }
+
+  return '';
+}
+
+/**
+ * Set a cookie with cross-subdomain support
+ */
+function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
+  const expires = new Date();
+  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
+
+  const domain = getCookieDomain();
+  const domainAttr = domain ? `; domain=${domain}` : '';
+  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
+
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
+
+  console.log(`[OIDC] Cookie set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
+}
+
+/**
+ * Delete a cookie
+ */
+function deleteAuthCookie(name: string): void {
+  const domain = getCookieDomain();
+  const domainAttr = domain ? `; domain=${domain}` : '';
+
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${domainAttr}`;
+}
+
+/**
+ * Get widget attributes from DOM
+ */
+function getWidgetConfig(): { environment: string; subsidiary: string } {
+  const widget = document.querySelector('keycloak-widget');
   return {
-    authority: `${resolvedAuthority}/realms/${subsidiary}`,
+    environment: widget?.getAttribute('environment') || localStorage.getItem('environment') || 'development',
+    subsidiary: widget?.getAttribute('subsidiary') || localStorage.getItem('subsidiary') || 'allied',
+  };
+}
+
+/**
+ * Get OIDC settings based on environment and subsidiary
+ */
+function getOidcSettings(environment?: string, subsidiary?: string): UserManagerSettings {
+  const widgetConfig = getWidgetConfig();
+  const env = environment || widgetConfig.environment;
+  const sub = subsidiary || widgetConfig.subsidiary;
+
+  const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
+  const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
+  const baseUrl = `https://${host}/realms/${realm}`;
+
+  const customCallbackUrl = localStorage.getItem('callbackUrl');
+  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
+
+  console.log('[OIDC] Config:', { env, subsidiary: sub, host, realm, redirect_uri });
+
+  return {
+    authority: baseUrl,
     client_id: 'colibricore',
     redirect_uri,
     post_logout_redirect_uri: window.location.origin,
@@ -31,41 +107,44 @@ function getOidcSettings(authority?: string): UserManagerSettings {
     filterProtocolClaims: true,
     loadUserInfo: true,
     metadata: {
-      issuer: `${resolvedAuthority}/realms/${subsidiary}`,
-      authorization_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/auth`,
-      token_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/token`,
-      userinfo_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/userinfo`,
-      end_session_endpoint: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/logout`,
-      jwks_uri: `${resolvedAuthority}/realms/${subsidiary}/protocol/openid-connect/certs`,
+      issuer: baseUrl,
+      authorization_endpoint: `${baseUrl}/protocol/openid-connect/auth`,
+      token_endpoint: `${baseUrl}/protocol/openid-connect/token`,
+      userinfo_endpoint: `${baseUrl}/protocol/openid-connect/userinfo`,
+      end_session_endpoint: `${baseUrl}/protocol/openid-connect/logout`,
+      jwks_uri: `${baseUrl}/protocol/openid-connect/certs`,
     },
   };
 }
 
 /**
- * Get UserManager instance (cached per authority)
+ * Get UserManager instance (cached per environment+subsidiary combo)
  */
-function getUserManager(authority?: string): UserManager {
-  const auth = resolveAuthority(authority);
-  
-  if (!userManagerCache[auth]) {
-    const settings = getOidcSettings(authority);
-    
-    userManagerCache[auth] = new UserManager({
+function getUserManager(environment?: string, subsidiary?: string): UserManager {
+  const widgetConfig = getWidgetConfig();
+  const env = environment || widgetConfig.environment;
+  const sub = subsidiary || widgetConfig.subsidiary;
+  const cacheKey = `${env}:${sub}`;
+
+  if (!userManagerCache[cacheKey]) {
+    const settings = getOidcSettings(env, sub);
+
+    userManagerCache[cacheKey] = new UserManager({
       ...settings,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     });
 
-    console.log('[OIDC] UserManager initialized for authority:', auth);
+    console.log('[OIDC] UserManager initialized:', { env, subsidiary: sub, cacheKey });
   }
-  
-  return userManagerCache[auth];
+
+  return userManagerCache[cacheKey];
 }
 
 /**
  * Sign in redirect to Keycloak
  */
-export async function signIn(authority?: string): Promise<void> {
-  const manager = getUserManager(authority);
+export async function signIn(environment?: string): Promise<void> {
+  const manager = getUserManager(environment);
 
   try {
     await manager.signinRedirect();
@@ -76,21 +155,32 @@ export async function signIn(authority?: string): Promise<void> {
 }
 
 /**
- * Handle sign-in callback
+ * Handle sign-in callback - sets access_token as cross-subdomain cookie
  */
-export async function handleSignInCallback(authority?: string): Promise<any> {
-  const manager = getUserManager(authority);
-  
+export async function handleSignInCallback(environment?: string): Promise<any> {
+  const manager = getUserManager(environment);
+
   try {
     const user = await manager.signinRedirectCallback();
-    const decoded = jwtDecode(user.access_token);
-    // Store user info in localStorage
+    const decoded: any = jwtDecode(user.access_token);
+    const expiresIn = user.expires_in || 300;
+
+    // Set access_token as cookie (cross-subdomain for WordPress PHP access)
+    // Refresh token NOT stored - rely on Keycloak SSO session for re-auth
+    setAuthCookie('access_token', user.access_token, expiresIn);
+
+    // Minimal localStorage - only for OIDC library state and quick JS checks
     localStorage.setItem('user_state', 'authenticated');
-    localStorage.setItem('access_token', user.access_token);
-    localStorage.setItem('user_session', JSON.stringify(decoded));
-    
-    return { 
-      tokens: { access_token: user.access_token }, 
+
+    console.log('[OIDC] Authentication complete:', {
+      sub: decoded.sub,
+      email: decoded.email,
+      student_id: decoded.student_id,
+      expires_in: expiresIn
+    });
+
+    return {
+      tokens: { access_token: user.access_token },
       userInfo: user.profile,
       userSession: decoded
     };
@@ -117,20 +207,21 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Sign out
+ * Sign out - clears cookies and OIDC state
  */
-export async function signOut(authority?: string): Promise<void> {
-  const manager = getUserManager(authority);
-  
+export async function signOut(environment?: string): Promise<void> {
+  const manager = getUserManager(environment);
+
   try {
     console.log('[OIDC] Signing out...');
-    await manager.signoutRedirect();
-    
-    // Clear session storage
-    localStorage.removeItem('user_info');
+
+    // Clear auth cookie
+    deleteAuthCookie('access_token');
+
+    // Clear localStorage
     localStorage.removeItem('user_state');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('access_token');
+
+    await manager.signoutRedirect();
   } catch (error) {
     console.error('[OIDC] Sign out error:', error);
     throw error;
@@ -138,9 +229,37 @@ export async function signOut(authority?: string): Promise<void> {
 }
 
 /**
- * Get access token
+ * Get access token from cookie
+ */
+export function getAccessTokenFromCookie(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/**
+ * Get access token (from OIDC manager or cookie)
  */
 export async function getAccessToken(): Promise<string | null> {
+  // Try OIDC manager first
   const user = await getUser();
-  return user?.access_token || null;
+  if (user?.access_token) {
+    return user.access_token;
+  }
+
+  // Fall back to cookie
+  return getAccessTokenFromCookie();
+}
+
+/**
+ * Decode the access token to get user claims
+ */
+export function decodeAccessToken(token?: string): any | null {
+  const accessToken = token || getAccessTokenFromCookie();
+  if (!accessToken) return null;
+
+  try {
+    return jwtDecode(accessToken);
+  } catch {
+    return null;
+  }
 }

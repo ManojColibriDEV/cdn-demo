@@ -12,7 +12,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App isShowToggle={"true"} callbackUrl="http://localhost:5173/" />
+        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" />
       </StrictMode>
     </BrowserRouter>
   );
