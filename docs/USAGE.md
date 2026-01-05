@@ -23,7 +23,10 @@ This guide explains how to use the Colibri Identity Login Widget in your project
   <body>
     <!-- Add the widget -->
     <keycloak-widget 
-      redirectUrl="/dashboard"
+      id="auth"
+      authority="dev"
+      subsidiary="allied"
+      callbackUrl="http://localhost:3000/"
     ></keycloak-widget>
 
     <!-- Include the JavaScript -->

@@ -103,7 +103,7 @@ function getOidcSettings(environment?: string, subsidiary?: string): UserManager
     post_logout_redirect_uri: window.location.origin,
     response_type: 'code',
     scope: 'openid profile email',
-    automaticSilentRenew: false,
+    automaticSilentRenew: true,
     filterProtocolClaims: true,
     loadUserInfo: true,
     metadata: {
@@ -134,6 +134,23 @@ function getUserManager(environment?: string, subsidiary?: string): UserManager 
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     });
 
+    // Listen for token renewal events (silent refresh)
+    userManagerCache[cacheKey].events.addUserLoaded((user) => {
+      const decoded: any = jwtDecode(user.access_token);
+      const expiresIn = user.expires_in || 300;
+      
+      // Update cookie with new token
+      setAuthCookie('access_token', user.access_token, expiresIn);
+      
+      // Update localStorage and cookie for X-Credential
+      if (decoded.x_credential) {
+        localStorage.setItem('X-Credential', decoded.x_credential);
+        setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
+      }
+      
+      console.log('[OIDC] Token silently renewed');
+    });
+
     console.log('[OIDC] UserManager initialized:', { env, subsidiary: sub, cacheKey });
   }
 
@@ -147,7 +164,6 @@ export async function signIn(environment?: string): Promise<void> {
   const manager = getUserManager(environment);
 
   try {
-    console.log('[OIDC] Initiating sign-in redirect...');
     await manager.signinRedirect();
   } catch (error) {
     console.error('[OIDC] Sign in error:', error);
@@ -172,12 +188,12 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
 
     // Minimal localStorage - only for OIDC library state and quick JS checks
     localStorage.setItem('user_state', 'authenticated');
+    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
 
     // Store xCredentials from JWT custom claim (claim name: x_credential)
     if (decoded.x_credential) {
-      localStorage.setItem('X-Credentials', decoded.x_credential);
+      setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
     }
-
     console.log('[OIDC] Authentication complete:', {
       sub: decoded.sub,
       email: decoded.email,

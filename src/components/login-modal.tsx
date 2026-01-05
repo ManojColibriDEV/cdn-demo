@@ -6,7 +6,7 @@ import {
 } from "../functions";
 import type { LoginModalProps, ActiveTab } from "../types/index";
 
-const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, environment }) => {
+const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authority }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -103,7 +103,7 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, environm
             loginLoading={loginLoading}
             setLoginError={setLoginError}
             setLoginLoading={setLoginLoading}
-            environment={environment}
+            authority={authority}
           />
         ) : (
           <RegistrationForm

@@ -93,7 +93,7 @@ export interface LoginModalProps {
   open: boolean;
   isShowToggle: string;
   onClose: () => void;
-  environment?: string;
+  authority?: string;
 }
 
 // Extended ActiveTab type to include 'upgrade'
@@ -101,7 +101,7 @@ export type ActiveTab = "signin" | "signup" | "upgrade";
 
 export interface LoginSubmitProps {
   handleSubmit: (props: HandleSubmitProps) => Promise<void>;
-  environment?: string;
+  authority?: string;
   loginError: string | null;
   loginLoading: boolean;
   setLoginError: (error: string | null) => void;
@@ -154,7 +154,7 @@ export interface HandleSubmitProps {
   e: React.FormEvent<HTMLFormElement>;
   email?: string;
   password?: string;
-  environment?: string;
+  authority?: string;
   onRedirect?: (url: string) => void;
   setLoginError: (error: string | null) => void;
   setLoginLoading: (loading: boolean) => void;

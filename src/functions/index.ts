@@ -1,5 +1,6 @@
 import { updatePasswordObtainToken } from "../services/index";
 import { signIn } from "../auth/oidcService";
+import { resolveAuthority } from "../utils/authorityResolver";
 import type {
   HandleSubmitProps,
   HandleUpdatePasswordProps,
@@ -11,17 +12,18 @@ import type {
  * Handle login form submission - triggers SSO authorization code flow
  */
 export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
-  const { e, environment, setLoginError, setLoginLoading } = props;
+  const { e, authority, setLoginError, setLoginLoading } = props;
   e.preventDefault();
   setLoginError(null);
   setLoginLoading(true);
   
   try {
-    // Get environment from localStorage if not provided
-    const env = environment || localStorage.getItem("environment") || "development";
+    // Get authority from localStorage if not provided, then resolve it
+    const storedAuthority = authority || localStorage.getItem("authority");
+    const auth = resolveAuthority(storedAuthority);
     
     // Trigger SSO login with authorization code flow
-    await signIn(env);
+    await signIn(auth);
   } catch (err) {
     const e = err as { message?: string };
     setLoginError(e?.message || "Sign in failed");

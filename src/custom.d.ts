@@ -8,4 +8,17 @@ declare module '*.svg' {
 }
 
 declare module '*.module.css';
+
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly DEV: boolean;
+  readonly PROD: boolean;
+  readonly MODE: string;
+  readonly VITE_RENDER_MODE?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
 declare module '*.css';
