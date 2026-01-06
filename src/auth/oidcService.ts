@@ -143,9 +143,9 @@ function getUserManager(environment?: string, subsidiary?: string): UserManager 
       setAuthCookie('access_token', user.access_token, expiresIn);
       
       // Update localStorage and cookie for X-Credential
-      if (decoded.x_credential) {
-        localStorage.setItem('X-Credential', decoded.x_credential);
-        setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
+      if (decoded.x_credentials) {
+        localStorage.setItem('X-Credential', decoded.x_credentials);
+        setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
       }
       
       console.log('[OIDC] Token silently renewed');
@@ -191,16 +191,9 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
     localStorage.setItem('decoded', JSON.stringify(decoded) || '');
 
     // Store xCredentials from JWT custom claim (claim name: x_credential)
-    if (decoded.x_credential) {
-      setAuthCookie('X-Credential', decoded.x_credential, expiresIn);
+    if (decoded.x_credentials) {
+      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
     }
-    console.log('[OIDC] Authentication complete:', {
-      sub: decoded.sub,
-      email: decoded.email,
-      studentId: decoded.studentId,
-      x_credential: decoded.x_credential,
-      expires_in: expiresIn
-    });
 
     return {
       tokens: { access_token: user.access_token },
