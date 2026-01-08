@@ -9,9 +9,9 @@ import type {
 } from "../types/index";
 
 /**
- * Handle login form submission - triggers SSO authorization code flow
+ * Handle login form submission - triggers SSO popup authorization code flow
  */
-export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
+export const handleSubmit = async (props: HandleSubmitProps): Promise<any> => {
   const { e, authority, setLoginError, setLoginLoading } = props;
   e.preventDefault();
   setLoginError(null);
@@ -22,12 +22,15 @@ export const handleSubmit = async (props: HandleSubmitProps): Promise<void> => {
     const storedAuthority = authority || localStorage.getItem("authority");
     const auth = resolveAuthority(storedAuthority);
     
-    // Trigger SSO login with authorization code flow
-    await signIn(auth);
+    // Trigger SSO login with popup (returns user session directly)
+    const userSession = await signIn(auth);
+    setLoginLoading(false);
+    return userSession;
   } catch (err) {
     const e = err as { message?: string };
     setLoginError(e?.message || "Sign in failed");
     setLoginLoading(false);
+    throw err;
   }
 };
 

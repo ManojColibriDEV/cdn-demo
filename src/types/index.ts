@@ -94,18 +94,22 @@ export interface LoginModalProps {
   isShowToggle: string;
   onClose: () => void;
   authority?: string;
+  onLoginSuccess?: (userSession: any) => void;
+  redirectUrl?: string;
 }
 
 // Extended ActiveTab type to include 'upgrade'
 export type ActiveTab = "signin" | "signup" | "upgrade";
 
 export interface LoginSubmitProps {
-  handleSubmit: (props: HandleSubmitProps) => Promise<void>;
+  handleSubmit: (props: HandleSubmitProps) => Promise<any>;
   authority?: string;
   loginError: string | null;
   loginLoading: boolean;
   setLoginError: (error: string | null) => void;
   setLoginLoading: (loading: boolean) => void;
+  onLoginSuccess?: (userSession: any) => void;
+  onShowIframe?: (url: string) => void;
 }
 
 export interface UpdatePasswordProps {

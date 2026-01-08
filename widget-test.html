@@ -11,7 +11,8 @@
   <!-- Widget with simplified authority - just pass "dev", "staging", or "prod" -->
   <!-- Or omit authority to auto-detect from domain -->
   <keycloak-widget id="auth" authority="dev" subsidiary="elite" isShowToggle="false"
-    callbackUrl="http://127.0.0.1:5500/widget-test.html">
+    callbackUrl="http://127.0.0.1:5500/widget-test.html"
+    redirectUrl="https://dev-learn.elitelearning.com/courses">
   </keycloak-widget>
 
   <link rel="stylesheet" href="./dist/login-widget.css" />
@@ -19,17 +20,17 @@
 
   <script>
     // Listen for redirect event from the widget
-    document.getElementById("auth")
-      .addEventListener("redirect", function (e) {
-        // User session is already saved in localStorage with key "user_session"
-        // You can also access it from the event
-        const { tokens, userInfo, userSession } = e.detail;
-        console.log({ tokens, userInfo, userSession });
-        alert("User authenticated successfully!");
-        // Use this link to redirect to the page where ever rquired after authentication
-        //  window.location.href = "https://github.com/McKissockLP/Colibri.Identity.Widget/pulls?q=is%3Apr+is%3Aclosed";
-
-      });
+    // document.getElementById("auth")
+    //   .addEventListener("redirect", function (e) {
+    //     // User session is already saved in localStorage with key "user_session"
+    //     // You can also access it from the event
+    //     const { url, userSession } = e.detail;
+    //     console.log('Redirect event received:', { url, userSession });
+        
+    //     // The widget will handle the redirect automatically
+    //     // Or you can customize it here:
+    //     // window.location.href = url;
+    //   });
   </script>
 </body>
 

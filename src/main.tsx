@@ -12,7 +12,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" />
+        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" redirectUrl="www.google.com"/>
       </StrictMode>
     </BrowserRouter>
   );
@@ -42,13 +42,24 @@ if (renderMode === 'TEST') {
 
     private handleRedirect = (url: string, userSession?: any) => {
       // Dispatch custom event to host page with URL and user session
-      this.dispatchEvent(
-        new CustomEvent("redirect", {
-          detail: { url, userSession },
-          bubbles: true,
-          composed: true
-        })
-      );
+      const event = new CustomEvent("redirect", {
+        detail: { 
+          url, 
+          userSession,
+          tokens: { access_token: userSession?.access_token },
+          userInfo: userSession?.userInfo 
+        },
+        bubbles: true,
+        composed: true
+      });
+      
+      this.dispatchEvent(event);
+      
+      // Auto-redirect in main window if URL is provided
+      if (url) {
+        console.log('[Widget] Redirecting to:', url);
+        window.location.href = url;
+      }
     }
 
     private getProps() {
@@ -58,7 +69,9 @@ if (renderMode === 'TEST') {
         theme: this.getAttribute("theme") || "light",
         isShowToggle: this.getAttribute("isShowToggle") || "true",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
+        redirectUrl: this.getAttribute("redirectUrl") || ``,
         onRedirect: this.handleRedirect,
+
       };
     }
 

@@ -1,4 +1,4 @@
-import { UserManager, WebStorageStateStore, User, UserManagerSettings } from 'oidc-client-ts';
+import { UserManager, WebStorageStateStore, UserManagerSettings } from 'oidc-client-ts';
 import { jwtDecode } from "jwt-decode";
 
 let userManagerCache: { [key: string]: UserManager } = {};
@@ -7,13 +7,14 @@ let userManagerCache: { [key: string]: UserManager } = {};
 const ENV_HOST_MAP: Record<string, string> = {
   'development': 'dev-keycloak.colibricore.io',
   'dev': 'dev-keycloak.colibricore.io',
+  'test': 'test-keycloak.colibricore.io',
   'staging': 'staging-keycloak.colibricore.io',
+  'stage': 'staging-keycloak.colibricore.io',
   'production': 'keycloak.colibricore.io',
   'prod': 'keycloak.colibricore.io',
-  'test': 'test-keycloak.colibricore.io',
 };
 
-// Subsidiary to realm mapping (1:1)
+// Subsidiary to realm mapping
 const SUBSIDIARY_REALM_MAP: Record<string, string> = {
   'elite': 'elite',
   'allied': 'allied',
@@ -56,16 +57,6 @@ function setAuthCookie(name: string, value: string, expiresInSeconds: number): v
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
 
   console.log(`[OIDC] Cookie set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
-}
-
-/**
- * Delete a cookie
- */
-function deleteAuthCookie(name: string): void {
-  const domain = getCookieDomain();
-  const domainAttr = domain ? `; domain=${domain}` : '';
-
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${domainAttr}`;
 }
 
 /**
@@ -158,15 +149,37 @@ function getUserManager(environment?: string, subsidiary?: string): UserManager 
 }
 
 /**
- * Sign in redirect to Keycloak
+ * Sign in via popup window to Keycloak
  */
-export async function signIn(environment?: string): Promise<void> {
+export async function signIn(environment?: string): Promise<any> {
   const manager = getUserManager(environment);
 
   try {
-    await manager.signinRedirect();
+    const user = await manager.signinPopup();
+    const decoded: any = jwtDecode(user.access_token);
+    const expiresIn = user.expires_in || 300;
+
+    // Set access_token as cookie (cross-subdomain for WordPress PHP access)
+    setAuthCookie('access_token', user.access_token, expiresIn);
+
+    // Minimal localStorage - only for OIDC library state and quick JS checks
+    localStorage.setItem('user_state', 'authenticated');
+    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
+
+    // Store xCredentials from JWT custom claim (claim name: x_credential)
+    if (decoded.x_credentials) {
+      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+    }
+
+    console.log('[OIDC] Authentication complete via popup');
+
+    return {
+      tokens: { access_token: user.access_token },
+      userInfo: user.profile,
+      userSession: decoded
+    };
   } catch (error) {
-    console.error('[OIDC] Sign in error:', error);
+    console.error('[OIDC] Sign in popup error:', error);
     throw error;
   }
 }
@@ -206,77 +219,3 @@ export async function handleSignInCallback(environment?: string): Promise<any> {
   }
 }
 
-/**
- * Get current user
- */
-export async function getUser(): Promise<User | null> {
-  const manager = getUserManager();
-  return await manager.getUser();
-}
-
-/**
- * Check if user is authenticated
- */
-export async function isAuthenticated(): Promise<boolean> {
-  const user = await getUser();
-  return user !== null && !user.expired;
-}
-
-/**
- * Sign out - clears cookies and OIDC state
- */
-export async function signOut(environment?: string): Promise<void> {
-  const manager = getUserManager(environment);
-
-  try {
-    console.log('[OIDC] Signing out...');
-
-    // Clear auth cookie
-    deleteAuthCookie('access_token');
-
-    // Clear localStorage
-    localStorage.removeItem('user_state');
-    localStorage.removeItem('xCredentials');
-
-    await manager.signoutRedirect();
-  } catch (error) {
-    console.error('[OIDC] Sign out error:', error);
-    throw error;
-  }
-}
-
-/**
- * Get access token from cookie
- */
-export function getAccessTokenFromCookie(): string | null {
-  const match = document.cookie.match(/(?:^|;\s*)access_token=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
-/**
- * Get access token (from OIDC manager or cookie)
- */
-export async function getAccessToken(): Promise<string | null> {
-  // Try OIDC manager first
-  const user = await getUser();
-  if (user?.access_token) {
-    return user.access_token;
-  }
-
-  // Fall back to cookie
-  return getAccessTokenFromCookie();
-}
-
-/**
- * Decode the access token to get user claims
- */
-export function decodeAccessToken(token?: string): any | null {
-  const accessToken = token || getAccessTokenFromCookie();
-  if (!accessToken) return null;
-
-  try {
-    return jwtDecode(accessToken);
-  } catch {
-    return null;
-  }
-}
