@@ -185,6 +185,87 @@ export async function signIn(environment?: string): Promise<any> {
 }
 
 /**
+ * Sign in via redirect to Keycloak (same tab)
+ */
+export async function signInRedirect(environment?: string): Promise<void> {
+  const manager = getUserManager(environment);
+
+  try {
+    console.log('[OIDC] Redirecting to Keycloak for authentication...');
+    await manager.signinRedirect();
+  } catch (error) {
+    console.error('[OIDC] Sign in redirect error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Sign in with username/password using ROPC flow (Resource Owner Password Credentials)
+ * Note: ROPC must be enabled in Keycloak client settings (Direct Access Grants Enabled)
+ */
+export async function signInWithPassword(
+  username: string,
+  password: string,
+  environment?: string
+): Promise<any> {
+  const widgetConfig = getWidgetConfig();
+  const env = environment || widgetConfig.environment;
+  const sub = widgetConfig.subsidiary;
+
+  const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
+  const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
+  const tokenEndpoint = `https://${host}/realms/${realm}/protocol/openid-connect/token`;
+
+  try {
+    const response = await fetch(tokenEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        grant_type: 'password',
+        client_id: 'colibricore',
+        username,
+        password,
+        scope: 'openid profile email',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error_description || 'Authentication failed');
+    }
+
+    const tokenData = await response.json();
+    const decoded: any = jwtDecode(tokenData.access_token);
+    const expiresIn = tokenData.expires_in || 300;
+
+    // Set access_token as cookie (cross-subdomain)
+    setAuthCookie('access_token', tokenData.access_token, expiresIn);
+
+    // Store in localStorage
+    localStorage.setItem('user_state', 'authenticated');
+    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
+
+    // Store xCredentials from JWT
+    if (decoded.x_credentials) {
+      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+    }
+
+    console.log('[OIDC] ROPC authentication complete');
+
+    return {
+      tokens: { access_token: tokenData.access_token, refresh_token: tokenData.refresh_token },
+      userInfo: decoded,
+      userSession: decoded,
+    };
+  } catch (error) {
+    console.error('[OIDC] ROPC sign in error:', error);
+    throw error;
+  }
+}
+
+/**
  * Handle sign-in callback - sets access_token as cross-subdomain cookie
  */
 export async function handleSignInCallback(environment?: string): Promise<any> {

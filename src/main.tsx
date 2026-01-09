@@ -12,7 +12,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" redirectUrl="www.google.com"/>
+        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" redirectUrl="www.google.com" authMode="redirect"/>
       </StrictMode>
     </BrowserRouter>
   );
@@ -23,7 +23,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "theme", "callbackUrl", "isShowToggle"];
+      return ["authority", "subsidiary", "theme", "callbackUrl", "isShowToggle", "authMode"];
     }
 
     connectedCallback() {
@@ -70,6 +70,7 @@ if (renderMode === 'TEST') {
         isShowToggle: this.getAttribute("isShowToggle") || "true",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         redirectUrl: this.getAttribute("redirectUrl") || ``,
+        authMode: (this.getAttribute("authMode") as 'popup' | 'redirect' | 'embedded') || 'popup',
         onRedirect: this.handleRedirect,
 
       };

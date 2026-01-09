@@ -3,13 +3,11 @@ import type { LoginSubmitProps } from "../types/index";
 
 const LoginSubmit: FC<LoginSubmitProps> = (props) => {
   const {
-    handleSubmit,
     authority,
     loginError,
     loginLoading,
     setLoginError,
     setLoginLoading,
-    onLoginSuccess,
     onShowIframe,
   } = props;
   

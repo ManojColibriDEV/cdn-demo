@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import Button from "./common/ui/button";
 import LoginModal from "./components/login-modal";
-import { handleSignInCallback, signIn } from "./auth/oidcService";
+import EmbeddedLoginForm from "./components/embedded-login-form";
+import { handleSignInCallback, signIn, signInRedirect } from "./auth/oidcService";
 import { resolveAuthority } from "./utils/authorityResolver";
 
 export interface OAuthCallbackProps {
@@ -99,10 +100,11 @@ const App = (props: {
   isShowToggle: string;
   callbackUrl: string;
   redirectUrl: string;
+  authMode?: 'popup' | 'redirect' | 'embedded';
   onRedirect?: (url: string, userSession?: any) => void;
 
 }) => {
-  const { authority, subsidiary, isShowToggle, callbackUrl, onRedirect } = props;
+  const { authority, subsidiary, isShowToggle, callbackUrl, onRedirect, authMode = 'popup' } = props;
   const [open, setOpen] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -149,6 +151,23 @@ const App = (props: {
   }, [authority, subsidiary, callbackUrl, onRedirect]);
 
   const handleLoginClick = async () => {
+    if (authMode === 'embedded') {
+      // Open embedded login form modal
+      setOpen(true);
+      return;
+    }
+
+    if (authMode === 'redirect') {
+      // Redirect mode - same tab
+      await handleRedirectLogin();
+      return;
+    }
+
+    // Popup mode - OAuth flow in popup window
+    await handlePopupLogin();
+  };
+
+  const handlePopupLogin = async () => {
     setLoginError(null);
     setLoginLoading(true);
 
@@ -160,9 +179,9 @@ const App = (props: {
       const userSession = await signIn(auth);
       setLoginLoading(false);
 
-      console.log('[App] Login successful:', userSession);
+      console.log('[App] Popup login successful:', userSession);
 
-      // Handle redirect
+      // Handle redirect in main window
       const targetUrl = props.redirectUrl || callbackUrl;
       if (onRedirect) {
         onRedirect(targetUrl, userSession);
@@ -174,6 +193,45 @@ const App = (props: {
       setLoginError(e?.message || "Sign in failed");
       setLoginLoading(false);
     }
+  };
+
+  const handleRedirectLogin = async () => {
+    setLoginError(null);
+    setLoginLoading(true);
+
+    try {
+      const storedAuthority = authority || localStorage.getItem("authority");
+      const auth = resolveAuthority(storedAuthority);
+
+      // Trigger SSO login redirect (same tab)
+      await signInRedirect(auth);
+      // Note: This will redirect away, so the loading state won't be reset
+    } catch (err) {
+      const e = err as { message?: string };
+      setLoginError(e?.message || "Sign in failed");
+      setLoginLoading(false);
+    }
+  };
+
+  const handleOIDCPopupLogin = async () => {
+    // For embedded mode - this triggers redirect to Keycloak
+    await handleRedirectLogin();
+  };
+
+  const handleEmbeddedLoginSuccess = (userSession: any) => {
+    console.log('[App] Embedded login successful:', userSession);
+    setOpen(false);
+
+    const targetUrl = props.redirectUrl || callbackUrl;
+    if (onRedirect) {
+      onRedirect(targetUrl, userSession);
+    } else if (props.redirectUrl) {
+      window.location.href = props.redirectUrl;
+    }
+  };
+
+  const handleEmbeddedLoginError = (error: string) => {
+    setLoginError(error);
   };
 
   // If OAuth callback parameters are present, handle callback regardless of path
@@ -194,25 +252,34 @@ const App = (props: {
             </div>
           )}
 
-          <Button
-            label={loginLoading ? "Opening Login..." : "Login with Colibri Identity"}
-            onClick={handleLoginClick}
-            disabled={loginLoading}
-          />
+          {authMode === 'embedded' && open ? (
+            <EmbeddedLoginForm
+              onSuccess={handleEmbeddedLoginSuccess}
+              onError={handleEmbeddedLoginError}
+              onClose={() => setOpen(false)}
+              authority={authority}
+            />
+          ) : !open ? (
+            <Button
+              label={loginLoading ? "Opening Login..." : "Login with Colibri Identity"}
+              onClick={handleLoginClick}
+              disabled={loginLoading}
+            />
+          ) : null}
 
-          {open && <LoginModal
-            open={open}
-            isShowToggle={isShowToggle}
-            onClose={() => setOpen(false)}
-            authority={authority}
-            redirectUrl={props.redirectUrl}
-            onLoginSuccess={(userSession) => {
-              console.log('[App] Login successful:', userSession);
-              if (onRedirect && props.redirectUrl) {
-                onRedirect(props.redirectUrl, userSession);
-              }
-            }}
-          />}
+          {open && authMode === 'popup' && <LoginModal
+                open={open}
+                isShowToggle={isShowToggle}
+                onClose={() => setOpen(false)}
+                authority={authority}
+                redirectUrl={props.redirectUrl}
+                onLoginSuccess={(userSession) => {
+                  console.log('[App] Login successful:', userSession);
+                  if (onRedirect && props.redirectUrl) {
+                    onRedirect(props.redirectUrl, userSession);
+                  }
+                }}
+              />}
         </div>
       } />
     </Routes>

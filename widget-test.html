@@ -8,9 +8,36 @@
 <body>
   <h1>Colibri Identity Widget - Local Test</h1>
 
-  <!-- Widget with simplified authority - just pass "dev", "staging", or "prod" -->
-  <!-- Or omit authority to auto-detect from domain -->
-  <keycloak-widget id="auth" authority="dev" subsidiary="elite" isShowToggle="false"
+  <h2>Popup Mode (OAuth2 with Keycloak Popup)</h2>
+  <keycloak-widget id="auth-popup" 
+    authority="dev" 
+    subsidiary="elite" 
+    isShowToggle="false"
+    authMode="popup"
+    callbackUrl="http://127.0.0.1:5500/widget-test.html"
+    redirectUrl="https://dev-learn.elitelearning.com/courses">
+  </keycloak-widget>
+
+  <hr style="margin: 40px 0;">
+
+  <h2>Redirect Mode (OAuth2 with Keycloak Redirect)</h2>
+  <keycloak-widget id="auth-redirect" 
+    authority="dev" 
+    subsidiary="elite" 
+    isShowToggle="false"
+    authMode="redirect"
+    callbackUrl="http://127.0.0.1:5500/widget-test.html"
+    redirectUrl="https://dev-learn.elitelearning.com/courses">
+  </keycloak-widget>
+
+  <hr style="margin: 40px 0;">
+
+  <h2>Embedded Mode (ROPC + SSO Options)</h2>
+  <keycloak-widget id="auth-embedded" 
+    authority="dev" 
+    subsidiary="elite" 
+    isShowToggle="false"
+    authMode="embedded"
     callbackUrl="http://127.0.0.1:5500/widget-test.html"
     redirectUrl="https://dev-learn.elitelearning.com/courses">
   </keycloak-widget>
