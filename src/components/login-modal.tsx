@@ -6,15 +6,52 @@ import {
 } from "../functions";
 import type { LoginModalProps, ActiveTab } from "../types/index";
 
-const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authority }) => {
+const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authority, onLoginSuccess, redirectUrl }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("signin");
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [requiresUpgrade] = useState(false);
   const [registrationData, setRegistrationData] = useState<any>(null);
+  const [showIframe, setShowIframe] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState<string>('');
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  
+  const handleLoginSuccess = (userSession: any) => {
+    // Close the modal
+    onClose();
+    setShowIframe(false);
+    
+    // Call parent callback if provided
+    if (onLoginSuccess) {
+      onLoginSuccess(userSession);
+    }
+    
+    // Redirect if redirectUrl is provided
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+  };
+  
+  // Listen for messages from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify origin (adjust based on your Keycloak domain)
+      if (!event.origin.includes('keycloak')) return;
+      
+      if (event.data.type === 'keycloak-auth-success') {
+        handleLoginSuccess(event.data.userSession);
+      } else if (event.data.type === 'keycloak-auth-error') {
+        setLoginError(event.data.error);
+        setShowIframe(false);
+        setLoginLoading(false);
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [redirectUrl, onLoginSuccess]);
 
   const handleRegistration = (data: any) => {
     setRegistrationData(data);
@@ -97,14 +134,54 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
         )}
         
         {activeTab === "signin" ? (
-          <LoginSubmit
-            handleSubmit={handleSubmit}
-            loginError={loginError}
-            loginLoading={loginLoading}
-            setLoginError={setLoginError}
-            setLoginLoading={setLoginLoading}
-            authority={authority}
-          />
+          showIframe ? (
+            <div className="relative">
+              <div className="mb-4 flex justify-between items-center">
+                <h3 className="text-lg font-semibold">Sign In</h3>
+                <button
+                  onClick={() => {
+                    setShowIframe(false);
+                    setLoginLoading(false);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              {loginError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                  {loginError}
+                </div>
+              )}
+              <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200">
+                <iframe
+                  src={iframeUrl}
+                  className="w-full h-[550px] border-0"
+                  title="Keycloak Login"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                  allow="payment"
+                />
+              </div>
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+                <strong>Note:</strong> If the login form doesn't appear above, Keycloak may be blocking iframe embedding. 
+                Please contact your administrator to configure the Content-Security-Policy header with frame-ancestors directive.
+              </div>
+            </div>
+          ) : (
+            <LoginSubmit
+              handleSubmit={handleSubmit}
+              loginError={loginError}
+              loginLoading={loginLoading}
+              setLoginError={setLoginError}
+              setLoginLoading={setLoginLoading}
+              authority={authority}
+              onLoginSuccess={handleLoginSuccess}
+              onShowIframe={(url) => {
+                setIframeUrl(url);
+                setShowIframe(true);
+              }}
+            />
+          )
         ) : (
           <RegistrationForm
             onRegister={handleRegistration}
