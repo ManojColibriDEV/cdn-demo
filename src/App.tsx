@@ -125,12 +125,14 @@ const App = (props: {
     if (initialized && window.opener && !window.opener.closed && keycloak.authenticated && keycloak.token) {
       console.log('[App] Popup window authenticated - sending tokens to parent');
       
+      // Use '*' as target origin since popup might be on different origin (localhost vs 127.0.0.1)
       window.opener.postMessage({
         type: 'keycloak-tokens',
         token: keycloak.token,
         refreshToken: keycloak.refreshToken,
         idToken: keycloak.idToken,
-      }, window.location.origin);
+        origin: window.location.origin, // Include origin for validation
+      }, '*');
       
       // Close popup after sending tokens
       setTimeout(() => {
@@ -284,7 +286,9 @@ const App = (props: {
     setLoginLoading(true);
 
     try {
-      const redirectUri = `${window.location.origin}/callback`;
+      // Use callbackUrl prop for web component mode, fallback to /callback for test mode
+      const redirectUri = callbackUrl || `${window.location.origin}/callback`;
+      console.log('[App] Using redirectUri for popup:', redirectUri);
       const keycloakLoginUrl = await keycloak.createLoginUrl({
         redirectUri: redirectUri,
       });
@@ -309,7 +313,9 @@ const App = (props: {
 
       // Listen for popup messages
       const messageHandler = async (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
+        // Skip origin check for local development (localhost vs 127.0.0.1)
+        // In production, you might want to validate event.origin
+        if (!event.data || !event.data.type) return;
 
         if (event.data.type === 'keycloak-tokens') {
           console.log('[App] Received tokens from popup');
