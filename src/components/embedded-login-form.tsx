@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { useKeycloak } from "@react-keycloak/web";
+import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import { signInWithPassword } from "../auth/oidcService";
@@ -10,12 +12,39 @@ interface EmbeddedLoginFormProps {
   authority?: string;
 }
 
+/**
+ * Set a cookie with cross-subdomain support
+ */
+function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
+  const expires = new Date();
+  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
+
+  const hostname = window.location.hostname;
+  let domain = '';
+  
+  // Skip domain for localhost/IP
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    const parts = hostname.split('.');
+    if (parts.length >= 2) {
+      domain = '.' + parts.slice(-2).join('.');
+    }
+  }
+
+  const domainAttr = domain ? `; domain=${domain}` : '';
+  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
+
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
+
+  console.log(`[Cookie] Set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
+}
+
 const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedLoginFormProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const { keycloak, initialized } = useKeycloak();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -24,6 +53,41 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    // Handle successful SSO authentication
+    if (initialized && keycloak?.authenticated && keycloak.token) {
+      const decoded: any = jwtDecode(keycloak.token);
+      const expiresIn = (keycloak.tokenParsed?.exp || 0) - Math.floor(Date.now() / 1000);
+
+      console.log('[EmbeddedLogin] SSO authentication successful, saving tokens...');
+
+      // Set access_token as cookie
+      setAuthCookie('access_token', keycloak.token, expiresIn);
+      
+      // Store in localStorage
+      localStorage.setItem('user_state', 'authenticated');
+      localStorage.setItem('decoded', JSON.stringify(decoded) || '');
+
+      // Store X-Credential from JWT if present
+      if (decoded.x_credentials) {
+        localStorage.setItem('X-Credential', decoded.x_credentials);
+        setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+        console.log('[EmbeddedLogin] X-Credential saved:', decoded.x_credentials);
+      }
+
+      const userSession = {
+        access_token: keycloak.token,
+        refresh_token: keycloak.refreshToken,
+        id_token: keycloak.idToken,
+        userInfo: keycloak.tokenParsed,
+        tokens: { access_token: keycloak.token }
+      };
+
+      console.log('[EmbeddedLogin] SSO login complete, calling onSuccess');
+      onSuccess(userSession);
+    }
+  }, [initialized, keycloak?.authenticated, keycloak?.token, onSuccess]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
@@ -43,13 +107,28 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
     
     try {
       const result = await signInWithPassword(username, password, authority);
-      console.log('[EmbeddedLogin] Authentication successful:', result);
+      console.log('[EmbeddedLogin] ROPC authentication successful:', result);
       onSuccess(result);
     } catch (error) {
-      console.error('[EmbeddedLogin] Authentication failed:', error);
+      console.error('[EmbeddedLogin] ROPC authentication failed:', error);
       onError(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSSOLogin = async () => {
+    try {
+      console.log('[EmbeddedLogin] Starting SSO login with Keycloak...');
+      const customCallbackUrl = localStorage.getItem('callbackUrl');
+      const redirectUri = customCallbackUrl || `${window.location.origin}${window.location.pathname}`;
+      
+      await keycloak?.login({
+        redirectUri
+      });
+    } catch (error) {
+      console.error('[EmbeddedLogin] SSO login failed:', error);
+      onError(error instanceof Error ? error.message : 'SSO login failed');
     }
   };
 
@@ -156,6 +235,28 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
               'Sign In'
             )}
           </Button>
+
+          {/* SSO Login Button */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSSOLogin}
+            disabled={!initialized}
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-blue-600 text-blue-600 py-3 px-6 text-base font-bold rounded-lg cursor-pointer shadow-md transition-all duration-300 hover:bg-blue-50 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            <span>Sign In with SSO</span>
+          </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">

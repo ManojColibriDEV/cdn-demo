@@ -20,7 +20,7 @@ export const createKeycloakInstance = (authority?: string) => {
   const keycloak = new Keycloak({
     url,
     realm,
-    clientId: 'colibricore' // Your Keycloak client ID
+    clientId: 'colibricore'
   });
 
   return keycloak;
