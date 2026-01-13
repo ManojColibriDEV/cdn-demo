@@ -151,7 +151,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
       <div className="bg-white! rounded-lg! shadow-lg! p-8! w-full! max-w-lg! relative!">
         <button
           onClick={onClose}
-          className="absolute! top-4! right-4! text-gray-400 hover:text-gray-600 transition-colors!"
+          className="absolute! top-4! right-4! text-gray-400 hover:text-gray-600 transition-colors! bg-transparent! border-none! "
           type="button"
         >
           <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,8 +160,8 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
         </button>
 
         <div className="mb-6! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800">Continue to login</h2>
-          <p className="text-sm! text-gray-600 mt-2!">Continue by signing in.</p>
+          <h2 className="text-2xl! font-bold! text-gray-800! md:0!">Continue to login</h2>
+          <p className="text-sm! text-gray-600! mt-2!">Continue by signing in.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4!">
@@ -199,7 +199,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-500 hover:text-gray-700 focus:outline-none!"
+                    className="text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -223,7 +223,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
               <input type="checkbox" className="mr-2! rounded! border-gray-300" />
               <span className="text-gray-600">Remember me</span>
             </label>
-            <a href="#" className="text-blue-600 hover:text-blue-700">
+            <a href="#" className="text-blue-600! hover:text-blue-700!">
               Forgot Password?
             </a>
           </div>}
@@ -231,7 +231,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
           <Button
             type="submit"
             disabled={loading || !username || !password || !isPasswordValid}
-            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+            className="w-full! bg-[#17a2b8]! enabled:bg-[#17a2b8]! hover:bg-[#138496]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">
