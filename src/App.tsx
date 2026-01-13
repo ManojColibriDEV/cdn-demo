@@ -7,6 +7,7 @@ import { handleSignInCallback } from "./auth/oidcService";
 import { resolveAuthority } from "./utils/authorityResolver";
 import { useKeycloak } from '@react-keycloak/web';
 import { clearTokens } from "./utils/tokenStorage";
+import { checkTokenAndRedirect } from "./functions";
 
 export interface OAuthCallbackProps {
   authority?: string;
@@ -24,14 +25,8 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
       try {
         // Check if we're in a popup window
         const isPopup = window.opener && !window.opener.closed;
-        
+
         if (isPopup) {
-          console.log('[OAuthCallback] Running in popup window - will wait for Keycloak to process');
-          
-          // DO NOTHING - let ReactKeycloakProvider process the OAuth callback
-          // The parent App component will listen to keycloak.authenticated and send tokens
-          // Just wait for the parent window listener to detect authentication
-          console.log('[OAuthCallback] Waiting for parent window to handle authentication...');
           return;
         }
 
@@ -68,13 +63,13 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
 
   if (error) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white">
-        <div className="text-center max-w-md p-8">
-          <div className="text-red-600 text-xl font-semibold mb-4">Authentication Failed</div>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="fixed! inset-0! flex! items-center! justify-center! bg-white">
+        <div className="text-center! max-w-md! p-8!">
+          <div className="text-red-600 text-xl! font-semibold! mb-4!">Authentication Failed</div>
+          <p className="text-gray-600 mb-6!">{error}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6! py-2! bg-blue-600 text-white rounded-lg! hover:bg-blue-700"
           >
             Return to Login
           </button>
@@ -84,13 +79,13 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+    <div className="fixed! inset-0! flex! items-center! justify-center! bg-white">
+      <div className="text-center!">
+        <div className="mb-4!">
+          <div className="inline-block! h-12! w-12! animate-spin! rounded-full! border-4! border-solid! border-blue-600 border-r-transparent"></div>
         </div>
-        <h2 className="text-xl font-semibold text-gray-700">Completing sign in...</h2>
-        <p className="mt-2 text-sm text-gray-500">Please wait while we process your authentication.</p>
+        <h2 className="text-xl! font-semibold! text-gray-700">Completing sign in...</h2>
+        <p className="mt-2! text-sm! text-gray-500">Please wait while we process your authentication.</p>
       </div>
     </div>
   );
@@ -110,12 +105,19 @@ const App = (props: {
 
   const { keycloak, initialized } = useKeycloak()
 
-  console.log("keycloak initialized:", {keycloak, initialized, authenticated: keycloak.authenticated});
+  console.log("keycloak initialized:", { keycloak, initialized, authenticated: keycloak.authenticated });
 
   const [open, setOpen] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [hasRedirected, setHasRedirected] = useState(false);
+
+  // Check for valid token and auto-redirect on mount (for embedded mode)
+  useEffect(() => {
+    if (authMode === 'embedded' && props.redirectUrl && !window.opener) {
+      checkTokenAndRedirect(props.redirectUrl);
+    }
+  }, [authMode, props.redirectUrl]);
 
   // Don't handle callback manually when using Keycloak provider - it handles it automatically
   const isOAuthCallback = false; // Disabled - let ReactKeycloakProvider handle callbacks
@@ -124,7 +126,7 @@ const App = (props: {
     // If we're in a popup window and authenticated, send tokens to parent and close
     if (initialized && window.opener && !window.opener.closed && keycloak.authenticated && keycloak.token) {
       console.log('[App] Popup window authenticated - sending tokens to parent');
-      
+
       // Use '*' as target origin since popup might be on different origin (localhost vs 127.0.0.1)
       window.opener.postMessage({
         type: 'keycloak-tokens',
@@ -133,44 +135,30 @@ const App = (props: {
         idToken: keycloak.idToken,
         origin: window.location.origin, // Include origin for validation
       }, '*');
-      
+
       // Close popup after sending tokens
       setTimeout(() => {
-        console.log('[App] Closing popup window');
         window.close();
       }, 100);
-      
+
       return;
     }
-    
+
     // Handle authentication and redirects - ONLY in main window, never in popups
     if (initialized && !window.opener) {
-      console.log('[App] Keycloak initialized - Authenticated:', keycloak.authenticated);
-      
       if (keycloak.authenticated && keycloak.token) {
         console.log('[App] User is authenticated with token');
-        
+
         // Check if token is expired
         const tokenParsed = keycloak.tokenParsed;
         const currentTime = Math.floor(Date.now() / 1000);
         const isTokenExpired = tokenParsed?.exp ? tokenParsed.exp < currentTime : false;
-        
-        console.log('[App] Token expiry check:', {
-          exp: tokenParsed?.exp,
-          currentTime,
-          isExpired: isTokenExpired,
-          expiresIn: tokenParsed?.exp ? tokenParsed.exp - currentTime : 0
-        });
 
         if (isTokenExpired) {
-          // Token is expired - try to refresh
-          console.log('[App] Token expired - attempting refresh');
           keycloak.updateToken(30)
             .then((refreshed) => {
               if (refreshed) {
-                console.log('[App] Token refreshed successfully');
                 localStorage.setItem('user_state', 'authenticated');
-                
                 // After refresh, redirect if needed
                 if (props.redirectUrl && !hasRedirected) {
                   handleRedirectAfterAuth();
@@ -186,17 +174,16 @@ const App = (props: {
         } else {
           // Token is valid
           localStorage.setItem('user_state', 'authenticated');
-          
+
           // Clean up OAuth params from URL if present
           const currentUrl = new URL(window.location.href);
           if (currentUrl.searchParams.has('code') || currentUrl.searchParams.has('state')) {
-            console.log('[App] Cleaning OAuth params from URL');
             currentUrl.searchParams.delete('code');
             currentUrl.searchParams.delete('state');
             currentUrl.searchParams.delete('session_state');
             window.history.replaceState({}, '', currentUrl.toString());
           }
-          
+
           // Redirect to redirectUrl if provided and we haven't redirected yet
           if (props.redirectUrl && !hasRedirected) {
             handleRedirectAfterAuth();
@@ -209,9 +196,8 @@ const App = (props: {
   }, [initialized, keycloak.authenticated, keycloak.token]);
 
   const handleRedirectAfterAuth = () => {
-    console.log('[App] Redirecting to:', props.redirectUrl);
     setHasRedirected(true);
-    
+
     if (onRedirect) {
       const userSession = {
         access_token: keycloak.token,
@@ -221,7 +207,7 @@ const App = (props: {
       };
       onRedirect(props.redirectUrl!, userSession);
     }
-    
+
     setTimeout(() => {
       window.location.href = props.redirectUrl!;
     }, 100);
@@ -298,7 +284,7 @@ const App = (props: {
       const height = 600;
       const left = window.screen.width / 2 - width / 2;
       const top = window.screen.height / 2 - height / 2;
-      
+
       const popup = window.open(
         keycloakLoginUrl,
         'keycloak-login',
@@ -321,18 +307,18 @@ const App = (props: {
           console.log('[App] Received tokens from popup');
           window.removeEventListener('message', messageHandler);
           clearInterval(popupCheckInterval);
-          
+
           // Close popup immediately if still open
           if (popup && !popup.closed) {
             popup.close();
           }
-          
+
           try {
             // Manually set tokens on the Keycloak instance
             keycloak.token = event.data.token;
             keycloak.refreshToken = event.data.refreshToken;
             keycloak.idToken = event.data.idToken;
-            
+
             // Parse the token to set tokenParsed
             if (event.data.token) {
               const base64Url = event.data.token.split('.')[1];
@@ -342,18 +328,18 @@ const App = (props: {
               }).join(''));
               keycloak.tokenParsed = JSON.parse(jsonPayload);
             }
-            
+
             // Trigger the onTokens callback to save tokens
             console.log('[App] Manually triggering token save');
             const { saveTokens } = await import('./utils/tokenStorage');
             saveTokens(event.data.token, event.data.refreshToken, event.data.idToken);
-            
+
             // Mark as authenticated
             keycloak.authenticated = true;
-            
+
             setLoginLoading(false);
             console.log('[App] Tokens applied successfully, redirecting...');
-            
+
             // Now redirect to the target URL
             if (props.redirectUrl) {
               setTimeout(() => {
@@ -365,7 +351,7 @@ const App = (props: {
             setLoginError('Failed to complete authentication');
             setLoginLoading(false);
           }
-          
+
         } else if (event.data.type === 'keycloak-auth-error') {
           console.error('[App] Popup auth error:', event.data.error);
           window.removeEventListener('message', messageHandler);
@@ -430,6 +416,24 @@ const App = (props: {
     setLoginError(error);
   };
 
+  const handleLogout = async () => {
+    console.log('[App] Logging out...');
+
+    // Clear tokens from localStorage and cookies
+    clearTokens();
+
+    // Clear Keycloak session
+    try {
+      await keycloak.logout({
+        redirectUri: callbackUrl || window.location.origin
+      });
+    } catch (error) {
+      console.error('[App] Logout error:', error);
+      // Even if Keycloak logout fails, we've cleared local tokens
+      window.location.href = callbackUrl || window.location.origin;
+    }
+  };
+
   // If OAuth callback parameters are present, handle callback regardless of path
   if (isOAuthCallback) {
     return <OAuthCallback authority={authority} callbackUrl={callbackUrl} redirectUrl={props.redirectUrl} onRedirect={onRedirect} />;
@@ -441,41 +445,58 @@ const App = (props: {
         <OAuthCallback authority={authority} onRedirect={onRedirect} callbackUrl={callbackUrl} redirectUrl={props.redirectUrl} />
       } />
       <Route path="*" element={
-        <div className="max-w-7xl mx-auto p-8 text-center">
+        <div className="max-w-7xl! mx-auto! p-8! text-center!">
           {loginError && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+            <div className="mb-4! p-4! bg-red-50 border! border-red-200 rounded-lg! text-red-600">
               {loginError}
             </div>
           )}
 
-          {authMode === 'embedded' && open ? (
-            <EmbeddedLoginForm
-              onSuccess={handleEmbeddedLoginSuccess}
-              onError={handleEmbeddedLoginError}
-              onClose={() => setOpen(false)}
-              authority={authority}
-            />
-          ) : !open ? (
-            <Button
-              label={loginLoading ? "Opening Login..." : "Login with Colibri Identity"}
-              onClick={handleLoginClick}
-              disabled={loginLoading}
-            />
-          ) : null}
+          {/* Show logout button if authenticated */}
+          {keycloak.authenticated && (
+            <div className="mb-4!">
+              <p className="mb-2! text-gray-700">You are logged in!</p>
+              <Button
+                label="Logout"
+                onClick={handleLogout}
+                disabled={false}
+              />
+            </div>
+          )}
 
-          {open && authMode === 'popup' && <LoginModal
-            open={open}
-            isShowToggle={isShowToggle}
-            onClose={() => setOpen(false)}
-            authority={authority}
-            redirectUrl={props.redirectUrl}
-            onLoginSuccess={(userSession) => {
-              console.log('[App] Login successful:', userSession);
-              if (onRedirect && props.redirectUrl) {
-                onRedirect(props.redirectUrl, userSession);
-              }
-            }}
-          />}
+          {/* Show login button if not authenticated */}
+          {!keycloak.authenticated && (
+            <>
+              {authMode === 'embedded' && open ? (
+                <EmbeddedLoginForm
+                  onSuccess={handleEmbeddedLoginSuccess}
+                  onError={handleEmbeddedLoginError}
+                  onClose={() => setOpen(false)}
+                  authority={authority}
+                />
+              ) : !open ? (
+                <Button
+                  label={loginLoading ? "Opening Login..." : "Login with Colibri Identity"}
+                  onClick={handleLoginClick}
+                  disabled={loginLoading}
+                />
+              ) : null}
+
+              {open && authMode === 'popup' && <LoginModal
+                open={open}
+                isShowToggle={isShowToggle}
+                onClose={() => setOpen(false)}
+                authority={authority}
+                redirectUrl={props.redirectUrl}
+                onLoginSuccess={(userSession) => {
+                  console.log('[App] Login successful:', userSession);
+                  if (onRedirect && props.redirectUrl) {
+                    onRedirect(props.redirectUrl, userSession);
+                  }
+                }}
+              />}
+            </>
+          )}
         </div>
       } />
     </Routes>

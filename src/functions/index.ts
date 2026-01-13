@@ -152,3 +152,23 @@ export function onlyLetters(input: string): string {
     .replace(/[^^\p{L}' \-]+/gu, "")
     .replace(/\s+/g, " ");
 }
+
+export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
+  try {
+    // Try localStorage first (since cookie might be HttpOnly)
+    const token = localStorage.getItem('decoded') ? JSON.parse(localStorage.getItem('decoded') || '{}') : {};
+    const currentTime = Math.floor(Date.now() / 1000);
+
+
+    if (!token.exp || currentTime >= token.exp) {
+      return false;
+    }
+
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+    return true;
+  } catch (error) {
+    return false;
+  }
+}

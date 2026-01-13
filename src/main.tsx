@@ -14,6 +14,7 @@ const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 if (renderMode === 'TEST') {
   // Try to restore tokens from localStorage before initialization
   const storedTokens = getTokens();
+  
   if (storedTokens.token && storedTokens.refreshToken) {
     console.log('[Main] Restoring tokens from localStorage');
     keycloak.token = storedTokens.token;
@@ -35,12 +36,7 @@ if (renderMode === 'TEST') {
         idToken: storedTokens.idToken || undefined,
       }}
       onTokens={(tokens) => {
-        console.log('[Keycloak] Tokens received:', { 
-          hasAccessToken: !!tokens.token, 
-          hasRefreshToken: !!tokens.refreshToken 
-        });
         if (tokens.token) {
-          console.log('[Keycloak] Saving tokens to localStorage');
           saveTokens(tokens.token, tokens.refreshToken, tokens.idToken);
         }
       }}
@@ -54,7 +50,7 @@ if (renderMode === 'TEST') {
     >
       <BrowserRouter>
         <StrictMode>
-          <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" redirectUrl="http://www.google.com" authMode="embedded" />
+          <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/"  authMode="embedded" />
         </StrictMode>
       </BrowserRouter>
     </ReactKeycloakProvider>

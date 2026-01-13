@@ -66,20 +66,20 @@ const LoginSubmit: FC<LoginSubmitProps> = (props) => {
   
   return (
     <form
-      className="flex flex-col gap-2.5 items-stretch"
+      className="flex! flex-col! gap-2.5! items-stretch!"
       onSubmit={onSubmit}
     >
-      <div className="text-center mb-4">
-        <p className="text-sm text-gray-600">
+      <div className="text-center! mb-4!">
+        <p className="text-sm! text-gray-600">
           Click below to sign in securely through our authentication portal
         </p>
       </div>
 
-      {loginError ? <div className="mt-1.5 text-[#b00020] text-[13px]">{loginError}</div> : null}
+      {loginError ? <div className="mt-1.5! text-[#b00020] text-[13px]!">{loginError}</div> : null}
       
-      <div className="mt-4">
+      <div className="mt-4!">
         <button
-          className="w-full h-12 rounded-lg border-none bg-[#bdbdbd] enabled:bg-[#a24796] text-white font-semibold cursor-pointer disabled:opacity-90 disabled:cursor-not-allowed"
+          className="w-full! h-12! rounded-lg! border-none! bg-[#bdbdbd] enabled:bg-[#a24796] text-white font-semibold! cursor-pointer! disabled:opacity-90! disabled:cursor-not-allowed!"
           type="submit"
           disabled={loginLoading}
         >

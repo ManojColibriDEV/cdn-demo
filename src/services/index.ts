@@ -6,8 +6,90 @@ import type {
   TenantDetailsResponse
 } from "../types/index";
 
-// Helper to build URLs that respect BASE
-const apiUrl = (path: string): string => `${path}`;
+// Get render mode to determine URL strategy
+const RENDER_MODE = (import.meta as any).env.VITE_RENDER_MODE || 'WEBCOMPONENT';
+const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL || '';
+
+// Helper to build URLs that respect mode
+// TEST mode: returns relative URLs for Vite proxy (e.g., /api/auth)
+// WEBCOMPONENT mode: returns full URLs for direct API calls (e.g., https://domain.com/api/auth)
+const apiUrl = (path: string): string => {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  
+  // In TEST mode, always use relative paths for Vite's dev server proxy
+  if (RENDER_MODE === 'TEST') {
+    return cleanPath;
+  }
+  
+  // In WEBCOMPONENT mode, use full URL if API_BASE_URL is configured
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${cleanPath}`;
+  }
+  
+  // Fallback to relative URL (for proxy server or same-origin deployment)
+  return cleanPath;
+};
+
+/**
+ * Auth API - Login with username and password
+ */
+export const authLogin = async (
+  username: string,
+  password: string
+): Promise<any> => {
+  const url = apiUrl("api/auth");
+  const payload = { username, password };
+  try {
+    const response = await axios.post(url, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during auth login:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Refresh token
+ */
+export const authRefresh = async (refreshToken: string): Promise<any> => {
+  const url = apiUrl("/auth/refresh");
+  const payload = { refresh_token: refreshToken };
+  try {
+    const response = await axios.post(url, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during token refresh:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Logout
+ */
+export const authLogout = async (refreshToken: string): Promise<void> => {
+  const url = apiUrl("/auth/logout");
+  const payload = { refresh_token: refreshToken };
+  try {
+    await axios.post(url, payload);
+  } catch (error) {
+    console.error("Error during logout:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Health check
+ */
+export const authHealthCheck = async (): Promise<any> => {
+  const url = apiUrl("/auth/health");
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error checking auth health:", error);
+    throw error;
+  }
+};
 
 /**
  * Check migration status of a user by email
