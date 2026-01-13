@@ -1,4 +1,1 @@
 @import "tailwindcss";
-
-/* WordPress style overrides for width, spacing, padding, margin */
-@import "./wordpress-override.css";

@@ -63,13 +63,13 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
 
   if (error) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white">
-        <div className="text-center max-w-md p-8">
-          <div className="text-red-600 text-xl font-semibold mb-4">Authentication Failed</div>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="fixed! inset-0! flex! items-center! justify-center! bg-white">
+        <div className="text-center! max-w-md! p-8!">
+          <div className="text-red-600 text-xl! font-semibold! mb-4!">Authentication Failed</div>
+          <p className="text-gray-600 mb-6!">{error}</p>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6! py-2! bg-blue-600 text-white rounded-lg! hover:bg-blue-700"
           >
             Return to Login
           </button>
@@ -79,13 +79,13 @@ const OAuthCallback = (props: OAuthCallbackProps) => {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white">
-      <div className="text-center">
-        <div className="mb-4">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+    <div className="fixed! inset-0! flex! items-center! justify-center! bg-white">
+      <div className="text-center!">
+        <div className="mb-4!">
+          <div className="inline-block! h-12! w-12! animate-spin! rounded-full! border-4! border-solid! border-blue-600 border-r-transparent"></div>
         </div>
-        <h2 className="text-xl font-semibold text-gray-700">Completing sign in...</h2>
-        <p className="mt-2 text-sm text-gray-500">Please wait while we process your authentication.</p>
+        <h2 className="text-xl! font-semibold! text-gray-700">Completing sign in...</h2>
+        <p className="mt-2! text-sm! text-gray-500">Please wait while we process your authentication.</p>
       </div>
     </div>
   );
@@ -154,22 +154,11 @@ const App = (props: {
         const currentTime = Math.floor(Date.now() / 1000);
         const isTokenExpired = tokenParsed?.exp ? tokenParsed.exp < currentTime : false;
 
-        console.log('[App] Token expiry check:', {
-          exp: tokenParsed?.exp,
-          currentTime,
-          isExpired: isTokenExpired,
-          expiresIn: tokenParsed?.exp ? tokenParsed.exp - currentTime : 0
-        });
-
         if (isTokenExpired) {
-          // Token is expired - try to refresh
-          console.log('[App] Token expired - attempting refresh');
           keycloak.updateToken(30)
             .then((refreshed) => {
               if (refreshed) {
-                console.log('[App] Token refreshed successfully');
                 localStorage.setItem('user_state', 'authenticated');
-
                 // After refresh, redirect if needed
                 if (props.redirectUrl && !hasRedirected) {
                   handleRedirectAfterAuth();
@@ -189,7 +178,6 @@ const App = (props: {
           // Clean up OAuth params from URL if present
           const currentUrl = new URL(window.location.href);
           if (currentUrl.searchParams.has('code') || currentUrl.searchParams.has('state')) {
-            console.log('[App] Cleaning OAuth params from URL');
             currentUrl.searchParams.delete('code');
             currentUrl.searchParams.delete('state');
             currentUrl.searchParams.delete('session_state');
@@ -457,17 +445,17 @@ const App = (props: {
         <OAuthCallback authority={authority} onRedirect={onRedirect} callbackUrl={callbackUrl} redirectUrl={props.redirectUrl} />
       } />
       <Route path="*" element={
-        <div className="max-w-7xl mx-auto p-8 text-center">
+        <div className="max-w-7xl! mx-auto! p-8! text-center!">
           {loginError && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+            <div className="mb-4! p-4! bg-red-50 border! border-red-200 rounded-lg! text-red-600">
               {loginError}
             </div>
           )}
 
           {/* Show logout button if authenticated */}
           {keycloak.authenticated && (
-            <div className="mb-4">
-              <p className="mb-2 text-gray-700">You are logged in!</p>
+            <div className="mb-4!">
+              <p className="mb-2! text-gray-700">You are logged in!</p>
               <Button
                 label="Logout"
                 onClick={handleLogout}

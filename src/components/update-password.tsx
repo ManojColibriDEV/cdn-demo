@@ -25,22 +25,22 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
   // Local state for confirm password show/hide
   const [confirmShowPassword, setConfirmShowPassword] = useState(false);
   return (
-    <div className="flex flex-col gap-2.5">
-      <h2 className="m-0">Update Your Password</h2>
-      <p className="my-0 mb-3.5 text-center text-[#9aa0a6] text-sm">
+    <div className="flex! flex-col! gap-2.5!">
+      <h2 className="m-0!">Update Your Password</h2>
+      <p className="my-0! mb-3.5! text-center! text-[#9aa0a6] text-sm!">
         {upgradeMessage ||
           "Your current password doesn't meet our updated security requirements. Please choose a new password."}
       </p>
 
-      <div className="bg-[#eaf4ff] rounded-lg p-3 text-center text-[#1b4f8a]">
-        <div className="font-bold">{upgradeUser?.displayName}</div>
-        <div className="text-[13px] text-[#6b6b6b]">{upgradeUser?.email}</div>
+      <div className="bg-[#eaf4ff] rounded-lg! p-3! text-center! text-[#1b4f8a]">
+        <div className="font-bold!">{upgradeUser?.displayName}</div>
+        <div className="text-[13px]! text-[#6b6b6b]">{upgradeUser?.email}</div>
       </div>
 
-      <label className="text-sm text-[#444] mt-1.5 block text-left">New Password</label>
-      <div className="relative w-full">
+      <label className="text-sm! text-[#444] mt-1.5! block! text-left!">New Password</label>
+      <div className="relative! w-full!">
         <input
-          className="block w-full box-border h-11 py-2.5 pr-11 pl-3 rounded-lg border border-[#d6e3f6] bg-white outline-none text-sm text-left focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)] focus:border-[#2b6fd6]"
+          className="block! w-full! box-border! h-11! py-2.5! pr-11! pl-3! rounded-lg! border! border-[#d6e3f6] bg-white outline-none! text-sm! text-left! focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)]! focus:border-[#2b6fd6]!"
           type={newShowPassword ? "text" : "password"}
           placeholder="Enter new password"
           value={newPassword}
@@ -48,7 +48,7 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
         />
         <button
           type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none p-1.5 flex items-center justify-center cursor-pointer"
+          className="absolute! right-2! top-1/2! -translate-y-1/2! bg-transparent border-none! p-1.5! flex! items-center! justify-center! cursor-pointer!"
           onClick={() => setNewShowPassword(!newShowPassword)}
           aria-label={newShowPassword ? "Hide password" : "Show password"}
         >
@@ -102,10 +102,10 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
       </div>
 
 
-      <label className="text-sm text-[#444] mt-1.5 block text-left">Confirm New Password</label>
-      <div className="relative w-full">
+      <label className="text-sm! text-[#444] mt-1.5! block! text-left!">Confirm New Password</label>
+      <div className="relative! w-full!">
         <input
-          className="block w-full box-border h-11 py-2.5 pr-11 pl-3 rounded-lg border border-[#d6e3f6] bg-white outline-none text-sm text-left focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)] focus:border-[#2b6fd6]"
+          className="block! w-full! box-border! h-11! py-2.5! pr-11! pl-3! rounded-lg! border! border-[#d6e3f6] bg-white outline-none! text-sm! text-left! focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)]! focus:border-[#2b6fd6]!"
           type={confirmShowPassword ? "text" : "password"}
           placeholder="Confirm new password"
           value={confirmPassword}
@@ -113,7 +113,7 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
         />
         <button
           type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-none p-1.5 flex items-center justify-center cursor-pointer"
+          className="absolute! right-2! top-1/2! -translate-y-1/2! bg-transparent border-none! p-1.5! flex! items-center! justify-center! cursor-pointer!"
           onClick={() => setConfirmShowPassword(!confirmShowPassword)}
           aria-label={confirmShowPassword ? "Hide password" : "Show password"}
         >
@@ -166,9 +166,9 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
         </button>
       </div>
 
-      <div className="bg-[#f3f4f6] rounded-lg py-3.5 px-4 box-border">
-        <div className="text-center font-bold mb-2.5 text-[#333]">Password Requirements</div>
-        <div className="flex gap-6">
+      <div className="bg-[#f3f4f6] rounded-lg! py-3.5! px-4! box-border!">
+        <div className="text-center! font-bold! mb-2.5! text-[#333]">Password Requirements</div>
+        <div className="flex! gap-6!">
           <div className="pr-col">
             {/* Length */}
             <div
@@ -408,7 +408,7 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
           </div>
 
           {/* COLUMN 2 */}
-          <div className="flex-1 flex flex-col gap-2.5 items-start text-left">
+          <div className="flex-1! flex! flex-col! gap-2.5! items-start! text-left!">
             {/* Uppercase */}
             <div
               className={"pr-item " + (passwordChecks.upper ? "ok" : "fail")}
@@ -652,10 +652,10 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
         </div>
       </div>
 
-      <div className="flex gap-3 items-center mt-4">
+      <div className="flex! gap-3! items-center! mt-4!">
         <button
           type="button"
-          className="bg-transparent border border-[#d6d6d6] py-2.5 px-3.5 rounded-lg cursor-pointer flex-[0_0_140px]"
+          className="bg-transparent border! border-[#d6d6d6] py-2.5! px-3.5! rounded-lg! cursor-pointer! flex-[0_0_140px]!"
           onClick={() => {
             setRequiresUpgrade(false);
             setUpgradeUser(null);
@@ -664,7 +664,7 @@ const UpdatePassword: FC<UpdatePasswordProps> = (props) => {
           Back to Login
         </button>
         <button
-          className="flex-1 h-12 rounded-lg border-none bg-[#bdbdbd] enabled:bg-[#a24796] text-white font-semibold cursor-pointer disabled:opacity-90 disabled:cursor-not-allowed"
+          className="flex-1! h-12! rounded-lg! border-none! bg-[#bdbdbd] enabled:bg-[#a24796] text-white font-semibold! cursor-pointer! disabled:opacity-90! disabled:cursor-not-allowed!"
           type="button"
           onClick={(e) =>
             handleUpdatePassword({

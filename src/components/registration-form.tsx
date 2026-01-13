@@ -365,9 +365,9 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
     const layout: Record<string, string[][]> = REGISTRATION_FIELDS_LAYOUT;
     const rows = layout[mode] || [visibleFields];
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex! flex-col! gap-4!">
         {rows.map((row, i) => (
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4" key={i}>
+          <div className="grid! grid-cols-[repeat(auto-fit,minmax(220px,1fr))]! gap-4!" key={i}>
             {row.map((fieldKey) => {
               if (!visibleFields.includes(fieldKey)) return null;
               const field = FIELD_DEFINITIONS[fieldKey];
@@ -522,72 +522,72 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
                       error={fieldErrors[fieldKey]}
                     />
                     {fieldKey === "password" && passwordChecks && (
-                      <div className="mt-2 py-2.5 px-3 bg-black/2 rounded-md text-[0.95rem] text-[#4b5563]">
+                      <div className="mt-2! py-2.5! px-3! bg-black/2 rounded-md! text-[0.95rem]! text-[#4b5563]">
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.length ? "ok" : "bad"
                           }`}
                         >
                           9–15 characters
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.upper ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           At least one uppercase letter
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.lower ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           At least one lowercase letter
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.number ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           At least one number
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.special ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           At least one special character (!@#$%^&*_-.)
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.special ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           Only !@#$%^&*_-_. symbols allowed
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.noSpaces ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           No spaces
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.noTriple ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           No more than 2 repeating characters
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.noNameParts ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
                           Cannot contain your first or last name
                         </div>
                         <div
-                          className={`my-0.5 flex items-center ${
+                          className={`my-0.5! flex! items-center! ${
                             passwordChecks.noEmailParts ? "text-[#2ea44f]" : "text-[#d64545]"
                           }`}
                         >
@@ -620,7 +620,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
                 );
 
                 return (
-                  <div key={fieldKey} className="flex flex-col flex-1 min-w-0 relative">
+                  <div key={fieldKey} className="flex! flex-col! flex-1! min-w-0! relative!">
                     <InputField
                       label={label}
                       type={field.type}
@@ -716,12 +716,12 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
   };
 
   return (
-    <form className="flex flex-col gap-2.5 items-stretch" onSubmit={handleSubmit}>
+    <form className="flex! flex-col! gap-2.5! items-stretch!" onSubmit={handleSubmit}>
       {!modeLocked && (
-        <div className="flex flex-col flex-1 min-w-0">
-          <label className="text-sm text-[#444] mt-4 mb-1 block text-left">Registration Mode</label>
+        <div className="flex! flex-col! flex-1! min-w-0!">
+          <label className="text-sm! text-[#444] mt-4! mb-1! block! text-left!">Registration Mode</label>
           <select
-            className="block w-full box-border h-11 py-2.5 px-3 rounded-lg border border-[#d6e3f6] bg-white outline-none text-sm text-left focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)] focus:border-[#2b6fd6]"
+            className="block! w-full! box-border! h-11! py-2.5! px-3! rounded-lg! border! border-[#d6e3f6] bg-white outline-none! text-sm! text-left! focus:shadow-[0_0_0_3px_rgba(24,102,214,0.12)]! focus:border-[#2b6fd6]!"
             value={mode}
             onChange={(e) => setMode(e.target.value)}
           >
@@ -734,10 +734,10 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
         </div>
       )}
       {renderFieldsGrid()}
-      {error && <div className="mt-1.5 text-[#b00020] text-[13px]">{error}</div>}
+      {error && <div className="mt-1.5! text-[#b00020] text-[13px]!">{error}</div>}
       {tenantDetails?.RegistrationConsent && (
-        <div className="flex flex-col flex-1 min-w-0">
-          <label className="block mb-1.5 font-semibold text-left">
+        <div className="flex! flex-col! flex-1! min-w-0!">
+          <label className="block! mb-1.5! font-semibold! text-left!">
             <input
               type="checkbox"
               checked={consentChecked}
@@ -763,10 +763,10 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
             .
           </label>
           {/* action row: Reset (secondary) + Continue (primary) */}
-          <div className="flex gap-3 mt-5">
+          <div className="flex! gap-3! mt-5!">
             <button
               type="button"
-              className="flex-1 bg-transparent text-teal-dark border-2 border-[#cdece8] rounded-lg py-3 px-4 font-semibold cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1! bg-transparent text-teal-dark border-2! border-[#cdece8] rounded-lg! py-3! px-4! font-semibold! cursor-pointer! disabled:opacity-60! disabled:cursor-not-allowed!"
               onClick={() => {
                 setFormValues({});
                 setFieldErrors({});
@@ -783,7 +783,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
               Reset
             </button>
             <button
-              className="flex-[2_1_60%] bg-[#bdbdbd] enabled:bg-[#a24796] text-white border-none rounded-lg py-3 px-4 text-[1.05rem] font-bold cursor-pointer disabled:bg-teal-light disabled:cursor-not-allowed"
+              className="flex-[2_1_60%]! bg-[#bdbdbd] enabled:bg-[#a24796] text-white border-none! rounded-lg! py-3! px-4! text-[1.05rem]! font-bold! cursor-pointer! disabled:bg-teal-light disabled:cursor-not-allowed!"
               type="submit"
               // disabled={!isContinueEnabled}
             >
@@ -792,7 +792,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
           </div>
           {!isContinueEnabled && continueDisabledReasons.length > 0 && (
             <div
-              className="text-[#b04545] mt-2 text-[13px]"
+              className="text-[#b04545] mt-2! text-[13px]!"
             >
               {continueDisabledReasons.map((r, idx) => (
                 <div key={idx}>- {r}</div>
@@ -800,7 +800,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
             </div>
           )}
           <div
-            className="mt-4"
+            className="mt-4!"
             dangerouslySetInnerHTML={{
               __html: tenantDetails?.RegistrationConsent.replace(
                 /{{BrandFullName}}/g,

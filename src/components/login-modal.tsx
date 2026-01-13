@@ -95,10 +95,10 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#6161612c] flex items-center justify-center z-[2000]" ref={overlayRef} onMouseDown={onOverlayClick}>
+    <div className="fixed! inset-0! bg-[#6161612c] flex! items-center! justify-center! z-[2000]!" ref={overlayRef} onMouseDown={onOverlayClick}>
       <div
         className={
-          activeTab === "signup" ? "w-[800px] bg-white rounded-[14px] py-5 px-7 shadow-[0_10px_30px_rgba(0,0,0,0.35)] font-brandon max-h-[calc(100vh-60px)] overflow-y-auto" : "w-[520px] bg-white rounded-[14px] py-5 px-7 shadow-[0_10px_30px_rgba(0,0,0,0.35)] font-brandon max-h-[calc(100vh-60px)] overflow-y-auto"
+          activeTab === "signup" ? "w-[800px]! bg-white rounded-[14px]! py-5! px-7! shadow-[0_10px_30px_rgba(0,0,0,0.35)]! font-brandon! max-h-[calc(100vh-60px)]! overflow-y-auto!" : "w-[520px]! bg-white rounded-[14px]! py-5! px-7! shadow-[0_10px_30px_rgba(0,0,0,0.35)]! font-brandon! max-h-[calc(100vh-60px)]! overflow-y-auto!"
         }
         role="dialog"
         aria-modal="true"
@@ -107,8 +107,8 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
       >
         {!requiresUpgrade && (
           <div>
-            <h2 className="m-0 text-[28px] text-center font-bold">Welcome Back</h2>
-            <p className="my-0 mb-3.5 text-center text-[#9aa0a6] text-sm">
+            <h2 className="m-0! text-[28px]! text-center! font-bold!">Welcome Back</h2>
+            <p className="my-0! mb-3.5! text-center! text-[#9aa0a6] text-sm!">
               {activeTab === "signup"
                 ? "Sign up for a new account"
                 : "Sign in to continue to your account"}
@@ -117,15 +117,15 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
         )}
 
         {!requiresUpgrade && isShowToggle === "true" && (
-          <div className="flex gap-3 mb-4 w-full bg-[#f3f3f3] p-1.5 rounded-[10px] box-border">
+          <div className="flex! gap-3! mb-4! w-full! bg-[#f3f3f3] p-1.5! rounded-[10px]! box-border!">
             <button
-              className={"flex-1 py-3 px-4 rounded-lg bg-transparent border-none text-[#6b6b6b] font-semibold cursor-pointer text-center " + (activeTab === "signin" ? "!bg-[#1866d6] !text-white shadow-none outline-none" : "")}
+              className={"flex-1! py-3! px-4! rounded-lg! bg-transparent border-none! text-[#6b6b6b] font-semibold! cursor-pointer! text-center! " + (activeTab === "signin" ? "!bg-[#1866d6] !text-white shadow-none! outline-none!" : "")}
               onClick={() => setActiveTab("signin")}
             >
               Sign In
             </button>
             <button
-              className={"flex-1 py-3 px-4 rounded-lg bg-transparent border-none text-[#6b6b6b] font-semibold cursor-pointer text-center " + (activeTab === "signup" ? "!bg-[#1866d6] !text-white shadow-none outline-none" : "")}
+              className={"flex-1! py-3! px-4! rounded-lg! bg-transparent border-none! text-[#6b6b6b] font-semibold! cursor-pointer! text-center! " + (activeTab === "signup" ? "!bg-[#1866d6] !text-white shadow-none! outline-none!" : "")}
               onClick={() => setActiveTab("signup")}
             >
               Sign Up
@@ -135,9 +135,9 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
         
         {activeTab === "signin" ? (
           showIframe ? (
-            <div className="relative">
-              <div className="mb-4 flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Sign In</h3>
+            <div className="relative!">
+              <div className="mb-4! flex! justify-between! items-center!">
+                <h3 className="text-lg! font-semibold!">Sign In</h3>
                 <button
                   onClick={() => {
                     setShowIframe(false);
@@ -149,20 +149,20 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
                 </button>
               </div>
               {loginError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+                <div className="mb-4! p-3! bg-red-50 border! border-red-200 rounded! text-red-600 text-sm!">
                   {loginError}
                 </div>
               )}
-              <div className="relative bg-white rounded-lg overflow-hidden border border-gray-200">
+              <div className="relative! bg-white rounded-lg! overflow-hidden! border! border-gray-200">
                 <iframe
                   src={iframeUrl}
-                  className="w-full h-[550px] border-0"
+                  className="w-full! h-[550px]! border-0!"
                   title="Keycloak Login"
                   sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
                   allow="payment"
                 />
               </div>
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+              <div className="mt-4! p-3! bg-yellow-50 border! border-yellow-200 rounded! text-yellow-800 text-xs!">
                 <strong>Note:</strong> If the login form doesn't appear above, Keycloak may be blocking iframe embedding. 
                 Please contact your administrator to configure the Content-Security-Policy header with frame-ancestors directive.
               </div>

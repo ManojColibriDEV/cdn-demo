@@ -50,7 +50,7 @@ if (renderMode === 'TEST') {
     >
       <BrowserRouter>
         <StrictMode>
-          <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/"  authMode="redirect" redirectUrl="http://www.google.com/"/>
+          <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/"  authMode="embedded" />
         </StrictMode>
       </BrowserRouter>
     </ReactKeycloakProvider>
