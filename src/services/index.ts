@@ -10,6 +10,67 @@ import type {
 const apiUrl = (path: string): string => `${path}`;
 
 /**
+ * Auth API - Login with username and password
+ */
+export const authLogin = async (
+  username: string,
+  password: string
+): Promise<any> => {
+  const url = apiUrl("api/auth");
+  const payload = { username, password };
+  try {
+    const response = await axios.post(url, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during auth login:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Refresh token
+ */
+export const authRefresh = async (refreshToken: string): Promise<any> => {
+  const url = apiUrl("/auth/refresh");
+  const payload = { refresh_token: refreshToken };
+  try {
+    const response = await axios.post(url, payload);
+    return response.data;
+  } catch (error) {
+    console.error("Error during token refresh:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Logout
+ */
+export const authLogout = async (refreshToken: string): Promise<void> => {
+  const url = apiUrl("/auth/logout");
+  const payload = { refresh_token: refreshToken };
+  try {
+    await axios.post(url, payload);
+  } catch (error) {
+    console.error("Error during logout:", error);
+    throw error;
+  }
+};
+
+/**
+ * Auth API - Health check
+ */
+export const authHealthCheck = async (): Promise<any> => {
+  const url = apiUrl("/auth/health");
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error checking auth health:", error);
+    throw error;
+  }
+};
+
+/**
  * Check migration status of a user by email
  */
 export const checkMigrationStatus = async (

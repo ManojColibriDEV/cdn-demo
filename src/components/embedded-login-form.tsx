@@ -3,7 +3,10 @@ import { useKeycloak } from "@react-keycloak/web";
 import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
-import { signInWithPassword } from "../auth/oidcService";
+import { authLogin } from "../services";
+import { validatePassword } from "../functions";
+import type { PasswordChecks } from "../types";
+import { setAuthCookie } from "../utils/cookieHelper";
 
 interface EmbeddedLoginFormProps {
   onSuccess: (userSession: any) => void;
@@ -12,39 +15,35 @@ interface EmbeddedLoginFormProps {
   authority?: string;
 }
 
-/**
- * Set a cookie with cross-subdomain support
- */
-function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
-  const expires = new Date();
-  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
-
-  const hostname = window.location.hostname;
-  let domain = '';
-  
-  // Skip domain for localhost/IP
-  if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    const parts = hostname.split('.');
-    if (parts.length >= 2) {
-      domain = '.' + parts.slice(-2).join('.');
-    }
-  }
-
-  const domainAttr = domain ? `; domain=${domain}` : '';
-  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
-
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
-
-  console.log(`[Cookie] Set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
-}
-
-const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedLoginFormProps) => {
+const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const { keycloak, initialized } = useKeycloak();
+
+  // Validate password whenever it changes
+  useEffect(() => {
+    if (password) {
+      const checks = validatePassword(password, null);
+      setPasswordChecks(checks);
+    } else {
+      setPasswordChecks(null);
+    }
+  }, [password]);
+
+  // Check if all password requirements are met
+  const isPasswordValid = passwordChecks
+    ? passwordChecks.length &&
+    passwordChecks.upper &&
+    passwordChecks.lower &&
+    passwordChecks.number &&
+    passwordChecks.noSpaces &&
+    passwordChecks.noTriple &&
+    passwordChecks.special
+    : false;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -64,7 +63,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
 
       // Set access_token as cookie
       setAuthCookie('access_token', keycloak.token, expiresIn);
-      
+
       // Store in localStorage
       localStorage.setItem('user_state', 'authenticated');
       localStorage.setItem('decoded', JSON.stringify(decoded) || '');
@@ -97,48 +96,59 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       onError("Please enter both username and password");
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      const result = await signInWithPassword(username, password, authority);
-      console.log('[EmbeddedLogin] ROPC authentication successful:', result);
-      onSuccess(result);
+
+      // Use the service function
+      const { tokens } = await authLogin(username, password);
+      console.log('[EmbeddedLogin] Login successful:', tokens);
+
+      // Store tokens if provided
+      if (tokens.access_token) {
+        const decoded: any = jwtDecode(tokens.access_token);
+        const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+        console.log("decoded", decoded)
+
+        // Set cookies
+        setAuthCookie('access_token', tokens.access_token, expiresIn);
+
+        if (decoded.x_credentials) {
+          setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+        }
+
+        // Store in localStorage
+        localStorage.setItem('user_state', 'authenticated');
+        localStorage.setItem('decoded', JSON.stringify(decoded) || '');
+
+        if (tokens.refresh_token) {
+          localStorage.setItem('refresh_token', tokens.refresh_token);
+        }
+      }
+
+      // Call success callback with result
+      onSuccess(tokens);
     } catch (error) {
-      console.error('[EmbeddedLogin] ROPC authentication failed:', error);
+      console.error('[EmbeddedLogin] Login failed:', error);
       onError(error instanceof Error ? error.message : 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSSOLogin = async () => {
-    try {
-      console.log('[EmbeddedLogin] Starting SSO login with Keycloak...');
-      const customCallbackUrl = localStorage.getItem('callbackUrl');
-      const redirectUri = customCallbackUrl || `${window.location.origin}${window.location.pathname}`;
-      
-      await keycloak?.login({
-        redirectUri
-      });
-    } catch (error) {
-      console.error('[EmbeddedLogin] SSO login failed:', error);
-      onError(error instanceof Error ? error.message : 'SSO login failed');
-    }
-  };
-
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]" 
-      ref={overlayRef} 
+    <div
+      className="fixed inset-0 bg-[#0000004f] bg-opacity-10 flex items-center justify-center z-[2000]"
+      ref={overlayRef}
       onMouseDown={onOverlayClick}
     >
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md relative">
+      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
@@ -148,23 +158,23 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        
+
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-800">Sign In</h2>
-          <p className="text-sm text-gray-600 mt-2">Enter your credentials to continue</p>
+          <h2 className="text-2xl font-bold text-gray-800">Continue to checkout</h2>
+          <p className="text-sm text-gray-600 mt-2">Sign in to continue your purchase.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1 text-left">
-              Username or Email
+              Email Address or Username
             </label>
             <Input
               id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder="Enter email or username"
               disabled={loading}
               className="w-full"
               autoComplete="username"
@@ -181,7 +191,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder="Enter Password..."
                 disabled={loading}
                 className="w-full"
                 autoComplete="current-password"
@@ -208,20 +218,20 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm">
+          {false && <div className="flex items-center justify-between text-sm">
             <label className="flex items-center">
               <input type="checkbox" className="mr-2 rounded border-gray-300" />
               <span className="text-gray-600">Remember me</span>
             </label>
             <a href="#" className="text-blue-600 hover:text-blue-700">
-              Forgot password?
+              Forgot Password?
             </a>
-          </div>
+          </div>}
 
           <Button
             type="submit"
-            disabled={loading || !username || !password}
-            className="w-full bg-[#bdbdbd] enabled:bg-[#a24796] hover:bg-[#a24796] text-white border-none py-3 px-6 text-base font-bold rounded-lg cursor-pointer shadow-md transition-colors duration-300 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            disabled={loading || !username || !password || !isPasswordValid}
+            className="w-full bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none py-3 px-6 text-base font-bold rounded-lg cursor-pointer shadow-md transition-colors duration-300 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span className="flex items-center justify-center">
@@ -236,35 +246,26 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
             )}
           </Button>
 
-          {/* SSO Login Button */}
-          <div className="relative my-6">
+          {/* Divider */}
+          {false && <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-2 bg-white text-gray-500">OR</span>
             </div>
-          </div>
+          </div>}
 
-          <button
+          {false && <button
             type="button"
-            onClick={handleSSOLogin}
-            disabled={!initialized}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-blue-600 text-blue-600 py-3 px-6 text-base font-bold rounded-lg cursor-pointer shadow-md transition-all duration-300 hover:bg-blue-50 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            // onClick={handleSSOLogin}
+            // disabled={!initialized}
+            disabled={false}
+            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-[#17a2b8] text-[#17a2b8] py-3 px-6 text-base font-bold rounded-lg cursor-pointer shadow-md transition-all duration-300 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            <span>Sign In with SSO</span>
-          </button>
+            <span>Create an Account</span>
+          </button>}
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account?{' '}
-          <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-            Sign up
-          </a>
-        </div>
       </div>
     </div>
   );

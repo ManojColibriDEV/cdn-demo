@@ -1,0 +1,617 @@
+/**
+ * WordPress Style Overrides
+ * Overrides WordPress default styles for width, spacing, padding, margin
+ * Does NOT touch colors to preserve the existing color scheme
+ * 
+ * Note: All rules use !important to override WordPress specificity
+ */
+
+/* Reset WordPress box-sizing for all widget elements */
+keycloak-widget,
+keycloak-widget *,
+keycloak-widget *::before,
+keycloak-widget *::after {
+  box-sizing: border-box !important;
+}
+
+/* Override WordPress width constraints */
+keycloak-widget .w-full,
+keycloak-widget [class*="w-"] {
+  width: auto !important;
+}
+
+keycloak-widget .w-full {
+  width: 100% !important;
+}
+
+keycloak-widget .w-6 {
+  width: 1.5rem !important;
+}
+
+keycloak-widget .w-5 {
+  width: 1.25rem !important;
+}
+
+keycloak-widget .h-6 {
+  height: 1.5rem !important;
+}
+
+keycloak-widget .h-5 {
+  height: 1.25rem !important;
+}
+
+keycloak-widget .h-12 {
+  height: 3rem !important;
+}
+
+keycloak-widget .w-12 {
+  width: 3rem !important;
+}
+
+/* Override WordPress max-width */
+keycloak-widget .max-w-md {
+  max-width: 28rem !important;
+}
+
+keycloak-widget .max-w-7xl {
+  max-width: 80rem !important;
+}
+
+/* Override WordPress padding */
+keycloak-widget .p-2 {
+  padding: 0.5rem !important;
+}
+
+keycloak-widget .p-4 {
+  padding: 1rem !important;
+}
+
+keycloak-widget .p-6 {
+  padding: 1.5rem !important;
+}
+
+keycloak-widget .p-8 {
+  padding: 2rem !important;
+}
+
+keycloak-widget .px-2 {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+keycloak-widget .px-4 {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+}
+
+keycloak-widget .px-6 {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+keycloak-widget .py-2 {
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+keycloak-widget .py-3 {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Override WordPress margin */
+keycloak-widget .m-0 {
+  margin: 0 !important;
+}
+
+keycloak-widget .mx-auto {
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+keycloak-widget .my-6 {
+  margin-top: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+keycloak-widget .mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+keycloak-widget .mt-4 {
+  margin-top: 1rem !important;
+}
+
+keycloak-widget .mt-6 {
+  margin-top: 1.5rem !important;
+}
+
+keycloak-widget .mb-1 {
+  margin-bottom: 0.25rem !important;
+}
+
+keycloak-widget .mb-2 {
+  margin-bottom: 0.5rem !important;
+}
+
+keycloak-widget .mb-4 {
+  margin-bottom: 1rem !important;
+}
+
+keycloak-widget .mb-6 {
+  margin-bottom: 1.5rem !important;
+}
+
+keycloak-widget .mr-2 {
+  margin-right: 0.5rem !important;
+}
+
+keycloak-widget .mr-3 {
+  margin-right: 0.75rem !important;
+}
+
+keycloak-widget .-ml-1 {
+  margin-left: -0.25rem !important;
+}
+
+/* Override WordPress spacing utilities */
+keycloak-widget .space-y-4 > * + * {
+  margin-top: 1rem !important;
+}
+
+keycloak-widget .gap-3 {
+  gap: 0.75rem !important;
+}
+
+/* Override WordPress inset positioning */
+keycloak-widget .inset-0 {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+}
+
+keycloak-widget .top-4 {
+  top: 1rem !important;
+}
+
+keycloak-widget .right-4 {
+  right: 1rem !important;
+}
+
+/* Override WordPress positioning */
+keycloak-widget .fixed {
+  position: fixed !important;
+}
+
+keycloak-widget .absolute {
+  position: absolute !important;
+}
+
+keycloak-widget .relative {
+  position: relative !important;
+}
+
+/* Override WordPress display */
+keycloak-widget .flex {
+  display: flex !important;
+}
+
+keycloak-widget .inline-block {
+  display: inline-block !important;
+}
+
+keycloak-widget .block {
+  display: block !important;
+}
+
+/* Override WordPress flex utilities */
+keycloak-widget .items-center {
+  align-items: center !important;
+}
+
+keycloak-widget .justify-center {
+  justify-content: center !important;
+}
+
+keycloak-widget .justify-between {
+  justify-content: space-between !important;
+}
+
+keycloak-widget .flex-col {
+  flex-direction: column !important;
+}
+
+/* Override WordPress text alignment */
+keycloak-widget .text-left {
+  text-align: left !important;
+}
+
+keycloak-widget .text-center {
+  text-align: center !important;
+}
+
+/* Override WordPress font sizes */
+keycloak-widget .text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+keycloak-widget .text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+keycloak-widget .text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+keycloak-widget .text-xl {
+  font-size: 1.25rem !important;
+  line-height: 1.75rem !important;
+}
+
+keycloak-widget .text-2xl {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+}
+
+/* Override WordPress font weights */
+keycloak-widget .font-medium {
+  font-weight: 500 !important;
+}
+
+keycloak-widget .font-bold {
+  font-weight: 700 !important;
+}
+
+/* Override WordPress rounded corners */
+keycloak-widget .rounded {
+  border-radius: 0.25rem !important;
+}
+
+keycloak-widget .rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+keycloak-widget .rounded-full {
+  border-radius: 9999px !important;
+}
+
+/* Override WordPress shadow */
+keycloak-widget .shadow-md {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+
+keycloak-widget .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Override WordPress opacity */
+keycloak-widget .opacity-25 {
+  opacity: 0.25 !important;
+}
+
+keycloak-widget .opacity-70 {
+  opacity: 0.7 !important;
+}
+
+keycloak-widget .opacity-75 {
+  opacity: 0.75 !important;
+}
+
+/* Override WordPress z-index */
+keycloak-widget .z-\[2000\] {
+  z-index: 2000 !important;
+}
+
+/* Override WordPress cursor */
+keycloak-widget .cursor-pointer {
+  cursor: pointer !important;
+}
+
+keycloak-widget .cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* Override WordPress pointer events */
+keycloak-widget button:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.7 !important;
+}
+
+/* Override WordPress line heights */
+keycloak-widget input,
+keycloak-widget button {
+  line-height: normal !important;
+}
+
+/* Override WordPress border widths */
+keycloak-widget .border {
+  border-width: 1px !important;
+}
+
+keycloak-widget .border-2 {
+  border-width: 2px !important;
+}
+
+keycloak-widget .border-4 {
+  border-width: 4px !important;
+}
+
+keycloak-widget .border-t {
+  border-top-width: 1px !important;
+}
+
+keycloak-widget .border-none {
+  border-style: none !important;
+}
+
+/* Override WordPress transitions */
+keycloak-widget .transition-colors {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+
+keycloak-widget .transition-all {
+  transition-property: all !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition-duration: 150ms !important;
+}
+
+keycloak-widget .duration-300 {
+  transition-duration: 300ms !important;
+}
+
+/* Override WordPress animations */
+keycloak-widget .animate-spin {
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Override WordPress transform scale */
+keycloak-widget .active\:scale-\[0\.98\]:active {
+  transform: scale(0.98) !important;
+}
+
+/* Override WordPress overflow */
+keycloak-widget .overflow-hidden {
+  overflow: hidden !important;
+}
+
+/* Ensure inputs and buttons maintain proper sizing */
+keycloak-widget input[type="text"],
+keycloak-widget input[type="password"],
+keycloak-widget input[type="email"],
+keycloak-widget button {
+  min-height: 2.5rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+/* Fix WordPress form element resets */
+keycloak-widget input,
+keycloak-widget button,
+keycloak-widget select,
+keycloak-widget textarea {
+  font-family: inherit !important;
+  font-size: inherit !important;
+}
+/* Additional comprehensive overrides - catch remaining utility classes */
+keycloak-widget .max-w-lg {
+  max-width: 32rem !important;
+}
+
+keycloak-widget .pr-2 {
+  padding-right: 0.5rem !important;
+}
+
+keycloak-widget .pr-11 {
+  padding-right: 2.75rem !important;
+}
+
+keycloak-widget .pl-3 {
+  padding-left: 0.75rem !important;
+}
+
+keycloak-widget .py-2\.5 {
+  padding-top: 0.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
+keycloak-widget .mb-1\.5 {
+  margin-bottom: 0.375rem !important;
+}
+
+keycloak-widget .mt-1\.5 {
+  margin-top: 0.375rem !important;
+}
+
+keycloak-widget .mr-1\.5 {
+  margin-right: 0.375rem !important;
+}
+
+keycloak-widget .rounded-md {
+  border-radius: 0.375rem !important;
+}
+
+keycloak-widget .text-\[13px\] {
+  font-size: 13px !important;
+}
+
+keycloak-widget .font-semibold {
+  font-weight: 600 !important;
+}
+
+keycloak-widget .italic {
+  font-style: italic !important;
+}
+
+keycloak-widget .-translate-y-1\/2 {
+  transform: translateY(-50%) !important;
+}
+
+keycloak-widget .top-1\/2 {
+  top: 50% !important;
+}
+
+keycloak-widget .right-2\.5 {
+  right: 0.625rem !important;
+}
+
+keycloak-widget .z-2 {
+  z-index: 2 !important;
+}
+
+keycloak-widget .pointer-events-auto {
+  pointer-events: auto !important;
+}
+
+keycloak-widget .appearance-none {
+  appearance: none !important;
+}
+
+keycloak-widget .outline-none {
+  outline: 2px solid transparent !important;
+  outline-offset: 2px !important;
+}
+
+keycloak-widget .flex-1 {
+  flex: 1 1 0% !important;
+}
+
+/* WordPress often overrides these critical styles, add higher specificity */
+keycloak-widget input[class*="flex-"],
+keycloak-widget select[class*="flex-"] {
+  flex: 1 1 0% !important;
+}
+
+keycloak-widget input[class*="w-"],
+keycloak-widget select[class*="w-"],
+keycloak-widget button[class*="w-"] {
+  width: 100% !important;
+}
+
+keycloak-widget input[class*="border"],
+keycloak-widget select[class*="border"] {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+keycloak-widget input[class*="rounded"],
+keycloak-widget select[class*="rounded"],
+keycloak-widget button[class*="rounded"] {
+  border-radius: inherit !important;
+}
+
+keycloak-widget input[class*="py-"],
+keycloak-widget select[class*="py-"],
+keycloak-widget button[class*="py-"] {
+  padding-top: inherit !important;
+  padding-bottom: inherit !important;
+}
+
+keycloak-widget input[class*="px-"],
+keycloak-widget select[class*="px-"],
+keycloak-widget button[class*="px-"] {
+  padding-left: inherit !important;
+  padding-right: inherit !important;
+}
+
+/* Ensure background colors work */
+keycloak-widget [class*="bg-white"] {
+  background-color: white !important;
+}
+
+keycloak-widget [class*="bg-gray"] {
+  background-color: inherit !important;
+}
+
+/* Focus states */
+keycloak-widget input:focus,
+keycloak-widget select:focus,
+keycloak-widget button:focus {
+  outline: none !important;
+}
+
+keycloak-widget .focus\:border-\[\#60a5fa\]:focus {
+  border-color: #60a5fa !important;
+}
+
+keycloak-widget .focus\:shadow-\[0_0_0_3px_rgba\(59\,130\,246\,0\.08\)\]:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08) !important;
+}
+
+/* Hover states */
+keycloak-widget .hover\:bg-gray-50:hover {
+  background-color: rgb(249 250 251) !important;
+}
+
+keycloak-widget .hover\:bg-\[\#138496\]:hover {
+  background-color: #138496 !important;
+}
+
+keycloak-widget .hover\:text-gray-600:hover {
+  color: rgb(75 85 99) !important;
+}
+
+keycloak-widget .hover\:text-gray-700:hover {
+  color: rgb(55 65 81) !important;
+}
+
+keycloak-widget .hover\:text-blue-700:hover {
+  color: rgb(29 78 216) !important;
+}
+
+/* Enabled states */
+keycloak-widget .enabled\:bg-\[\#17a2b8\]:enabled {
+  background-color: #17a2b8 !important;
+}
+
+keycloak-widget .enabled\:bg-\[\#a24796\]:enabled {
+  background-color: #a24796 !important;
+}
+
+/* Disabled states */
+keycloak-widget .disabled\:opacity-70:disabled {
+  opacity: 0.7 !important;
+}
+
+keycloak-widget .disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed !important;
+}
+
+/* Important: Override any WordPress link/button/input resets */
+keycloak-widget a,
+keycloak-widget button,
+keycloak-widget input,
+keycloak-widget select,
+keycloak-widget textarea {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  font: inherit !important;
+  vertical-align: baseline !important;
+}
+
+/* Then restore our styles via utility classes */
+keycloak-widget [class] {
+  all: unset !important;
+  display: revert !important;
+}
+
+keycloak-widget *[class*="flex"],
+keycloak-widget *[class*="block"],
+keycloak-widget *[class*="inline"],
+keycloak-widget *[class*="grid"] {
+  all: revert !important;
+}

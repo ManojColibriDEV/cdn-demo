@@ -95,7 +95,7 @@ const LoginModal: FC<LoginModalProps> = ({ open, isShowToggle, onClose, authorit
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#61616187] flex items-center justify-center z-[2000]" ref={overlayRef} onMouseDown={onOverlayClick}>
+    <div className="fixed inset-0 bg-[#6161612c] flex items-center justify-center z-[2000]" ref={overlayRef} onMouseDown={onOverlayClick}>
       <div
         className={
           activeTab === "signup" ? "w-[800px] bg-white rounded-[14px] py-5 px-7 shadow-[0_10px_30px_rgba(0,0,0,0.35)] font-brandon max-h-[calc(100vh-60px)] overflow-y-auto" : "w-[520px] bg-white rounded-[14px] py-5 px-7 shadow-[0_10px_30px_rgba(0,0,0,0.35)] font-brandon max-h-[calc(100vh-60px)] overflow-y-auto"
