@@ -37,8 +37,6 @@ export function setAuthCookie(name: string, value: string, expiresInSeconds: num
   const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
 
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
-
-  console.log(`[Cookie] Set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
 }
 
 /**

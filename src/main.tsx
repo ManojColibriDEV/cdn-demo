@@ -3,57 +3,26 @@ import { BrowserRouter } from 'react-router-dom';
 import { createRoot, Root } from 'react-dom/client';
 import './index.css';
 import App from './App';
-import { resolveAuthority } from './utils/authorityResolver';
-import keycloak from './auth/keycloak'
-import { ReactKeycloakProvider } from '@react-keycloak/web'
-import { saveTokens, getTokens, clearTokens } from './utils/tokenStorage'
-
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
-if (renderMode === 'TEST') {
-  // Try to restore tokens from localStorage before initialization
-  const storedTokens = getTokens();
-  
-  if (storedTokens.token && storedTokens.refreshToken) {
-    console.log('[Main] Restoring tokens from localStorage');
-    keycloak.token = storedTokens.token;
-    keycloak.refreshToken = storedTokens.refreshToken;
-    keycloak.idToken = storedTokens.idToken || undefined;
-  }
+console.log('[main.tsx] VITE_RENDER_MODE:', renderMode);
+console.log('[main.tsx] All env vars:', import.meta.env);
 
+if (renderMode === 'TEST') {
   // Standalone testing mode with BrowserRouter
+  console.log('[main.tsx] Rendering in TEST mode');
   createRoot(document.getElementById('root')!).render(
-    <ReactKeycloakProvider 
-      authClient={keycloak}
-      initOptions={{
-        onLoad: 'check-sso',
-        checkLoginIframe: false,
-        pkceMethod: 'S256',
-        enableLogging: true,
-        token: storedTokens.token || undefined,
-        refreshToken: storedTokens.refreshToken || undefined,
-        idToken: storedTokens.idToken || undefined,
-      }}
-      onTokens={(tokens) => {
-        if (tokens.token) {
-          saveTokens(tokens.token, tokens.refreshToken, tokens.idToken);
-        }
-      }}
-      onEvent={(event, error) => {
-        console.log('[Keycloak Event]:', event, error);
-        if (event === 'onAuthRefreshError' || event === 'onAuthLogout') {
-          console.log('[Keycloak] Clearing stored tokens');
-          clearTokens();
-        }
-      }}
-    >
-      <BrowserRouter>
-        <StrictMode>
-          <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/"  authMode="embedded" />
-        </StrictMode>
-      </BrowserRouter>
-    </ReactKeycloakProvider>
+    <BrowserRouter>
+      <StrictMode>
+        <App 
+          authority="dev" 
+          subsidiary="elite" 
+          isShowToggle={"true"} 
+          callbackUrl="http://localhost:5173/"
+        />
+      </StrictMode>
+    </BrowserRouter>
   );
 } else {
   // Web Component mode for production deployment
@@ -62,7 +31,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "theme", "callbackUrl", "isShowToggle", "authMode"];
+      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle"];
     }
 
     connectedCallback() {
@@ -103,15 +72,12 @@ if (renderMode === 'TEST') {
 
     private getProps() {
       return {
-        authority: resolveAuthority(this.getAttribute("authority")),
+        authority: this.getAttribute("authority") || "dev",
         subsidiary: this.getAttribute("subsidiary") || "allied",
-        theme: this.getAttribute("theme") || "light",
         isShowToggle: this.getAttribute("isShowToggle") || "true",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         redirectUrl: this.getAttribute("redirectUrl") || ``,
-        authMode: (this.getAttribute("authMode") as 'popup' | 'redirect' | 'embedded') || 'popup',
         onRedirect: this.handleRedirect,
-
       };
     }
 
@@ -122,57 +88,20 @@ if (renderMode === 'TEST') {
         this.root = createRoot(this.mountPoint);
       }
 
-      // Try to restore tokens from localStorage before initialization
-      const storedTokens = getTokens();
-      if (storedTokens.token && storedTokens.refreshToken) {
-        console.log('[Main] Restoring tokens from localStorage');
-        keycloak.token = storedTokens.token;
-        keycloak.refreshToken = storedTokens.refreshToken;
-        keycloak.idToken = storedTokens.idToken || undefined;
-      }
+      const props = this.getProps();
 
       this.root.render(
-        <ReactKeycloakProvider 
-          authClient={keycloak}
-          initOptions={{
-            onLoad: 'check-sso',
-            checkLoginIframe: false,
-            pkceMethod: 'S256',
-            enableLogging: true,
-            token: storedTokens.token || undefined,
-            refreshToken: storedTokens.refreshToken || undefined,
-            idToken: storedTokens.idToken || undefined,
-          }}
-          onTokens={(tokens) => {
-            console.log('[Keycloak] Tokens received:', { 
-              hasAccessToken: !!tokens.token, 
-              hasRefreshToken: !!tokens.refreshToken 
-            });
-            if (tokens.token) {
-              console.log('[Keycloak] Saving tokens to localStorage');
-              saveTokens(tokens.token, tokens.refreshToken, tokens.idToken);
-            }
-          }}
-          onEvent={(event, error) => {
-            console.log('[Keycloak Event]:', event, error);
-            if (event === 'onAuthRefreshError' || event === 'onAuthLogout') {
-              console.log('[Keycloak] Clearing stored tokens');
-              clearTokens();
-            }
-          }}
-        >
+        <BrowserRouter>
           <StrictMode>
-            <BrowserRouter>
-              <App {...this.getProps()} />
-            </BrowserRouter>
+            <App {...props} />
           </StrictMode>
-        </ReactKeycloakProvider>
+        </BrowserRouter>
       );
     }
   }
 
-  // Register web component
-  if (!customElements.get("keycloak-widget")) {
-    customElements.define("keycloak-widget", KeycloakWidget);
-  }
+  customElements.define("keycloak-widget", KeycloakWidget);
 }
+
+
+

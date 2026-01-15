@@ -1,10 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from '@tailwindcss/vite'
+import { cssInjectedByJsPlugin } from './src/tools/vite-plugin-css-injector';
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
   server: {
     proxy: {
       "/api": {
@@ -35,21 +36,30 @@ export default defineConfig({
   },
   define: {
     "process.env.NODE_ENV": '"production"',
+    // Force WEBCOMPONENT mode for production builds
+    ...(mode === 'production' && {
+      "import.meta.env.VITE_RENDER_MODE": '"WEBCOMPONENT"'
+    }),
     process: {},
   },
   build: {
     cssCodeSplit: false,
     lib: {
       entry: "src/main.tsx",
-      name: "KeycloakWidget",
-      formats: ["umd"],
-      fileName: () => "keycloak-widget.umd.js",
+      name: "ColibriIdentityWidget",
+      formats: ["es", "umd"],
+      fileName: (format) => `keycloak-widget.${format}.js`,
     },
     rollupOptions: {
       external: [],
       output: {
         globals: {},
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name === 'style.css') return 'keycloak-widget.css';
+          return assetInfo.name || 'asset';
+        },
+        inlineDynamicImports: true,
       },
     },
   },
-});
+}));

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login Success</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+      background: #f5f5f5;
+    }
+    .success-box {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .success-icon {
+      font-size: 64px;
+      color: #4CAF50;
+      margin-bottom: 20px;
+    }
+    .token-info {
+      background: #f9f9f9;
+      padding: 20px;
+      border-radius: 4px;
+      margin-top: 20px;
+      text-align: left;
+    }
+    pre {
+      overflow-x: auto;
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <h1>Login Successful!</h1>
+    <p>You have been authenticated successfully using @colibri/identity-widget</p>
+
+    <div class="token-info">
+      <h3>Stored User Information:</h3>
+      <div id="user-info"></div>
+    </div>
+
+    <button onclick="logout()" style="margin-top: 20px; padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      Logout
+    </button>
+  </div>
+
+  <script>
+    // Display stored user information
+    const decoded = JSON.parse(localStorage.getItem('decoded') || '{}');
+    const userState = localStorage.getItem('user_state');
+    
+    const userInfoDiv = document.getElementById('user-info');
+    userInfoDiv.innerHTML = `
+      <p><strong>User State:</strong> ${userState}</p>
+      <p><strong>Token Data:</strong></p>
+      <pre>${JSON.stringify(decoded, null, 2)}</pre>
+    `;
+
+    function logout() {
+      localStorage.clear();
+      sessionStorage.clear();
+      // Clear cookies
+      document.cookie.split(";").forEach(c => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      window.location.href = 'test-npm-package.html';
+    }
+
+    console.log('User session data:', {
+      decoded,
+      userState,
+      cookies: document.cookie
+    });
+  </script>
+</body>
+</html>

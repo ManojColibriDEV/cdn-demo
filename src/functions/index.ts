@@ -1,87 +1,7 @@
-import { updatePasswordObtainToken } from "../services/index";
-import { signIn } from "../auth/oidcService";
-import { resolveAuthority } from "../utils/authorityResolver";
 import type {
-  HandleSubmitProps,
-  HandleUpdatePasswordProps,
   UpgradeUser,
   PasswordChecks,
 } from "../types/index";
-
-/**
- * Handle login form submission - triggers SSO popup authorization code flow
- */
-export const handleSubmit = async (props: HandleSubmitProps): Promise<any> => {
-  const { e, authority, setLoginError, setLoginLoading } = props;
-  e.preventDefault();
-  setLoginError(null);
-  setLoginLoading(true);
-  
-  try {
-    // Get authority from localStorage if not provided, then resolve it
-    const storedAuthority = authority || localStorage.getItem("authority");
-    const auth = resolveAuthority(storedAuthority);
-    
-    // Trigger SSO login with popup (returns user session directly)
-    const userSession = await signIn(auth);
-    setLoginLoading(false);
-    return userSession;
-  } catch (err) {
-    const e = err as { message?: string };
-    setLoginError(e?.message || "Sign in failed");
-    setLoginLoading(false);
-    throw err;
-  }
-};
-
-/**
- * Handle password update during upgrade flow
- * Submits new password and obtains OAuth token
- */
-export const handleUpdatePassword = async (
-  props: HandleUpdatePasswordProps
-): Promise<void> => {
-  const {
-    e,
-    newPassword,
-    upgradeUser,
-    setLoginLoading,
-    setLoginError,
-    navigate,
-  } = props;
-  setLoginLoading(true);
-  e.preventDefault();
-  const payload = {
-    username: upgradeUser?.email,
-    password: newPassword,
-    passwordUpgradeMode: true,
-    studentId: upgradeUser?.studentId,
-  };
-  try {
-    const resp = await updatePasswordObtainToken(payload);
-    if (resp && resp?.status === "FAILED") {
-      setLoginError(resp?.message || "Sign in failed");
-      setLoginLoading(false);
-      return;
-    }
-    // If backend requires password upgrade, show upgrade UI
-    if (resp && resp?.redirect_url) {
-      setLoginLoading(false);
-      navigate(resp.redirect_url);
-      return;
-    }
-  } catch (err) {
-    console.error("Sign in failed", err);
-    const e = err as {
-      response?: { data?: { message?: string; error_description?: string } };
-      message?: string;
-    };
-    const backendMsg =
-      e?.response?.data?.message || e?.response?.data?.error_description;
-    setLoginError(backendMsg || e?.message || "Sign in failed");
-    setLoginLoading(false);
-  }
-};
 
 /**
  * Validate new password against security rules
@@ -155,11 +75,22 @@ export function onlyLetters(input: string): string {
 
 export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
   try {
-    // Try localStorage first (since cookie might be HttpOnly)
-    const token = localStorage.getItem('decoded') ? JSON.parse(localStorage.getItem('decoded') || '{}') : {};
+    // Check if X-Credential cookie exists
+    const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith('X-Credential='));
+    if (!xCredCookie) {
+      return false;
+    }
+
+    // Check if token exists and is valid
+    const decodedStr = localStorage.getItem('decoded');
+    if (!decodedStr) {
+      return false;
+    }
+
+    const token = JSON.parse(decodedStr);
     const currentTime = Math.floor(Date.now() / 1000);
 
-
+    // Check if token is expired
     if (!token.exp || currentTime >= token.exp) {
       return false;
     }
@@ -169,6 +100,7 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
     }
     return true;
   } catch (error) {
+    console.error('[checkTokenAndRedirect] Error:', error);
     return false;
   }
 }

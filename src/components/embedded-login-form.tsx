@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useKeycloak } from "@react-keycloak/web";
 import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
@@ -22,7 +21,6 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
   const [showPassword, setShowPassword] = useState(false);
   const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const { keycloak, initialized } = useKeycloak();
 
   // Validate password whenever it changes
   useEffect(() => {
@@ -52,41 +50,6 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
-
-  useEffect(() => {
-    // Handle successful SSO authentication
-    if (initialized && keycloak?.authenticated && keycloak.token) {
-      const decoded: any = jwtDecode(keycloak.token);
-      const expiresIn = (keycloak.tokenParsed?.exp || 0) - Math.floor(Date.now() / 1000);
-
-      console.log('[EmbeddedLogin] SSO authentication successful, saving tokens...');
-
-      // Set access_token as cookie
-      setAuthCookie('access_token', keycloak.token, expiresIn);
-
-      // Store in localStorage
-      localStorage.setItem('user_state', 'authenticated');
-      localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-
-      // Store X-Credential from JWT if present
-      if (decoded.x_credentials) {
-        localStorage.setItem('X-Credential', decoded.x_credentials);
-        setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
-        console.log('[EmbeddedLogin] X-Credential saved:', decoded.x_credentials);
-      }
-
-      const userSession = {
-        access_token: keycloak.token,
-        refresh_token: keycloak.refreshToken,
-        id_token: keycloak.idToken,
-        userInfo: keycloak.tokenParsed,
-        tokens: { access_token: keycloak.token }
-      };
-
-      console.log('[EmbeddedLogin] SSO login complete, calling onSuccess');
-      onSuccess(userSession);
-    }
-  }, [initialized, keycloak?.authenticated, keycloak?.token, onSuccess]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
@@ -151,7 +114,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
       <div className="bg-white! rounded-lg! shadow-lg! p-8! w-full! max-w-lg! relative!">
         <button
           onClick={onClose}
-          className="absolute! top-4! right-4! text-gray-400 hover:text-gray-600 transition-colors! bg-transparent! border-none! "
+          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! "
           type="button"
         >
           <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,7 +123,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
         </button>
 
         <div className="mb-6! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! md:0!">Continue to login</h2>
+          <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">Continue to login</h2>
           <p className="text-sm! text-gray-600! mt-2!">Continue by signing in.</p>
         </div>
 
@@ -231,7 +194,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
           <Button
             type="submit"
             disabled={loading || !username || !password || !isPasswordValid}
-            className="w-full! bg-[#17a2b8]! enabled:bg-[#17a2b8]! hover:bg-[#138496]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">

@@ -1,0 +1,35 @@
+# Source files
+src/
+public/
+docs/
+
+# Config files
+*.config.js
+*.config.ts
+tsconfig*.json
+eslint.config.js
+tailwind.config.js
+
+# Build files
+node_modules/
+.vscode/
+.git/
+*.log
+
+# Test files
+widget-test.html
+*.test.*
+*.spec.*
+
+# Documentation (except README)
+*.md
+!README.md
+
+# AWS/Deployment configs
+buildspec.yml
+AWS-CODEBUILD-SETUP.md
+BLOOM-DEPLOYMENT.md
+KEYCLOAK-IFRAME-SETUP.md
+
+# Development only
+index.html
