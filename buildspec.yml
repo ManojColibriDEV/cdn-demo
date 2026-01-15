@@ -41,14 +41,13 @@ phases:
       - aws s3 sync ./dist s3://$WIDGET_BUCKET_NAME/ --delete --cache-control "max-age=60"
       - echo "Creating CloudFront invalidation..."
       - INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*" --query 'Invalidation.Id' --output text)
-      - echo "CloudFront invalidation created - ID: $INVALIDATION_ID"
+      - echo "CloudFront invalidation created - ID - $INVALIDATION_ID"
       - echo "Deployment completed successfully on $(date)"
 
 artifacts:
   files:
     - '**/*'
   base-directory: dist
-  name: iam-widget-$ENVIRONMENT-$(date +%Y%m%d-%H%M%S)
 
 cache:
   paths:
