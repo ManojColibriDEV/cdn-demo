@@ -1,7 +1,6 @@
 import axios from "axios";
 import type {
   CheckMigrationStatusResponse,
-  LoginResponse,
   CheckAvailableEmailResponse,
   TenantDetailsResponse
 } from "../types/index";
@@ -108,42 +107,6 @@ export const checkMigrationStatus = async (
   } catch (error) {
     console.error("Error checking migration status:", error);
     return null;
-  }
-};
-
-/**
- * Obtain OAuth token using username and password
- */
-export const obtainToken = async (
-  username: string,
-  password: string
-): Promise<LoginResponse> => {
-  const url = apiUrl("/api/oauthproxy/token");
-  const payload = { username, password, grant_type: "password" };
-  try {
-    // eslint-disable-next-line no-console
-    const response = await axios.post<LoginResponse>(url, payload);
-    return response.data;
-  } catch (error) {
-    console.error("Error obtaining token:", error);
-    throw error;
-  }
-};
-
-/**
- * Update password and obtain token in upgrade mode
- */
-export const updatePasswordObtainToken = async (
-  payload: Record<string, unknown>
-): Promise<LoginResponse> => {
-  const url = apiUrl("/api/oauthproxy/token");
-  try {
-    // eslint-disable-next-line no-console
-    const response = await axios.post<LoginResponse>(url, payload);
-    return response.data;
-  } catch (error) {
-    console.error("Error obtaining token:", error);
-    throw error;
   }
 };
 

@@ -1,24 +1,56 @@
 {
-  "name": "login-widget",
-  "private": true,
-  "version": "0.0.0",
+  "name": "@colibri/identity-widget",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Embedded authentication widget for Colibri Identity platform",
   "type": "module",
+  "main": "./dist/keycloak-widget.umd.js",
+  "module": "./dist/keycloak-widget.es.js",
+  "types": "./dist/main.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "import": "./dist/keycloak-widget.es.js",
+      "require": "./dist/keycloak-widget.umd.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "authentication",
+    "identity",
+    "login",
+    "widget",
+    "web-component",
+    "react",
+    "colibri"
+  ],
+  "author": "Colibri",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ManojColibriDEV/cdn-demo"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
     "build:dev": "vite build",
     "build:test": "vite build",
     "build:stage": "vite build",
     "build:prod": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@react-keycloak/web": "^3.4.0",
+    "@colibri/identity-widget": "file:colibri-identity-widget-1.0.0.tgz",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
     "jwt-decode": "^4.0.0",
-    "keycloak-js": "^26.2.2",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router": "^7.10.1",
