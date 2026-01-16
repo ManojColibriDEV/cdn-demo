@@ -134,13 +134,13 @@ const EmbeddedLoginForm = ({
           </svg>
         </button>
 
-        <div className="mb-6! text-center!">
+        <div className="mb-3! text-center!">
           <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
-          <p className="text-sm! text-gray-600! mt-2!">{subtitle}</p>
+          <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4!">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-2!">
+          <div className="mt-0! ml-0! mb-4! mr-0!">
             <label htmlFor="username" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
               Email Address or Username
             </label>
@@ -156,7 +156,7 @@ const EmbeddedLoginForm = ({
             />
           </div>
 
-          <div>
+          <div className="mt-0! ml-0! mb-0! mr-0!">
             <label htmlFor="password" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
               Password
             </label>
@@ -197,7 +197,7 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div className="flex! items-center! justify-between! text-sm! mt-2!">
+          <div className="flex! items-center! justify-between! text-sm! mt-4! ml-0! mb-4! mr-0!">
             <label className="flex! items-center!">
               <input
                 type="checkbox"

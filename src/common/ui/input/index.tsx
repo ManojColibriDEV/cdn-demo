@@ -28,7 +28,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
         {isSelect ? (
           <select 
             ref={ref as any} 
-            className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? 'border-[#d64545]' : 'border-[#cbd5d5]'} rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
+            className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? 'border-[#d64545]!' : 'border-[#cbd5d5]!'} rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
             {...(rest as any)}
           >
             {options && options.map(o => (
@@ -38,7 +38,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
         ) : (
           <input 
             ref={ref} 
-            className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? 'border-[#d64545]' : 'border-[#cbd5d5]'} rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
+            className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? 'border-[#d64545]!' : 'border-[#cbd5d5]!'} rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
             {...(rest as any)} 
           />
         )}
