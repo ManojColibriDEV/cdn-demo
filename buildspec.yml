@@ -33,10 +33,6 @@ phases:
   post_build:
     commands:
       - echo "Post-build started on $(date)"
-      - echo "Assuming cross-account role for deployment..."
-      - eval $(aws sts assume-role --role-arn $CROSS_ACCOUNT_ROLE_ARN --role-session-name codebuild-iam-widget | jq -r '.Credentials | @sh "export AWS_SESSION_TOKEN=\(.SessionToken)\nexport AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)"')
-      - echo "Confirming assumed role..."
-      - aws sts get-caller-identity
       - echo "Deploying to S3 bucket $WIDGET_BUCKET_NAME..."
       - aws s3 sync ./dist s3://$WIDGET_BUCKET_NAME/ --delete --cache-control "max-age=60"
       - echo "Creating CloudFront invalidation..."
