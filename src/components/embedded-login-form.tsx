@@ -197,8 +197,8 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div className="flex! items-center! justify-between! text-sm! mt-4! ml-0! mb-4! mr-0!">
-            <label className="flex! items-center!">
+          <div className="flex! items-center! justify-between! text-sm! h-0! mt-5! ml-0! mb-5! mr-0!">
+            <label className="flex! items-center! m-0!">
               <input
                 type="checkbox"
                 checked={rememberMe}
