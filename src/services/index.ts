@@ -41,9 +41,21 @@ export const authLogin = async (
   try {
     const response = await axios.post(url, payload);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error during auth login:", error);
-    throw error;
+    
+    // Extract error message from response
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 401) {
+      throw new Error("Invalid credentials");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error("Authentication failed");
   }
 };
 

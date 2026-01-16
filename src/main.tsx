@@ -31,7 +31,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle"];
+      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle"];
     }
 
     connectedCallback() {
@@ -77,6 +77,8 @@ if (renderMode === 'TEST') {
         isShowToggle: this.getAttribute("isShowToggle") || "true",
         callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
         redirectUrl: this.getAttribute("redirectUrl") || ``,
+        loginTitle: this.getAttribute("loginTitle") || undefined,
+        loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
         onRedirect: this.handleRedirect,
       };
     }
