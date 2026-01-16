@@ -13,11 +13,12 @@ const App = (props: {
   callbackUrl: string;
   redirectUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
+  loginTitle?: string;
+  loginSubtitle?: string;
 }) => {
   const { authority, subsidiary, callbackUrl, onRedirect } = props;
 
   const [open, setOpen] = useState(false);
-  const [loginError, setLoginError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
@@ -61,7 +62,7 @@ const App = (props: {
   };
 
   const handleEmbeddedLoginError = (error: string) => {
-    setLoginError(error);
+    console.log("[App] Embedded login error:", error);
   };
 
   const handleLogout = () => {
@@ -74,14 +75,9 @@ const App = (props: {
     <Routes>
       <Route path="*" element={
         <div className="max-w-7xl! mx-auto! p-8! text-center!">
-          {loginError && (
-            <div className="mb-4! p-4! bg-red-50 border! border-red-200 rounded-lg! text-red-600">
-              {loginError}
-            </div>
-          )}
 
           {/* Show logout button if authenticated */}
-          {isAuthenticated && (
+          {isAuthenticated && false && (
             <div className="mb-4!">
               <p className="mb-2! text-gray-700">You are logged in!</p>
               <Button
@@ -101,6 +97,8 @@ const App = (props: {
                   onError={handleEmbeddedLoginError}
                   onClose={() => setOpen(false)}
                   authority={authority}
+                  title={props.loginTitle}
+                  subtitle={props.loginSubtitle}
                 />
               ) : (
                 <Button

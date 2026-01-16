@@ -12,14 +12,24 @@ interface EmbeddedLoginFormProps {
   onError: (error: string) => void;
   onClose: () => void;
   authority?: string;
+  title?: string;
+  subtitle?: string;
 }
 
-const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormProps) => {
+const EmbeddedLoginForm = ({
+  onSuccess,
+  onError,
+  onClose,
+  title = "Continue to login",
+  subtitle = "Continue by signing in."
+}: EmbeddedLoginFormProps) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [rememberMe, setRememberMe] = useState(true); // Checked by default
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // Validate password whenever it changes
@@ -61,23 +71,23 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
     e.preventDefault();
 
     if (!username || !password) {
+      setErrorMessage("Please enter both username and password");
       onError("Please enter both username and password");
       return;
     }
 
     setLoading(true);
+    setErrorMessage(""); // Clear previous errors
 
     try {
 
       // Use the service function
       const { tokens } = await authLogin(username, password);
-      console.log('[EmbeddedLogin] Login successful:', tokens);
 
       // Store tokens if provided
       if (tokens.access_token) {
         const decoded: any = jwtDecode(tokens.access_token);
         const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
-        console.log("decoded", decoded)
 
         // Set cookies
         setAuthCookie('access_token', tokens.access_token, expiresIn);
@@ -99,7 +109,9 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
       onSuccess(tokens);
     } catch (error) {
       console.error('[EmbeddedLogin] Login failed:', error);
-      onError(error instanceof Error ? error.message : 'Authentication failed');
+      const errorMsg = error instanceof Error ? error.message : 'Authentication failed';
+      setErrorMessage(errorMsg);
+      onError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -123,8 +135,8 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
         </button>
 
         <div className="mb-6! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">Continue to login</h2>
-          <p className="text-sm! text-gray-600! mt-2!">Continue by signing in.</p>
+          <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
+          <p className="text-sm! text-gray-600! mt-2!">{subtitle}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4!">
@@ -153,12 +165,16 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrorMessage(""); // Clear error when user types
+                }}
                 placeholder="Enter Password..."
                 disabled={loading}
-              className="w-full!"
-              autoComplete="current-password"
-              endIcon={
+                className="w-full!"
+                autoComplete="current-password"
+                error={errorMessage}
+                endIcon={
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
@@ -181,19 +197,24 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
             </div>
           </div>
 
-          {false && <div className="flex! items-center! justify-between! text-sm!">
+          <div className="flex! items-center! justify-between! text-sm! mt-2!">
             <label className="flex! items-center!">
-              <input type="checkbox" className="mr-2! rounded! border-gray-300" />
-              <span className="text-gray-600">Remember me</span>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="mr-2! rounded! border-gray-300!"
+              />
+              <span className="text-gray-600!">Remember me</span>
             </label>
-            <a href="#" className="text-blue-600! hover:text-blue-700!">
+            {false && <a href="#" className="text-blue-600! hover:text-blue-700! no-underline!">
               Forgot Password?
-            </a>
-          </div>}
+            </a>}
+          </div>
 
           <Button
             type="submit"
-            disabled={loading || !username || !password || !isPasswordValid}
+            disabled={loading || !username || !password || !isPasswordValid || !rememberMe}
             className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
           >
             {loading ? (
@@ -210,7 +231,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose }: EmbeddedLoginFormPro
           </Button>
 
           {/* Divider */}
-          {false && <div className="relative! my-6!">
+          {false && <div className="relative!">
             <div className="absolute! inset-0! flex! items-center!">
               <div className="w-full! border-t! border-gray-300"></div>
             </div>
