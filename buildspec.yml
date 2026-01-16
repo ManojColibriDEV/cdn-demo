@@ -35,9 +35,11 @@ phases:
       - echo "Post-build started on $(date)"
       - echo "Deploying to S3 bucket $WIDGET_BUCKET_NAME..."
       - aws s3 sync ./dist s3://$WIDGET_BUCKET_NAME/ --delete --cache-control "max-age=60"
+      - echo "S3 deployment completed"
+      - echo "Assuming cross-account role for CloudFront invalidation..."
+      - eval $(aws sts assume-role --role-arn $CROSS_ACCOUNT_ROLE_ARN --role-session-name codebuild-iam-widget | jq -r '.Credentials | @sh "export AWS_SESSION_TOKEN=\(.SessionToken)\nexport AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)"')
       - echo "Creating CloudFront invalidation..."
-      - INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*" --query 'Invalidation.Id' --output text)
-      - echo "CloudFront invalidation created - ID - $INVALIDATION_ID"
+      - AWS_MAX_ATTEMPTS=10 aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
       - echo "Deployment completed successfully on $(date)"
 
 artifacts:
