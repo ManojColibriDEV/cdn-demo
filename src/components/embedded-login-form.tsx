@@ -197,7 +197,7 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div className="flex! items-center! justify-between! text-sm! h-0! mt-5! ml-0! mb-5! mr-0!">
+          <div className="flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!">
             <label className="flex! items-center! m-0!">
               <input
                 type="checkbox"
