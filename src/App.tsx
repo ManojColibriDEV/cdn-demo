@@ -13,7 +13,7 @@ const App = (props: {
   loginTitle?: string;
   loginSubtitle?: string;
   showLogin?: boolean;
-  onClose?: () => void;
+  handleClose?: () => void;
 }) => {
   const { authority, subsidiary, callbackUrl, onRedirect } = props;
 
@@ -40,8 +40,8 @@ const App = (props: {
   }, [authority, subsidiary, callbackUrl]);
 
   const handleEmbeddedLoginSuccess = (userSession: any) => {
-    if (props.onClose) {
-      props.onClose();
+    if (props.handleClose) {
+      props.handleClose();
     }
     setIsAuthenticated(true);
 
@@ -62,8 +62,8 @@ const App = (props: {
   };
 
   const handleClose = () => {
-    if (props.onClose) {
-      props.onClose();
+    if (props.handleClose) {
+      props.handleClose();
     }
   };
 
@@ -76,7 +76,7 @@ const App = (props: {
             <EmbeddedLoginForm
               onSuccess={handleEmbeddedLoginSuccess}
               onError={handleEmbeddedLoginError}
-              onClose={handleClose}
+              handleClose={handleClose}
               authority={authority}
               title={props.loginTitle}
               subtitle={props.loginSubtitle}

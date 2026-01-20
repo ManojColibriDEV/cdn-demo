@@ -11,7 +11,7 @@ import CreateAccountForm from "./create-account-form";
 interface EmbeddedLoginFormProps {
   onSuccess: (userSession: any) => void;
   onError: (error: string) => void;
-  onClose: () => void;
+  handleClose: () => void;
   authority?: string;
   title?: string;
   subtitle?: string;
@@ -20,7 +20,7 @@ interface EmbeddedLoginFormProps {
 const EmbeddedLoginForm = ({
   onSuccess,
   onError,
-  onClose,
+  handleClose,
   authority,
   title = "Continue to login",
   subtitle = "Continue by signing in."
@@ -58,15 +58,15 @@ const EmbeddedLoginForm = ({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [handleClose]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -129,7 +129,7 @@ const EmbeddedLoginForm = ({
           onSuccess(userSession);
         }}
         onError={onError}
-        onClose={onClose}
+        handleClose={handleClose}
         onSignIn={() => setShowCreateAccount(false)}
         authority={authority}
       />
@@ -144,7 +144,7 @@ const EmbeddedLoginForm = ({
     >
       <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
           type="button"
         >

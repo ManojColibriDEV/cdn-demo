@@ -7,7 +7,7 @@ import type { PasswordChecks } from "../types";
 interface CreateAccountFormProps {
   onSuccess: (userSession: any) => void;
   onError: (error: string) => void;
-  onClose: () => void;
+  handleClose: () => void;
   onSignIn: () => void;
   authority?: string;
   title?: string;
@@ -17,7 +17,7 @@ interface CreateAccountFormProps {
 const CreateAccountForm = ({
   onSuccess,
   onError,
-  onClose,
+  handleClose,
   onSignIn,
   title = "Create your account",
   subtitle = "Create an account to continue to checkout"
@@ -62,15 +62,15 @@ const CreateAccountForm = ({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [handleClose]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -122,7 +122,7 @@ const CreateAccountForm = ({
     >
       <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none!"
           type="button"
         >

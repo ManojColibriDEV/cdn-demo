@@ -94,7 +94,7 @@ if (renderMode === 'TEST') {
         loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
         showLogin: this.getAttribute("show-login") === "true",
         onRedirect: this.handleRedirect,
-        onClose: this.handleClose,
+        handleClose: this.handleClose,
       };
     }
 
