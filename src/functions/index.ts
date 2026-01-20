@@ -20,7 +20,7 @@ export function validatePassword(
     number: /[0-9]/.test(pw),
     noSpaces: !/\s/.test(pw),
     noTriple: !/(.)\1\1/.test(pw),
-    special: /[!@#$%^&*\-_.]/.test(pw) && /^[A-Za-z0-9!@#$%^&*\-_.]+$/.test(pw),
+    special: /[@.$%^_\-]/.test(pw) && /^[A-Za-z0-9@.$%^_\-]+$/.test(pw),
     noNameParts: true,
     noEmailParts: true,
   };
