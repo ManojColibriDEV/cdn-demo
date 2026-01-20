@@ -1,49 +1,51 @@
 import { useState, useRef, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
-import { authLogin } from "../services";
 import { validatePassword } from "../functions";
 import type { PasswordChecks } from "../types";
-import { setAuthCookie } from "../utils/cookieHelper";
-import CreateAccountForm from "./create-account-form";
 
-interface EmbeddedLoginFormProps {
+interface CreateAccountFormProps {
   onSuccess: (userSession: any) => void;
   onError: (error: string) => void;
   onClose: () => void;
+  onSignIn: () => void;
   authority?: string;
   title?: string;
   subtitle?: string;
 }
 
-const EmbeddedLoginForm = ({
+const CreateAccountForm = ({
   onSuccess,
   onError,
   onClose,
-  authority,
-  title = "Continue to login",
-  subtitle = "Continue by signing in."
-}: EmbeddedLoginFormProps) => {
-  const [username, setUsername] = useState("");
+  onSignIn,
+  title = "Create your account",
+  subtitle = "Create an account to continue to checkout"
+}: CreateAccountFormProps) => {
+  const [email, setEmail] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [rememberMe, setRememberMe] = useState(true); // Checked by default
-  const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [touched, setTouched] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // Validate password whenever it changes
   useEffect(() => {
     if (password) {
-      const checks = validatePassword(password, null);
+      const userData = email || firstName || lastName ? {
+        email: email,
+        displayName: `${firstName} ${lastName}`.trim()
+      } : null;
+      const checks = validatePassword(password, userData);
       setPasswordChecks(checks);
     } else {
       setPasswordChecks(null);
     }
-  }, [password]);
+  }, [password, email, firstName, lastName]);
 
   // Check if all password requirements are met
   const isPasswordValid = passwordChecks
@@ -53,7 +55,9 @@ const EmbeddedLoginForm = ({
     passwordChecks.number &&
     passwordChecks.noSpaces &&
     passwordChecks.noTriple &&
-    passwordChecks.special
+    passwordChecks.special &&
+    passwordChecks.noNameParts &&
+    passwordChecks.noEmailParts
     : false;
 
   useEffect(() => {
@@ -73,68 +77,42 @@ const EmbeddedLoginForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setErrorMessage("Please enter both username and password");
-      onError("Please enter both username and password");
+    // Mark form as touched to show validation errors
+    setTouched(true);
+
+    if (!email || !firstName || !lastName || !password) {
+      setErrorMessage("Please fill in all required fields");
+      onError("Please fill in all required fields");
+      return;
+    }
+
+    if (!isPasswordValid) {
+      setErrorMessage("Password does not meet requirements");
+      onError("Password does not meet requirements");
       return;
     }
 
     setLoading(true);
-    setErrorMessage(""); // Clear previous errors
+    setErrorMessage("");
 
     try {
-
-      // Use the service function
-      const { tokens } = await authLogin(username, password);
-
-      // Store tokens if provided
-      if (tokens.access_token) {
-        const decoded: any = jwtDecode(tokens.access_token);
-        const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
-
-        // Set cookies
-        setAuthCookie('access_token', tokens.access_token, expiresIn);
-
-        if (decoded.x_credentials) {
-          setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
-        }
-
-        // Store in localStorage
-        localStorage.setItem('user_state', 'authenticated');
-        localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-
-        if (tokens.refresh_token) {
-          localStorage.setItem('refresh_token', tokens.refresh_token);
-        }
-      }
-
-      // Call success callback with result
-      onSuccess(tokens);
+      // TODO: Implement registration API call
+      // const result = await registerUser({ email, firstName, lastName, password });
+      
+      // For now, simulate successful registration
+      console.log("Registration data:", { email, firstName, lastName, password });
+      
+      // Call success callback
+      onSuccess({ email, firstName, lastName });
     } catch (error) {
-      console.error('[EmbeddedLogin] Login failed:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Authentication failed';
+      console.error('[CreateAccount] Registration failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Registration failed';
       setErrorMessage(errorMsg);
       onError(errorMsg);
     } finally {
       setLoading(false);
     }
   };
-
-  // If showing create account form, render that instead
-  if (showCreateAccount) {
-    return (
-      <CreateAccountForm
-        onSuccess={(userSession) => {
-          setShowCreateAccount(false);
-          onSuccess(userSession);
-        }}
-        onError={onError}
-        onClose={onClose}
-        onSignIn={() => setShowCreateAccount(false)}
-        authority={authority}
-      />
-    );
-  }
 
   return (
     <div
@@ -153,29 +131,68 @@ const EmbeddedLoginForm = ({
           </svg>
         </button>
 
-        <div className="mb-3! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
+        <div className="mb-6! text-center!">
+          <h2 className="text-2xl! font-bold! text-gray-800! mb-1!">{title}</h2>
           <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2!">
+        <form onSubmit={handleSubmit} className="space-y-4!">
+          {/* Email Address */}
           <div className="mt-0! ml-0! mb-4! mr-0!">
-            <label htmlFor="username" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
-              Email Address or Username
+            <label htmlFor="email" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+              Email Address
             </label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter email or username"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email"
               disabled={loading}
               className="w-full!"
-              autoComplete="username"
+              autoComplete="email"
+              error={touched && !email ? "Required" : ""}
             />
           </div>
 
-          <div className="mt-0! ml-0! mb-0! mr-0!">
+          {/* First Name and Last Name */}
+          <div className="grid! grid-cols-2! gap-4! mt-0! ml-0! mb-4! mr-0!">
+            <div>
+              <label htmlFor="firstName" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+                First Name
+              </label>
+              <Input
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First Name"
+                disabled={loading}
+                className="w-full!"
+                autoComplete="given-name"
+                error={touched && !firstName ? "Required" : ""}
+              />
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+                Last Name
+              </label>
+              <Input
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="First Name"
+                disabled={loading}
+                className="w-full!"
+                autoComplete="family-name"
+                error={touched && !lastName ? "Required" : ""}
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="mt-0! ml-0! mb-4! mr-0!">
             <label htmlFor="password" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
               Password
             </label>
@@ -186,13 +203,19 @@ const EmbeddedLoginForm = ({
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
-                  setErrorMessage(""); // Clear error when user types
+                  setErrorMessage("");
                 }}
                 placeholder="Enter Password..."
                 disabled={loading}
                 className="w-full!"
-                autoComplete="current-password"
-                error={errorMessage}
+                autoComplete="new-password"
+                error={
+                  touched && !password 
+                    ? "Required" 
+                    : touched && password && !isPasswordValid
+                    ? "Password must be 9-15 characters with at least one uppercase, lowercase, number, and special character (@.$%^_-). Example: MyPass123$"
+                    : ""
+                }
                 endIcon={
                   <button
                     type="button"
@@ -216,24 +239,10 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div className="flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!">
-            <label className="flex! items-center! m-0!">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="mr-2! rounded! border-gray-300!"
-              />
-              <span className="text-gray-600!">Remember me</span>
-            </label>
-       <a href="#" className="text-blue-600! hover:text-blue-700! no-underline!">
-              Forgot Password?
-            </a>
-          </div>
-
+          {/* Create Account Button */}
           <Button
             type="submit"
-            disabled={loading || !username || !password || !isPasswordValid || !rememberMe}
+            disabled={loading}
             className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
           >
             {loading ? (
@@ -242,10 +251,10 @@ const EmbeddedLoginForm = ({
                   <circle className="opacity-25!" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75!" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Signing in...
+                Creating Account...
               </span>
             ) : (
-              'Sign In'
+              'Create Account'
             )}
           </Button>
 
@@ -259,13 +268,14 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
+          {/* Sign In Button */}
           <button
             type="button"
-            onClick={() => setShowCreateAccount(true)}
+            onClick={onSignIn}
             disabled={loading}
             className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
           >
-            <span>Create an Account</span>
+            <span>Sign In</span>
           </button>
         </form>
       </div>
@@ -273,4 +283,4 @@ const EmbeddedLoginForm = ({
   );
 };
 
-export default EmbeddedLoginForm;
+export default CreateAccountForm;

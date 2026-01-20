@@ -48,7 +48,9 @@ export default defineConfig(({ mode }) => ({
       entry: "src/main.tsx",
       name: "ColibriIdentityWidget",
       formats: ["es", "umd"],
-      fileName: (format) => `keycloak-widget.${format}.js`,
+      fileName: (format) => format === 'es' 
+        ? 'keycloak-widget.es.js' 
+        : 'keycloak-widget.js',
     },
     rollupOptions: {
       external: [],
