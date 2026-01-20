@@ -120,10 +120,10 @@ const CreateAccountForm = ({
       ref={overlayRef}
       onMouseDown={onOverlayClick}
     >
-      <div className="bg-white! rounded-lg! shadow-lg! p-8! w-full! max-w-lg! relative!">
+      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
         <button
           onClick={onClose}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! "
+          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none!"
           type="button"
         >
           <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">

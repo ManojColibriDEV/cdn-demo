@@ -142,10 +142,10 @@ const EmbeddedLoginForm = ({
       ref={overlayRef}
       onMouseDown={onOverlayClick}
     >
-      <div className="bg-white! rounded-lg! shadow-lg! p-8! w-full! max-w-lg! relative!">
+      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
         <button
           onClick={onClose}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! "
+          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
           type="button"
         >
           <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +226,7 @@ const EmbeddedLoginForm = ({
               />
               <span className="text-gray-600!">Remember me</span>
             </label>
-       <a href="#" className="text-blue-600! hover:text-blue-700! no-underline!">
+            <a href="#" className="text-blue-600! hover:text-blue-700! no-underline!">
               Forgot Password?
             </a>
           </div>
@@ -249,24 +249,25 @@ const EmbeddedLoginForm = ({
             )}
           </Button>
 
-          {/* Divider */}
-          <div className="relative! mt-6! mb-6!">
-            <div className="absolute! inset-0! flex! items-center!">
-              <div className="w-full! border-t! border-gray-300"></div>
+          {/* Will enable it after completing API integration for registration page */}
+          {false && <>
+            <div className="relative! mt-6! mb-6!">
+              <div className="absolute! inset-0! flex! items-center!">
+                <div className="w-full! border-t! border-gray-300"></div>
+              </div>
+              <div className="relative! flex! justify-center! text-sm!">
+                <span className="px-2! bg-white text-gray-500">OR</span>
+              </div>
             </div>
-            <div className="relative! flex! justify-center! text-sm!">
-              <span className="px-2! bg-white text-gray-500">OR</span>
-            </div>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setShowCreateAccount(true)}
-            disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
-          >
-            <span>Create an Account</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateAccount(true)}
+              disabled={loading}
+              className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+            >
+              <span>Create an Account</span>
+            </button></>}
         </form>
       </div>
     </div>

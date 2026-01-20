@@ -3,32 +3,126 @@
 
 <head>
   <title>Colibri Identity Widget Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    button {
+      background-color: #17a2b8;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #138496;
+    }
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .info {
+      background-color: #f0f0f0;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+  </style>
 </head>
 
 <body>
+
+  <div class="controls">
+    <h1>Colibri Identity Widget Test</h1>
+    <p>Click the button below to open the login form:</p>
+    <button id="loginBtn">Open Login Form</button>
+  </div>
+
+  <div class="info">
+    <h3>Status:</h3>
+    <p id="status">Not authenticated</p>
+  </div>
 
   <keycloak-widget id="auth-embedded" 
     authority="dev" 
     subsidiary="elite" 
     isShowToggle="false"
     callbackUrl="http://127.0.0.1:5500/widget-test.html"
+    login-title="Continue to login"
+    login-subtitle="Continue by signing in."
     >
   </keycloak-widget>
-<script src="./dist/keycloak-widget.umd.js"></script>
+
+  <script src="./dist/keycloak-widget.umd.js"></script>
 
   <script>
+    const widget = document.getElementById('auth-embedded');
+    const loginBtn = document.getElementById('loginBtn');
+    const statusEl = document.getElementById('status');
+
+    // Function to open the login form using login() method
+    function openLoginForm() {
+      if (widget) {
+        if (typeof widget.login === 'function') {
+          widget.login();
+        } else {
+          widget.setAttribute('show-login', 'true');
+        }
+        loginBtn.textContent = 'Login Form Open...';
+        statusEl.textContent = 'Login form is open';
+      } else {
+        console.error('Widget element not found');
+      }
+    }
+
+    // Function to close the login form
+    function closeLoginForm() {
+      if (widget) {
+        widget.setAttribute('show-login', 'false');
+        loginBtn.textContent = 'Open Login Form';
+        statusEl.textContent = 'Login form closed';
+      }
+    }
+
+    // Add click event to the button
+    loginBtn.addEventListener('click', openLoginForm);
+
+    // Listen for close event
+    widget.addEventListener('close', function(e) {
+      closeLoginForm();
+    });
+
     // Listen for redirect event from the widget
-    // document.getElementById("auth")
-    //   .addEventListener("redirect", function (e) {
-    //     // User session is already saved in localStorage with key "user_session"
-    //     // You can also access it from the event
-    //     const { url, userSession } = e.detail;
-    //     console.log('Redirect event received:', { url, userSession });
-        
-    //     // The widget will handle the redirect automatically
-    //     // Or you can customize it here:
-    //     // window.location.href = url;
-    //   });
+    widget.addEventListener('redirect', function (e) {
+      const { url, userSession } = e.detail;
+      console.log('Redirect event received:', { url, userSession });
+    });
+
+    // Check if already authenticated on page load
+    window.addEventListener('load', function() {
+      const userState = localStorage.getItem('user_state');
+      if (userState === 'authenticated') {
+        const decoded = localStorage.getItem('decoded');
+        if (decoded) {
+          try {
+            const user = JSON.parse(decoded);
+            statusEl.textContent = 'Already authenticated! User: ' + (user?.email || 'Unknown');
+            loginBtn.textContent = 'Logged In';
+          } catch (e) {
+            console.error('Failed to parse user data', e);
+          }
+        }
+      }
+    });
   </script>
 </body>
 

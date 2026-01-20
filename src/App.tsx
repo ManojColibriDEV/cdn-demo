@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
-import Button from "./common/ui/button";
 import EmbeddedLoginForm from "./components/embedded-login-form";
 import { checkTokenAndRedirect } from "./functions";
-import { clearTokens } from "./utils/tokenStorage";
-
 
 const App = (props: {
   authority?: string;
@@ -15,10 +12,11 @@ const App = (props: {
   onRedirect?: (url: string, userSession?: any) => void;
   loginTitle?: string;
   loginSubtitle?: string;
+  showLogin?: boolean;
+  onClose?: () => void;
 }) => {
   const { authority, subsidiary, callbackUrl, onRedirect } = props;
 
-  const [open, setOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
@@ -41,12 +39,10 @@ const App = (props: {
     }
   }, [authority, subsidiary, callbackUrl]);
 
-  const handleLoginClick = () => {
-    setOpen(true);
-  };
-
   const handleEmbeddedLoginSuccess = (userSession: any) => {
-    setOpen(false);
+    if (props.onClose) {
+      props.onClose();
+    }
     setIsAuthenticated(true);
 
     const targetUrl = props.redirectUrl || callbackUrl;
@@ -65,51 +61,28 @@ const App = (props: {
     console.log("[App] Embedded login error:", error);
   };
 
-  const handleLogout = () => {
-    clearTokens();
-    setIsAuthenticated(false);
-    window.location.href = callbackUrl || window.location.origin;
+  const handleClose = () => {
+    if (props.onClose) {
+      props.onClose();
+    }
   };
 
   return (
     <Routes>
       <Route path="*" element={
-        <div className="max-w-7xl! mx-auto! p-8! text-center!">
-
-          {/* Show logout button if authenticated */}
-          {isAuthenticated && false && (
-            <div className="mb-4!">
-              <p className="mb-2! text-gray-700">You are logged in!</p>
-              <Button
-                label="Logout"
-                onClick={handleLogout}
-                disabled={false}
-              />
-            </div>
+        <>
+          {/* Show login form when showLogin prop is true and not authenticated */}
+          {!isAuthenticated && props.showLogin && (
+            <EmbeddedLoginForm
+              onSuccess={handleEmbeddedLoginSuccess}
+              onError={handleEmbeddedLoginError}
+              onClose={handleClose}
+              authority={authority}
+              title={props.loginTitle}
+              subtitle={props.loginSubtitle}
+            />
           )}
-
-          {/* Show login button if not authenticated */}
-          {!isAuthenticated && (
-            <>
-              {open ? (
-                <EmbeddedLoginForm
-                  onSuccess={handleEmbeddedLoginSuccess}
-                  onError={handleEmbeddedLoginError}
-                  onClose={() => setOpen(false)}
-                  authority={authority}
-                  title={props.loginTitle}
-                  subtitle={props.loginSubtitle}
-                />
-              ) : (
-                <Button
-                  label="Login with Colibri Identity"
-                  onClick={handleLoginClick}
-                  disabled={false}
-                />
-              )}
-            </>
-          )}
-        </div>
+        </>
       } />
     </Routes>
   );

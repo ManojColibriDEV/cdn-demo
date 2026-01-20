@@ -31,7 +31,7 @@ if (renderMode === 'TEST') {
     private mountPoint!: HTMLDivElement;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle"];
+      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle", "show-login"];
     }
 
     connectedCallback() {
@@ -70,6 +70,19 @@ if (renderMode === 'TEST') {
       }
     }
 
+    private handleClose = () => {
+      // Dispatch close event when user closes the form
+      const event = new CustomEvent("close", {
+        bubbles: true,
+        composed: true
+      });
+      
+      this.dispatchEvent(event);
+      
+      // Also remove the show-login attribute
+      this.removeAttribute("show-login");
+    }
+
     private getProps() {
       return {
         authority: this.getAttribute("authority") || "dev",
@@ -79,8 +92,40 @@ if (renderMode === 'TEST') {
         redirectUrl: this.getAttribute("redirectUrl") || ``,
         loginTitle: this.getAttribute("loginTitle") || undefined,
         loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
+        showLogin: this.getAttribute("show-login") === "true",
         onRedirect: this.handleRedirect,
+        onClose: this.handleClose,
       };
+    }
+
+    // Public API methods
+    public login() {
+      console.log('[Widget] login() called');
+      this.setAttribute("show-login", "true");
+    }
+
+    public logout() {
+      console.log('[Widget] logout() called');
+      // Clear authentication state
+      localStorage.removeItem('user_state');
+      localStorage.removeItem('decoded');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      
+      // Clear cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      // Close login form if open
+      this.removeAttribute("show-login");
+      
+      // Dispatch logout event
+      const event = new CustomEvent("logout", {
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
     }
 
     private render() {
@@ -91,6 +136,8 @@ if (renderMode === 'TEST') {
       }
 
       const props = this.getProps();
+
+      console.log('[Widget] Rendering with props:', props);
 
       this.root.render(
         <BrowserRouter>
