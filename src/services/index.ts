@@ -63,7 +63,7 @@ export const authLogin = async (
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {
-  const url = apiUrl("/auth/refresh");
+  const url = apiUrl("api/auth/refresh");
   const payload = { refresh_token: refreshToken };
   try {
     const response = await axios.post(url, payload);

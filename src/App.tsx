@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import EmbeddedLoginForm from "./components/embedded-login-form";
-import { checkTokenAndRedirect } from "./functions";
+import { checkTokenAndRedirect, isRefreshTokenValid } from "./functions";
+import { authRefresh } from "./services";
+import { setAuthCookie } from "./utils/cookieHelper";
+import { jwtDecode } from "jwt-decode";
 
 const App = (props: {
   authority?: string;
@@ -19,13 +22,68 @@ const App = (props: {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-
-  // Check for valid token and auto-redirect on mount
+  // Auto-login using refresh token if available
   useEffect(() => {
-    if (props.redirectUrl) {
-      const hasValidToken = checkTokenAndRedirect(props.redirectUrl);
-      setIsAuthenticated(hasValidToken);
-    }
+    const attemptAutoLogin = async () => {
+      try {
+        // First check if access token is already valid
+        const hasValidAccessToken = checkTokenAndRedirect();
+        if (hasValidAccessToken) {
+          setIsAuthenticated(true);
+          if (props.redirectUrl) {
+            window.location.href = props.redirectUrl;
+          }
+          return;
+        }
+
+        // If no valid access token, try to use refresh token
+        const hasValidRefreshToken = isRefreshTokenValid();
+        if (hasValidRefreshToken) {
+          const refreshToken = localStorage.getItem('refresh_token');
+          if (refreshToken) {
+            console.log('[App] Attempting auto-login with refresh token');
+            const tokens = await authRefresh(refreshToken);
+            
+            if (tokens && tokens.access_token) {
+              // Decode token to get expiry time
+              const decoded: any = jwtDecode(tokens.access_token);
+              const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+              
+              // Store new access token in cookies
+              setAuthCookie('access_token', tokens.access_token, expiresIn);
+              if (tokens.credential) {
+                setAuthCookie('X-Credential', tokens.credential, expiresIn);
+              }
+              
+              // Update refresh token if new one provided
+              if (tokens.refresh_token) {
+                localStorage.setItem('refresh_token', tokens.refresh_token);
+                localStorage.setItem('refresh_token_time', Date.now().toString());
+              }
+              
+              localStorage.setItem('user_state', 'authenticated');
+              setIsAuthenticated(true);
+              console.log('[App] Auto-login successful');
+              
+              if (props.redirectUrl) {
+                window.location.href = props.redirectUrl;
+              }
+            }
+          }
+        } else {
+          // Clear expired refresh token
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('refresh_token_time');
+        }
+      } catch (error) {
+        console.error('[App] Auto-login failed:', error);
+        // Clear invalid tokens
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('refresh_token_time');
+      }
+    };
+
+    attemptAutoLogin();
   }, [props.redirectUrl]);
 
   useEffect(() => {

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
-import { authLogin } from "../services";
+import { authLogin, authRefresh } from "../services";
 import { validatePassword } from "../functions";
 import type { PasswordChecks } from "../types";
 import { setAuthCookie } from "../utils/cookieHelper";
@@ -92,19 +92,25 @@ const EmbeddedLoginForm = ({
         const decoded: any = jwtDecode(tokens.access_token);
         const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
-        // Set cookies
+        // Set cookies for access token
         setAuthCookie('access_token', tokens.access_token, expiresIn);
 
         if (decoded.x_credentials) {
           setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
         }
 
-        // Store in localStorage
+        // Store user state
         localStorage.setItem('user_state', 'authenticated');
-        localStorage.setItem('decoded', JSON.stringify(decoded) || '');
 
-        if (tokens.refresh_token) {
+        // Only store refresh token if Remember Me is checked
+        if (rememberMe && tokens.refresh_token) {
           localStorage.setItem('refresh_token', tokens.refresh_token);
+          // Store timestamp when refresh token was saved
+          localStorage.setItem('refresh_token_time', Date.now().toString());
+        } else {
+          // Clear refresh token if Remember Me is not checked
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('refresh_token_time');
         }
       }
 
@@ -157,6 +163,8 @@ const EmbeddedLoginForm = ({
           <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
           <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
+
+        <button onClick={() => authRefresh("eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIwMjQ3MjAwYy0zMzcyLTQyNmItYWVhMi1kYjkxYjM5YTdlZWUifQ.eyJleHAiOjE3Njg5Mzk1ODEsImlhdCI6MTc2ODkzNzc4MSwianRpIjoiODdiZjMyNjMtZGVhZi1iNGMxLTRlMWQtZTZkMWFiYTg0ZmUwIiwiaXNzIjoiaHR0cHM6Ly9kZXYta2V5Y2xvYWsuY29saWJyaWNvcmUuaW8vcmVhbG1zL2FsbGllZCIsImF1ZCI6Imh0dHBzOi8vZGV2LWtleWNsb2FrLmNvbGlicmljb3JlLmlvL3JlYWxtcy9hbGxpZWQiLCJ0eXAiOiJSZWZyZXNoIiwiYXpwIjoiY29saWJyaWNvcmUiLCJzaWQiOiJmYmNhNTE1MS1jYTlhLWFhMjgtNmNmMS0zMWVhYmE4MzFkMGQiLCJzY29wZSI6Im9wZW5pZCByb2xlcyBhY3IgcHJvZmlsZSBlbWFpbCB3ZWItb3JpZ2lucyJ9.FMFyThTF0Dtef475ZF9anL8j8QOUbxvj0UrH2Kzvout-A_5hO6c8GzRz6Uz3ncYZ3IwxTQh1lc5zS0EB3rDK2Q")}>Click</button>
 
         <form onSubmit={handleSubmit} className="space-y-2!">
           <div className="mt-0! ml-0! mb-4! mr-0!">

@@ -20,6 +20,7 @@ if (renderMode === 'TEST') {
           subsidiary="elite" 
           isShowToggle={"true"} 
           callbackUrl="http://localhost:5173/"
+          showLogin={true}
         />
       </StrictMode>
     </BrowserRouter>
@@ -108,9 +109,9 @@ if (renderMode === 'TEST') {
       console.log('[Widget] logout() called');
       // Clear authentication state
       localStorage.removeItem('user_state');
-      localStorage.removeItem('decoded');
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('refresh_token_time');
       
       // Clear cookies
       document.cookie.split(";").forEach((c) => {
