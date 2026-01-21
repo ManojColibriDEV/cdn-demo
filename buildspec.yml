@@ -18,7 +18,7 @@ phases:
       - echo "Widget Bucket - $WIDGET_BUCKET_NAME"
       - echo "Distribution ID - $DISTRIBUTION_ID"
       - echo "Configuring CodeArtifact for NPM..."
-      - aws codeartifact login --tool npm --repository dev-codeartifact-repository --domain dev-codeartifact-domain --domain-owner $CICD_ACCOUNT_ID --region $AWS_REGION
+      - aws codeartifact login --tool npm --repository dev-codeartifact-repository --domain $ENVIRONMENT-codeartifact-domain --domain-owner $CICD_ACCOUNT_ID --region $AWS_REGION
       - echo "Installing NPM dependencies..."
       - npm ci
       

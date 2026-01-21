@@ -14136,7 +14136,7 @@ function dm(u, c, r) {
 const eb = ({
   onSuccess: u,
   onError: c,
-  onClose: r,
+  handleClose: r,
   onSignIn: s,
   title: f = "Create your account",
   subtitle: d = "Create an account to continue to checkout"
@@ -14323,7 +14323,7 @@ const eb = ({
 }, tb = ({
   onSuccess: u,
   onError: c,
-  onClose: r,
+  handleClose: r,
   authority: s,
   title: f = "Continue to login",
   subtitle: d = "Continue by signing in."
@@ -14373,7 +14373,7 @@ const eb = ({
         P(!1), u(re);
       },
       onError: c,
-      onClose: r,
+      handleClose: r,
       onSignIn: () => P(!1),
       authority: s
     }
@@ -14492,7 +14492,7 @@ const eb = ({
     c && localStorage.setItem("authority", c), r && localStorage.setItem("subsidiary", r), s ? localStorage.setItem("callbackUrl", s) : localStorage.getItem("callbackUrl") || localStorage.setItem("callbackUrl", window.location.href.split("?")[0]);
   }, [c, r, s]);
   const p = (b) => {
-    u.onClose && u.onClose(), h(!0);
+    u.handleClose && u.handleClose(), h(!0);
     const A = u.redirectUrl || s;
     f && f(A, b), u.redirectUrl && setTimeout(() => {
       window.location.href = u.redirectUrl;
@@ -14500,14 +14500,14 @@ const eb = ({
   }, v = (b) => {
     console.log("[App] Embedded login error:", b);
   }, y = () => {
-    u.onClose && u.onClose();
+    u.handleClose && u.handleClose();
   };
   return /* @__PURE__ */ q.jsx(Nv, { children: /* @__PURE__ */ q.jsx(Cm, { path: "*", element: /* @__PURE__ */ q.jsx(q.Fragment, { children: !d && u.showLogin && /* @__PURE__ */ q.jsx(
     tb,
     {
       onSuccess: p,
       onError: v,
-      onClose: y,
+      handleClose: y,
       authority: c,
       title: u.loginTitle,
       subtitle: u.loginSubtitle
@@ -14563,7 +14563,7 @@ console.log("[main.tsx] All env vars:", nb);
         loginSubtitle: this.getAttribute("loginSubtitle") || void 0,
         showLogin: this.getAttribute("show-login") === "true",
         onRedirect: this.handleRedirect,
-        onClose: this.handleClose
+        handleClose: this.handleClose
       };
     }
     // Public API methods
