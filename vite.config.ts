@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     proxy: {
       "/api": {
-        target: "https://dev-demo-env.colibricore.io",
+        target: "https://dev-demo-env.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, "/api"),
@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => ({
         rewrite: (path) => path.replace(/^\/register/, "/register"),
       },
       "/keycloak": {
-        target: "https://dev-keycloak.colibricore.io",
+        target: "https://dev-keycloak.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/keycloak/, ""),
