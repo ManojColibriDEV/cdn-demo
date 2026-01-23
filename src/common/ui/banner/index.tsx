@@ -32,6 +32,7 @@ const Banner: FC<BannerProps> = ({
           iconColor: 'text-green-600!',
           actionColor: 'text-green-700!',
           actionHover: 'hover:text-green-800!',
+          closeButtonHover: 'hover:text-green-800!',
         };
       case 'warning':
         return {
@@ -42,6 +43,7 @@ const Banner: FC<BannerProps> = ({
           iconColor: 'text-yellow-600!',
           actionColor: 'text-yellow-700!',
           actionHover: 'hover:text-yellow-800!',
+          closeButtonHover: 'hover:text-yellow-800!',
         };
       case 'error':
         return {
@@ -52,6 +54,7 @@ const Banner: FC<BannerProps> = ({
           iconColor: 'text-red-600!',
           actionColor: 'text-red-700!',
           actionHover: 'hover:text-red-800!',
+          closeButtonHover: 'hover:text-red-800!',
         };
       case 'info':
       default:
@@ -63,6 +66,7 @@ const Banner: FC<BannerProps> = ({
           iconColor: 'text-cyan-600!',
           actionColor: 'text-cyan-600!',
           actionHover: 'hover:text-cyan-700!',
+          closeButtonHover: 'hover:text-cyan-700!',
         };
     }
   };
@@ -123,7 +127,7 @@ const Banner: FC<BannerProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className={`ml-2! flex-shrink-0! inline-flex! ${styles.iconColor}! hover:${styles.text}! bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`}
+          className={`ml-2! flex-shrink-0! inline-flex! ${styles.iconColor} ${styles.closeButtonHover} bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`}
         >
           <span className="sr-only">Dismiss</span>
           <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">

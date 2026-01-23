@@ -308,7 +308,7 @@ const EmbeddedLoginForm = ({
 
           <Button
             type="submit"
-            disabled={loading || !email || !password || !isPasswordValid || !rememberMe || !isEmailValid || !emailExists}
+            disabled={loading || !email || !password || !isPasswordValid || !isEmailValid || !emailExists}
             className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
