@@ -2005,16 +2005,16 @@ widget.addEventListener('redirect', handleRedirect);
 
 ---
 
-## 📞 Support
+##  Version History
 
-For issues or questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation in `/docs` folder
+### Version 1.0.2
+- Added registration page functionality
+- Implemented email validation to check if user already exists before registration or login
+- Added comprehensive error handlers in login and registration widgets
+- Added "Remember me" checkbox in both login and registration forms
+- Enhanced user experience with visual feedback (loader, checkmarks, banners)
+- Improved form validation and field enabling/disabling based on email verification
 
----
-
-## 📄 License
-
-MIT License - See LICENSE file for details
+### Version 1.0.1
+- Initial release with basic login functionality
 
