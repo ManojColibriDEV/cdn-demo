@@ -231,7 +231,7 @@ const CreateAccountForm = ({
       )}
 
       <div
-        className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-[2000]! p-4"
+        className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
         ref={overlayRef}
         onMouseDown={onOverlayClick}
       >

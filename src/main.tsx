@@ -32,6 +32,11 @@ if (renderMode === 'TEST') {
       return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle", "show-login"];
     }
 
+    // Store function props
+    public onRedirect?: (url: string, userSession?: any) => void;
+    public onClose?: () => void;
+    public onLogout?: () => void;
+
     connectedCallback() {
       this.mountPoint = document.createElement("div");
       this.appendChild(this.mountPoint);
@@ -49,6 +54,12 @@ if (renderMode === 'TEST') {
     private handleRedirect = (url: string, userSession?: any) => {
       console.log('[Widget] handleRedirect called, url:', url);
       
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onRedirect) {
+        console.log('[Widget] Calling onRedirect function prop');
+        this.onRedirect(url, userSession);
+      }
+      
       // Dispatch custom event to host page with URL and user session
       const event = new CustomEvent("redirect", {
         detail: { 
@@ -64,9 +75,9 @@ if (renderMode === 'TEST') {
       this.dispatchEvent(event);
       console.log('[Widget] Redirect event dispatched');
       
-      // Auto-redirect in main window if URL is provided
+      // Auto-redirect in main window if URL is provided (only if no function prop)
       // Add small delay to allow event handlers to process
-      if (url) {
+      if (url && !this.onRedirect) {
         console.log('[Widget] Will redirect to:', url, 'in 200ms');
         setTimeout(() => {
           window.location.href = url;
@@ -75,6 +86,12 @@ if (renderMode === 'TEST') {
     }
 
     private handleClose = () => {
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onClose) {
+        console.log('[Widget] Calling onClose function prop');
+        this.onClose();
+      }
+      
       // Dispatch close event when user closes the form
       const event = new CustomEvent("close", {
         bubbles: true,
@@ -123,6 +140,12 @@ if (renderMode === 'TEST') {
       
       // Close login form if open
       this.removeAttribute("show-login");
+      
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onLogout) {
+        console.log('[Widget] Calling onLogout function prop');
+        this.onLogout();
+      }
       
       // Dispatch logout event
       const event = new CustomEvent("logout", {

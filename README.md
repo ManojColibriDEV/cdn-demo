@@ -38,6 +38,227 @@ npm install @colibri/identity-widget
 
 ### Usage in React/TypeScript Projects
 
+**Complete Working Example (Copy & Paste Ready)**
+
+```tsx
+import { useRef, useEffect, useState } from 'react';
+import '@colibri/identity-widget';
+
+// TypeScript declaration for the custom element
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'keycloak-widget': any;
+    }
+  }
+}
+
+interface WidgetElement extends HTMLElement {
+  onRedirect?: (url: string, userSession?: any) => void;
+  onClose?: () => void;
+  onLogout?: () => void;
+  login: () => void;
+  logout: () => void;
+}
+
+function App() {
+  const widgetRef = useRef<WidgetElement>(null);
+  const [showWidget, setShowWidget] = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
+
+  const handleRedirect = (url: string, userSession: any) => {
+    console.log('User authenticated:', userSession);
+    console.log('Redirect URL:', url);
+    setUserSession(userSession);
+    setShowWidget(false);
+    // Handle redirect or save user session
+    // Note: Auto-redirect is disabled when using function props
+    // You control the navigation
+  };
+
+  const handleClose = () => {
+    console.log('Login form closed');
+    setShowWidget(false);
+  };
+
+  const handleLogout = () => {
+    console.log('User logged out');
+    setUserSession(null);
+  };
+
+  // Set function props on the widget element after mount
+  useEffect(() => {
+    const widget = widgetRef.current;
+    if (widget) {
+      widget.onRedirect = handleRedirect;
+      widget.onClose = handleClose;
+      widget.onLogout = handleLogout;
+    }
+  }, []);
+
+  const handleLogin = () => {
+    setShowWidget(true);
+    setTimeout(() => {
+      widgetRef.current?.login();
+    }, 100);
+  };
+
+  const handleLogoutClick = () => {
+    widgetRef.current?.logout();
+  };
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f3f4f6', padding: '2rem' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '2rem', color: '#111827' }}>
+          Colibri Identity Widget Test
+        </h1>
+
+        {/* User Status */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '0.5rem', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+          padding: '1.5rem',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>User Status</h2>
+          {userSession ? (
+            <div>
+              <p style={{ color: '#059669', fontWeight: '500', marginBottom: '0.5rem' }}>✓ Authenticated</p>
+              <pre style={{ 
+                background: '#f9fafb', 
+                padding: '1rem', 
+                borderRadius: '0.25rem', 
+                overflow: 'auto',
+                fontSize: '0.875rem',
+                marginBottom: '1rem'
+              }}>
+                {JSON.stringify(userSession, null, 2)}
+              </pre>
+              <button 
+                onClick={handleLogoutClick}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '0.375rem',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500'
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <p style={{ color: '#6b7280' }}>Not authenticated</p>
+          )}
+        </div>
+
+        {/* Widget Controls */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '0.5rem', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+          padding: '1.5rem',
+          marginBottom: '1.5rem'
+        }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>Widget Controls</h2>
+          <button 
+            onClick={handleLogin}
+            disabled={showWidget || !!userSession}
+            style={{
+              padding: '0.75rem 1.5rem',
+              background: (showWidget || userSession) ? '#9ca3af' : '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '0.5rem',
+              cursor: (showWidget || userSession) ? 'not-allowed' : 'pointer',
+              fontSize: '1rem',
+              fontWeight: '500'
+            }}
+          >
+            Open Login Widget
+          </button>
+        </div>
+
+        {/* Configuration Info */}
+        <div style={{ 
+          background: 'white', 
+          borderRadius: '0.5rem', 
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)', 
+          padding: '1.5rem'
+        }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>Configuration</h2>
+          <div style={{ background: '#f9fafb', padding: '1rem', borderRadius: '0.25rem' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.875rem' }}>
+              <li style={{ marginBottom: '0.5rem' }}><strong>Authority:</strong> dev</li>
+              <li style={{ marginBottom: '0.5rem' }}><strong>Subsidiary:</strong> elite</li>
+              <li style={{ marginBottom: '0.5rem' }}><strong>Callback URL:</strong> {window.location.origin}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Widget Component */}
+      <keycloak-widget
+        ref={widgetRef}
+        authority="dev"
+        subsidiary="elite"
+        callbackUrl={window.location.origin}
+        show-login={showWidget ? "true" : "false"}
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+**Minimal Example (Just the Basics)**
+
+```tsx
+import { useRef, useEffect } from 'react';
+import '@colibri/identity-widget';
+
+function App() {
+  const widgetRef = useRef<any>(null);
+
+  const handleRedirect = (url: string, userSession: any) => {
+    console.log('User authenticated:', userSession);
+    // Handle your authentication logic here
+  };
+
+  useEffect(() => {
+    const widget = widgetRef.current;
+    if (widget) {
+      widget.onRedirect = handleRedirect;
+    }
+  }, []);
+
+  return (
+    <div>
+      <button onClick={() => widgetRef.current?.login()}>Login</button>
+      
+      <keycloak-widget
+        ref={widgetRef}
+        authority="dev"
+        subsidiary="elite"
+        callbackUrl={window.location.origin}
+      />
+    </div>
+  );
+}
+
+export default App;
+```
+
+**Alternative: Using Event Listeners**
+
+If you prefer event-driven approach instead of function props:
+
 ```tsx
 import { useEffect, useRef } from 'react';
 import '@colibri/identity-widget';
@@ -58,6 +279,11 @@ function App() {
       // Listen for logout
       widget.addEventListener('logout', () => {
         console.log('User logged out');
+      });
+
+      // Listen for close
+      widget.addEventListener('close', () => {
+        console.log('Login form closed');
       });
     }
   }, []);
@@ -96,31 +322,43 @@ Create `src/vite-env.d.ts`:
 /// <reference types="vite/client" />
 
 declare global {
-  interface KeycloakWidgetElement extends HTMLElement {
-    login(): void;
-    logout(): void;
-  }
-}
-
-declare module 'react' {
   namespace JSX {
     interface IntrinsicElements {
-      'keycloak-widget': {
+      'keycloak-widget': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
         ref?: React.Ref<KeycloakWidgetElement>;
         authority?: string;
         subsidiary?: string;
         callbackUrl?: string;
         redirectUrl?: string;
-        'login-title'?: string;
-        'login-subtitle'?: string;
+        isShowToggle?: string;
+        loginTitle?: string;
+        loginSubtitle?: string;
         'show-login'?: string;
-      };
+        // Function props for React/NPM usage
+        onRedirect?: (url: string, userSession?: any) => void;
+        onClose?: () => void;
+        onLogout?: () => void;
+      }, HTMLElement>;
     }
+  }
+
+  interface KeycloakWidgetElement extends HTMLElement {
+    login(): void;
+    logout(): void;
+    // Function props
+    onRedirect?: (url: string, userSession?: any) => void;
+    onClose?: () => void;
+    onLogout?: () => void;
   }
 }
 
 export {};
 ```
+
+**Note:** When using function props (`onRedirect`, `onClose`, `onLogout`):
+- The automatic redirect behavior is disabled for `onRedirect` - you control the navigation
+- Events are still dispatched for backward compatibility
+- Function props provide a more React-friendly API
 
 ---
 
@@ -2014,6 +2252,9 @@ widget.addEventListener('redirect', handleRedirect);
 - Added "Remember me" checkbox in both login and registration forms
 - Enhanced user experience with visual feedback (loader, checkmarks, banners)
 - Improved form validation and field enabling/disabling based on email verification
+- **Added function props support (`onRedirect`, `onClose`, `onLogout`) for better React/NPM integration**
+- Function props provide more React-friendly API compared to event listeners
+- Auto-redirect is disabled when using `onRedirect` prop to give developers full control
 
 ### Version 1.0.1
 - Initial release with basic login functionality
