@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => ({
         rewrite: (path) => path.replace(/^\/register/, "/register"),
       },
       "/keycloak": {
-        target: "https://dev-keycloak.colibricore.io",
+        target: "https://dev-keycloak.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/keycloak/, ""),
