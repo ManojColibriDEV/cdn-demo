@@ -1,7 +1,7 @@
 {
   "name": "@colibri/identity-widget",
   "private": false,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Embedded authentication widget for Colibri Identity platform",
   "type": "module",
   "main": "./dist/keycloak-widget.umd.js",
@@ -32,7 +32,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ManojColibriDEV/cdn-demo"
+    "url": "https://github.com/McKissockLP/Colibri.Identity.Widget"
   },
   "scripts": {
     "dev": "vite",

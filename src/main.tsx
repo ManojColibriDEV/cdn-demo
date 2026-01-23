@@ -6,9 +6,6 @@ import App from './App';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
-console.log('[main.tsx] VITE_RENDER_MODE:', renderMode);
-console.log('[main.tsx] All env vars:', import.meta.env);
-
 if (renderMode === 'TEST') {
   // Standalone testing mode with BrowserRouter
   console.log('[main.tsx] Rendering in TEST mode');
@@ -20,6 +17,7 @@ if (renderMode === 'TEST') {
           subsidiary="elite" 
           isShowToggle={"true"} 
           callbackUrl="http://localhost:5173/"
+          showLogin={true}
         />
       </StrictMode>
     </BrowserRouter>
@@ -33,6 +31,11 @@ if (renderMode === 'TEST') {
     static get observedAttributes() {
       return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle", "show-login"];
     }
+
+    // Store function props
+    public onRedirect?: (url: string, userSession?: any) => void;
+    public onClose?: () => void;
+    public onLogout?: () => void;
 
     connectedCallback() {
       this.mountPoint = document.createElement("div");
@@ -49,6 +52,14 @@ if (renderMode === 'TEST') {
     }
 
     private handleRedirect = (url: string, userSession?: any) => {
+      console.log('[Widget] handleRedirect called, url:', url);
+      
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onRedirect) {
+        console.log('[Widget] Calling onRedirect function prop');
+        this.onRedirect(url, userSession);
+      }
+      
       // Dispatch custom event to host page with URL and user session
       const event = new CustomEvent("redirect", {
         detail: { 
@@ -62,15 +73,25 @@ if (renderMode === 'TEST') {
       });
       
       this.dispatchEvent(event);
+      console.log('[Widget] Redirect event dispatched');
       
-      // Auto-redirect in main window if URL is provided
-      if (url) {
-        console.log('[Widget] Redirecting to:', url);
-        window.location.href = url;
+      // Auto-redirect in main window if URL is provided (only if no function prop)
+      // Add small delay to allow event handlers to process
+      if (url && !this.onRedirect) {
+        console.log('[Widget] Will redirect to:', url, 'in 200ms');
+        setTimeout(() => {
+          window.location.href = url;
+        }, 200);
       }
     }
 
     private handleClose = () => {
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onClose) {
+        console.log('[Widget] Calling onClose function prop');
+        this.onClose();
+      }
+      
       // Dispatch close event when user closes the form
       const event = new CustomEvent("close", {
         bubbles: true,
@@ -108,9 +129,9 @@ if (renderMode === 'TEST') {
       console.log('[Widget] logout() called');
       // Clear authentication state
       localStorage.removeItem('user_state');
-      localStorage.removeItem('decoded');
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('refresh_token_time');
       
       // Clear cookies
       document.cookie.split(";").forEach((c) => {
@@ -119,6 +140,12 @@ if (renderMode === 'TEST') {
       
       // Close login form if open
       this.removeAttribute("show-login");
+      
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onLogout) {
+        console.log('[Widget] Calling onLogout function prop');
+        this.onLogout();
+      }
       
       // Dispatch logout event
       const event = new CustomEvent("logout", {

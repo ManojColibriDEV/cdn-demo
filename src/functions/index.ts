@@ -1,7 +1,11 @@
 import type {
   UpgradeUser,
   PasswordChecks,
+  AuthenticationTokens,
 } from "../types/index";
+import { jwtDecode } from "jwt-decode";
+import { setAuthCookie } from "../utils/cookieHelper";
+import { authLogin } from "../services";
 
 /**
  * Validate new password against security rules
@@ -81,26 +85,125 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
       return false;
     }
 
-    // Check if token exists and is valid
-    const decodedStr = localStorage.getItem('decoded');
-    if (!decodedStr) {
+    // Check if access token cookie exists
+    const accessTokenCookie = document.cookie.split(';').find(row => row.trim().startsWith('access_token='));
+    if (!accessTokenCookie) {
       return false;
     }
 
-    const token = JSON.parse(decodedStr);
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    // Check if token is expired
-    if (!token.exp || currentTime >= token.exp) {
+    // Extract and decode the access token
+    const token = accessTokenCookie.split('=')[1];
+    if (!token) {
       return false;
     }
 
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
+    try {
+      const { jwtDecode } = require('jwt-decode');
+      const decoded: any = jwtDecode(token);
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      // Check if token is expired
+      if (!decoded.exp || currentTime >= decoded.exp) {
+        return false;
+      }
+
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+      return true;
+    } catch (decodeError) {
+      console.error('[checkTokenAndRedirect] Token decode error:', decodeError);
+      return false;
     }
-    return true;
   } catch (error) {
     console.error('[checkTokenAndRedirect] Error:', error);
     return false;
   }
 }
+
+/**
+ * Check if refresh token is valid and not expired
+ * Refresh tokens typically have longer expiry (days/weeks)
+ */
+export const isRefreshTokenValid = (): boolean => {
+  try {
+    const refreshToken = localStorage.getItem('refresh_token');
+    const refreshTokenTime = localStorage.getItem('refresh_token_time');
+    
+    if (!refreshToken || !refreshTokenTime) {
+      return false;
+    }
+
+    // Assuming refresh token is valid for 7 days (adjust as needed)
+    const REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    const tokenAge = Date.now() - parseInt(refreshTokenTime);
+    
+    return tokenAge < REFRESH_TOKEN_VALIDITY;
+  } catch (error) {
+    console.error('[isRefreshTokenValid] Error:', error);
+    return false;
+  }
+}
+
+/**
+ * Clear all authentication tokens and state
+ */
+export const clearAuthTokens = (): void => {
+  // Clear localStorage
+  localStorage.removeItem('user_state');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('refresh_token_time');
+  localStorage.removeItem('access_token');
+  
+  // Clear cookies
+  document.cookie.split(";").forEach((c) => {
+    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+  });
+}
+
+/**
+ * Handle user authentication and token storage
+ * Reusable function for login flow
+ * @param username - User's email or username
+ * @param password - User's password
+ * @param rememberMe - Whether to persist refresh token
+ * @returns Authentication tokens
+ */
+export const handleAuthentication = async (
+  username: string,
+  password: string,
+  rememberMe: boolean = true
+): Promise<AuthenticationTokens> => {
+  // Use the service function
+  const { tokens } = await authLogin(username, password);
+
+  // Store tokens if provided
+  if (tokens.access_token) {
+    const decoded: any = jwtDecode(tokens.access_token);
+    const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+    // Set cookies for access token (with encoding)
+    setAuthCookie('access_token', tokens.access_token, expiresIn, true);
+
+    // Set X-Credential cookie without encoding to preserve the exact format
+    if (decoded.x_credentials) {
+      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn, false);
+    }
+
+    // Store user state
+    localStorage.setItem('user_state', 'authenticated');
+
+    // Only store refresh token if Remember Me is checked
+    if (rememberMe && tokens.refresh_token) {
+      localStorage.setItem('refresh_token', tokens.refresh_token);
+      // Store timestamp when refresh token was saved
+      localStorage.setItem('refresh_token_time', Date.now().toString());
+    } else {
+      // Clear refresh token if Remember Me is not checked
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('refresh_token_time');
+    }
+  }
+
+  return tokens;
+};

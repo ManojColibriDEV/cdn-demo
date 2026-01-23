@@ -27,8 +27,12 @@ export function getCookieDomain(): string {
 
 /**
  * Set a cookie with cross-subdomain support
+ * @param name - Cookie name
+ * @param value - Cookie value
+ * @param expiresInSeconds - Expiration time in seconds
+ * @param encode - Whether to URL encode the value (default: true, false for X-Credential)
  */
-export function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
+export function setAuthCookie(name: string, value: string, expiresInSeconds: number, encode: boolean = true): void {
   const expires = new Date();
   expires.setSeconds(expires.getSeconds() + expiresInSeconds);
 
@@ -36,7 +40,10 @@ export function setAuthCookie(name: string, value: string, expiresInSeconds: num
   const domainAttr = domain ? `; domain=${domain}` : '';
   const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
 
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
+  // Only encode if explicitly requested (access tokens should be encoded, X-Credential should not)
+  const cookieValue = encode ? encodeURIComponent(value) : value;
+
+  document.cookie = `${name}=${cookieValue}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
 }
 
 /**
