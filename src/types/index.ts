@@ -42,9 +42,50 @@ export interface LoginResponse {
   error_description?: string;
 }
 
+export interface RegisterRequest {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  brand?: {
+    id: number;
+    name: string;
+    domain: string;
+    realm: string;
+  };
+}
+
+export interface RegisterErrorResponse {
+  error: string;
+  details?: {
+    errorMessage: string;
+  };
+}
+
+export interface AuthenticationTokens {
+  access_token?: string;
+  refresh_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  tokens?: {
+    access_token?: string;
+    refresh_token?: string;
+  };
+}
+
 export interface CheckMigrationStatusResponse {
   forgotPasswordUrl?: string;
   [key: string]: any;
+}
+
+export interface CheckEmailResponse {
+  exists: boolean;
 }
 
 export interface CheckAvailableEmailResponse {

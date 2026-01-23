@@ -9,10 +9,16 @@ export default defineConfig(({ mode }) => ({
   server: {
     proxy: {
       "/api": {
-        target: "https://dev-demo-env.colibricore.io",
+        target: "https://dev-demo-env.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, "/api"),
+      },
+      "/admin": {
+        target: "https://dev-demo-env.colibrilearning.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/admin/, "/admin"),
       },
       "/brand": {
         target: "https://dev-idb.colibrirealestate.com",

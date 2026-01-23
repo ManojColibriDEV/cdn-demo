@@ -21,7 +21,7 @@ const App = (props: {
   const { authority, subsidiary, callbackUrl, onRedirect } = props;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  console.log("isAuthenticated", isAuthenticated)
   // Auto-login using refresh token if available
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -42,29 +42,53 @@ const App = (props: {
           const refreshToken = localStorage.getItem('refresh_token');
           if (refreshToken) {
             console.log('[App] Attempting auto-login with refresh token');
-            const tokens = await authRefresh(refreshToken);
-            
-            if (tokens && tokens.access_token) {
-              // Decode token to get expiry time
+            const response = await authRefresh(refreshToken);
+
+            if (response && response.tokens && response.tokens.access_token) {
+              const tokens = response.tokens;
+
+              // Decode token to get expiry time and user info
               const decoded: any = jwtDecode(tokens.access_token);
               const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
-              
-              // Store new access token in cookies
-              setAuthCookie('access_token', tokens.access_token, expiresIn);
-              if (tokens.credential) {
-                setAuthCookie('X-Credential', tokens.credential, expiresIn);
+
+              // Store new access token in cookies (with encoding)
+              setAuthCookie('access_token', tokens.access_token, expiresIn, true);
+              // Store X-Credential without encoding to preserve exact format
+              if (decoded.x_credentials) {
+                setAuthCookie('X-Credential', decoded.x_credentials, expiresIn, false);
               }
-              
+
               // Update refresh token if new one provided
               if (tokens.refresh_token) {
                 localStorage.setItem('refresh_token', tokens.refresh_token);
                 localStorage.setItem('refresh_token_time', Date.now().toString());
               }
-              
+
               localStorage.setItem('user_state', 'authenticated');
               setIsAuthenticated(true);
               console.log('[App] Auto-login successful');
-              
+
+              // Trigger onRedirect callback with userSession from decoded token
+              const targetUrl = props.redirectUrl || callbackUrl;
+              if (onRedirect) {
+                const userSession = {
+                  access_token: tokens.access_token,
+                  userInfo: {
+                    studentId: decoded.studentId,
+                    sub: decoded.sub,
+                    email_verified: decoded.email_verified,
+                    x_credentials: decoded.x_credentials,
+                    name: decoded.name,
+                    preferred_username: decoded.preferred_username,
+                    given_name: decoded.given_name,
+                    family_name: decoded.family_name,
+                    email: decoded.email
+                  }
+                };
+                onRedirect(targetUrl, userSession);
+              }
+
+              // Redirect to target URL if provided
               if (props.redirectUrl) {
                 window.location.href = props.redirectUrl;
               }

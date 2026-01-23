@@ -1,7 +1,11 @@
 import type {
   UpgradeUser,
   PasswordChecks,
+  AuthenticationTokens,
 } from "../types/index";
+import { jwtDecode } from "jwt-decode";
+import { setAuthCookie } from "../utils/cookieHelper";
+import { authLogin } from "../services";
 
 /**
  * Validate new password against security rules
@@ -156,3 +160,50 @@ export const clearAuthTokens = (): void => {
     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
   });
 }
+
+/**
+ * Handle user authentication and token storage
+ * Reusable function for login flow
+ * @param username - User's email or username
+ * @param password - User's password
+ * @param rememberMe - Whether to persist refresh token
+ * @returns Authentication tokens
+ */
+export const handleAuthentication = async (
+  username: string,
+  password: string,
+  rememberMe: boolean = true
+): Promise<AuthenticationTokens> => {
+  // Use the service function
+  const { tokens } = await authLogin(username, password);
+
+  // Store tokens if provided
+  if (tokens.access_token) {
+    const decoded: any = jwtDecode(tokens.access_token);
+    const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+    // Set cookies for access token (with encoding)
+    setAuthCookie('access_token', tokens.access_token, expiresIn, true);
+
+    // Set X-Credential cookie without encoding to preserve the exact format
+    if (decoded.x_credentials) {
+      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn, false);
+    }
+
+    // Store user state
+    localStorage.setItem('user_state', 'authenticated');
+
+    // Only store refresh token if Remember Me is checked
+    if (rememberMe && tokens.refresh_token) {
+      localStorage.setItem('refresh_token', tokens.refresh_token);
+      // Store timestamp when refresh token was saved
+      localStorage.setItem('refresh_token_time', Date.now().toString());
+    } else {
+      // Clear refresh token if Remember Me is not checked
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('refresh_token_time');
+    }
+  }
+
+  return tokens;
+};

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
-import { authLogin, authRefresh } from "../services";
-import { validatePassword } from "../functions";
+import Banner from "../common/ui/banner";
+import Loader from "../common/ui/loader";
+import { validatePassword, handleAuthentication } from "../functions";
+import { checkEmail } from "../services";
 import type { PasswordChecks } from "../types";
-import { setAuthCookie } from "../utils/cookieHelper";
 import CreateAccountForm from "./create-account-form";
+import checkSuccessImg from "../icons/check-success.png";
 
 interface EmbeddedLoginFormProps {
   onSuccess: (userSession: any) => void;
@@ -25,7 +26,7 @@ const EmbeddedLoginForm = ({
   title = "Continue to login",
   subtitle = "Continue by signing in."
 }: EmbeddedLoginFormProps) => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +34,64 @@ const EmbeddedLoginForm = ({
   const [errorMessage, setErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(true); // Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check email existence when user types
+  useEffect(() => {
+    // Clear previous timeout
+    if (emailCheckTimeoutRef.current) {
+      clearTimeout(emailCheckTimeoutRef.current);
+    }
+
+    // Reset email exists state when email is empty or invalid
+    if (!email) {
+      setEmailExists(false);
+      setShowBanner(false);
+      return;
+    }
+
+    // Validate email format before making API call
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailExists(false);
+      setShowBanner(false);
+      return;
+    }
+
+    // Debounce email check by 500ms
+    emailCheckTimeoutRef.current = setTimeout(async () => {
+      setCheckingEmail(true);
+      try {
+        const result = await checkEmail(email);
+        // For login, we want emailExists to be true when user is found
+        if (result.exists) {
+          setEmailExists(true);
+          setShowBanner(false);
+        } else {
+          setEmailExists(false);
+          setShowBanner(true);
+        }
+      } catch (error) {
+        console.error('[EmbeddedLogin] Email check failed:', error);
+        // On error, allow user to proceed
+        setEmailExists(true);
+        setShowBanner(false);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (emailCheckTimeoutRef.current) {
+        clearTimeout(emailCheckTimeoutRef.current);
+      }
+    };
+  }, [email]);
 
   // Validate password whenever it changes
   useEffect(() => {
@@ -56,6 +114,10 @@ const EmbeddedLoginForm = ({
     passwordChecks.special
     : false;
 
+  // Check if email is valid
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isEmailValid = email && emailRegex.test(email);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") handleClose();
@@ -73,9 +135,9 @@ const EmbeddedLoginForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username || !password) {
-      setErrorMessage("Please enter both username and password");
-      onError("Please enter both username and password");
+    if (!email || !password) {
+      setErrorMessage("Please enter both email and password");
+      onError("Please enter both email and password");
       return;
     }
 
@@ -83,36 +145,8 @@ const EmbeddedLoginForm = ({
     setErrorMessage(""); // Clear previous errors
 
     try {
-
-      // Use the service function
-      const { tokens } = await authLogin(username, password);
-
-      // Store tokens if provided
-      if (tokens.access_token) {
-        const decoded: any = jwtDecode(tokens.access_token);
-        const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
-
-        // Set cookies for access token
-        setAuthCookie('access_token', tokens.access_token, expiresIn);
-
-        if (decoded.x_credentials) {
-          setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
-        }
-
-        // Store user state
-        localStorage.setItem('user_state', 'authenticated');
-
-        // Only store refresh token if Remember Me is checked
-        if (rememberMe && tokens.refresh_token) {
-          localStorage.setItem('refresh_token', tokens.refresh_token);
-          // Store timestamp when refresh token was saved
-          localStorage.setItem('refresh_token_time', Date.now().toString());
-        } else {
-          // Clear refresh token if Remember Me is not checked
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('refresh_token_time');
-        }
-      }
+      // Use the common authentication function
+      const tokens = await handleAuthentication(email, password, rememberMe);
 
       // Call success callback with result
       onSuccess(tokens);
@@ -164,24 +198,49 @@ const EmbeddedLoginForm = ({
           <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
-        <button onClick={() => authRefresh("eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIwMjQ3MjAwYy0zMzcyLTQyNmItYWVhMi1kYjkxYjM5YTdlZWUifQ.eyJleHAiOjE3Njg5Mzk1ODEsImlhdCI6MTc2ODkzNzc4MSwianRpIjoiODdiZjMyNjMtZGVhZi1iNGMxLTRlMWQtZTZkMWFiYTg0ZmUwIiwiaXNzIjoiaHR0cHM6Ly9kZXYta2V5Y2xvYWsuY29saWJyaWNvcmUuaW8vcmVhbG1zL2FsbGllZCIsImF1ZCI6Imh0dHBzOi8vZGV2LWtleWNsb2FrLmNvbGlicmljb3JlLmlvL3JlYWxtcy9hbGxpZWQiLCJ0eXAiOiJSZWZyZXNoIiwiYXpwIjoiY29saWJyaWNvcmUiLCJzaWQiOiJmYmNhNTE1MS1jYTlhLWFhMjgtNmNmMS0zMWVhYmE4MzFkMGQiLCJzY29wZSI6Im9wZW5pZCByb2xlcyBhY3IgcHJvZmlsZSBlbWFpbCB3ZWItb3JpZ2lucyJ9.FMFyThTF0Dtef475ZF9anL8j8QOUbxvj0UrH2Kzvout-A_5hO6c8GzRz6Uz3ncYZ3IwxTQh1lc5zS0EB3rDK2Q")}>Click</button>
-
         <form onSubmit={handleSubmit} className="space-y-2!">
           <div className="mt-0! ml-0! mb-4! mr-0!">
-            <label htmlFor="username" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
-              Email Address or Username
+            <label htmlFor="email" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+              Email Address
             </label>
             <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter email or username"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
               disabled={loading}
               className="w-full!"
-              autoComplete="username"
+              autoComplete="email"
+              endIcon={
+                <>
+                  {checkingEmail && <Loader />}
+                  {!checkingEmail && emailExists && isEmailValid && (
+                    <img
+                      src={checkSuccessImg}
+                      alt="user found"
+                      style={{ width: 18, height: 18 }}
+                    />
+                  )}
+                </>
+              }
             />
           </div>
+
+          {/* Banner for non-existing user - appears after email field */}
+          {showBanner && !emailExists && isEmailValid && (
+            <Banner
+              type="info"
+              message="We couldn't find an account with this email."
+              actionText="Let's create one to continue?"
+              onActionClick={() => {
+                setShowBanner(false);
+                setShowCreateAccount(true);
+              }}
+              onClose={() => setShowBanner(false)}
+              className="mb-4!"
+            />
+          )}
 
           <div className="mt-0! ml-0! mb-0! mr-0!">
             <label htmlFor="password" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
@@ -197,7 +256,7 @@ const EmbeddedLoginForm = ({
                   setErrorMessage(""); // Clear error when user types
                 }}
                 placeholder="Enter Password..."
-                disabled={loading}
+                disabled={loading || !isEmailValid || !emailExists}
                 className="w-full!"
                 autoComplete="current-password"
                 error={errorMessage}
@@ -234,15 +293,23 @@ const EmbeddedLoginForm = ({
               />
               <span className="text-gray-600!">Remember me</span>
             </label>
-            <a href="#" className="text-blue-600! hover:text-blue-700! no-underline!">
+            <a 
+              href="#" 
+              className={`text-blue-600! hover:text-blue-700! no-underline! ${(!isEmailValid || !emailExists) ? 'opacity-50! pointer-events-none!' : ''}`}
+              onClick={(e) => {
+                if (!isEmailValid || !emailExists) {
+                  e.preventDefault();
+                }
+              }}
+            >
               Forgot Password?
             </a>
           </div>
 
           <Button
             type="submit"
-            disabled={loading || !username || !password || !isPasswordValid || !rememberMe}
-            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+            disabled={loading || !email || !password || !isPasswordValid || !rememberMe || !isEmailValid || !emailExists}
+            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">
@@ -257,25 +324,23 @@ const EmbeddedLoginForm = ({
             )}
           </Button>
 
-          {/* Will enable it after completing API integration for registration page */}
-          {false && <>
-            <div className="relative! mt-6! mb-6!">
-              <div className="absolute! inset-0! flex! items-center!">
-                <div className="w-full! border-t! border-gray-300"></div>
-              </div>
-              <div className="relative! flex! justify-center! text-sm!">
-                <span className="px-2! bg-white text-gray-500">OR</span>
-              </div>
+          <div className="relative! mt-6! mb-6!">
+            <div className="absolute! inset-0! flex! items-center!">
+              <div className="w-full! border-t! border-gray-300"></div>
             </div>
+            <div className="relative! flex! justify-center! text-sm!">
+              <span className="px-2! bg-white text-gray-500">OR</span>
+            </div>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => setShowCreateAccount(true)}
-              disabled={loading}
-              className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
-            >
-              <span>Create an Account</span>
-            </button></>}
+          <button
+            type="button"
+            onClick={() => setShowCreateAccount(true)}
+            disabled={loading}
+            className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+          >
+            <span>Create an Account</span>
+          </button>
         </form>
       </div>
     </div>

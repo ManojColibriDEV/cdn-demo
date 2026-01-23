@@ -6,9 +6,6 @@ import App from './App';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
-console.log('[main.tsx] VITE_RENDER_MODE:', renderMode);
-console.log('[main.tsx] All env vars:', import.meta.env);
-
 if (renderMode === 'TEST') {
   // Standalone testing mode with BrowserRouter
   console.log('[main.tsx] Rendering in TEST mode');
@@ -50,6 +47,8 @@ if (renderMode === 'TEST') {
     }
 
     private handleRedirect = (url: string, userSession?: any) => {
+      console.log('[Widget] handleRedirect called, url:', url);
+      
       // Dispatch custom event to host page with URL and user session
       const event = new CustomEvent("redirect", {
         detail: { 
@@ -63,11 +62,15 @@ if (renderMode === 'TEST') {
       });
       
       this.dispatchEvent(event);
+      console.log('[Widget] Redirect event dispatched');
       
       // Auto-redirect in main window if URL is provided
+      // Add small delay to allow event handlers to process
       if (url) {
-        console.log('[Widget] Redirecting to:', url);
-        window.location.href = url;
+        console.log('[Widget] Will redirect to:', url, 'in 200ms');
+        setTimeout(() => {
+          window.location.href = url;
+        }, 200);
       }
     }
 
