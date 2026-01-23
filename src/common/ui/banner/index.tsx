@@ -101,7 +101,7 @@ const Banner: FC<BannerProps> = ({
 
   return (
     <div className={`flex! items-center! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}>
-      <div className={`flex-shrink-0! ${styles.iconColor}`}>
+      <div className={`flex-shrink-0! ${styles.iconColor}!`}>
         {getIcon()}
       </div>
       <div className="ml-3! flex-1! flex! items-center! gap-2!">
@@ -112,7 +112,7 @@ const Banner: FC<BannerProps> = ({
           <button
             type="button"
             onClick={onActionClick}
-            className={`text-sm! font-medium! ${styles.actionColor} ${styles.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap!`}
+            className={`text-sm! font-medium! ${styles.actionColor} ${styles.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! shadow-none!`}
           >
             {actionText}
           </button>
@@ -123,7 +123,7 @@ const Banner: FC<BannerProps> = ({
         <button
           type="button"
           onClick={onClose}
-          className={`ml-2! flex-shrink-0! inline-flex! ${styles.iconColor} hover:${styles.text} bg-transparent! border-none! cursor-pointer! p-0!`}
+          className={`ml-2! flex-shrink-0! inline-flex! ${styles.iconColor}! hover:${styles.text}! bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`}
         >
           <span className="sr-only">Dismiss</span>
           <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">

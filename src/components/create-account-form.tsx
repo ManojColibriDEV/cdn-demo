@@ -238,7 +238,7 @@ const CreateAccountForm = ({
         <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
           <button
             onClick={handleClose}
-            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none!"
+            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
             type="button"
           >
             <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,7 +319,7 @@ const CreateAccountForm = ({
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name"
                   disabled={loading || emailExists || !isEmailValid}
-                  className="w-full!"
+                  className="w-[50%]!"
                   autoComplete="given-name"
                   error={touched && !firstName ? "Required" : ""}
                 />
@@ -335,7 +335,7 @@ const CreateAccountForm = ({
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="First Name"
                   disabled={loading || emailExists || !isEmailValid}
-                  className="w-full!"
+                  className="w-[50%]!"
                   autoComplete="family-name"
                   error={touched && !lastName ? "Required" : ""}
                 />
@@ -397,7 +397,7 @@ const CreateAccountForm = ({
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2! rounded! border-gray-300!"
+                  className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none!"
                 />
                 <span className="text-gray-600! text-sm!">Remember me</span>
               </label>
@@ -437,7 +437,7 @@ const CreateAccountForm = ({
               type="button"
               onClick={onSignIn}
               disabled={loading}
-              className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+              className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
             >
               <span>Sign In</span>
             </button>

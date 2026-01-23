@@ -289,7 +289,7 @@ const EmbeddedLoginForm = ({
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="mr-2! rounded! border-gray-300!"
+                className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none!"
               />
               <span className="text-gray-600!">Remember me</span>
             </label>
@@ -337,7 +337,7 @@ const EmbeddedLoginForm = ({
             type="button"
             onClick={() => setShowCreateAccount(true)}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             <span>Create an Account</span>
           </button>
