@@ -289,13 +289,8 @@ const CreateAccountForm = ({
           <form onSubmit={handleSubmit} className="space-y-4!">
             {/* Email Address */}
             <div className="mt-0! ml-0! mb-4! mr-0!">
-              <label
-                htmlFor="email"
-                className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
-              >
-                Email Address
-              </label>
               <Input
+                label="Email Address"
                 id="email"
                 type="email"
                 value={email}
@@ -345,56 +340,37 @@ const CreateAccountForm = ({
 
             {/* First Name and Last Name */}
             <div className="grid! grid-cols-2! gap-4! mt-0! ml-0! mb-4! mr-0!">
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
-                >
-                  First Name
-                </label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First Name"
-                  disabled={loading || emailExists || !isEmailValid}
-                  className="w-[50%]!"
-                  autoComplete="given-name"
-                  error={touched && !firstName ? "Required" : ""}
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
-                >
-                  Last Name
-                </label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last Name"
-                  disabled={loading || emailExists || !isEmailValid}
-                  className="w-[50%]!"
-                  autoComplete="family-name"
-                  error={touched && !lastName ? "Required" : ""}
-                />
-              </div>
+              <Input
+                label="First Name"
+                id="firstName"
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First Name"
+                disabled={loading || emailExists || !isEmailValid}
+                className="w-full!"
+                autoComplete="given-name"
+                error={touched && !firstName ? "Required" : ""}
+              />
+              <Input
+                label="Last Name"
+                id="lastName"
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last Name"
+                disabled={loading || emailExists || !isEmailValid}
+                className="w-full!"
+                autoComplete="family-name"
+                error={touched && !lastName ? "Required" : ""}
+              />
             </div>
 
             {/* Password */}
             <div className="mt-0! ml-0! mb-4! mr-0!">
-              <label
-                htmlFor="password"
-                className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
-              >
-                Password
-              </label>
               <div className="relative! w-full!">
                 <Input
+                  label="Password"
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
