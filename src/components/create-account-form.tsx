@@ -25,7 +25,7 @@ const CreateAccountForm = ({
   handleClose,
   onSignIn,
   title = "Create your account",
-  subtitle = "Create an account to continue to checkout"
+  subtitle = "Create an account to continue to checkout",
 }: CreateAccountFormProps) => {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -34,7 +34,9 @@ const CreateAccountForm = ({
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
+  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
+    null,
+  );
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [errorMessage, setErrorMessage] = useState("");
   const [touched, setTouched] = useState(false);
@@ -43,7 +45,9 @@ const CreateAccountForm = ({
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [rememberMe, setRememberMe] = useState(true); // Checked by default
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<'success' | 'warning' | 'error' | 'info'>('info');
+  const [toastType, setToastType] = useState<
+    "success" | "warning" | "error" | "info"
+  >("info");
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -82,7 +86,7 @@ const CreateAccountForm = ({
           setShowBanner(false);
         }
       } catch (error) {
-        console.error('[CreateAccount] Email check failed:', error);
+        console.error("[CreateAccount] Email check failed:", error);
         // On error, don't block the user
         setEmailExists(false);
         setShowBanner(false);
@@ -102,10 +106,13 @@ const CreateAccountForm = ({
   // Validate password whenever it changes
   useEffect(() => {
     if (password) {
-      const userData = email || firstName || lastName ? {
-        email: email,
-        displayName: `${firstName} ${lastName}`.trim()
-      } : null;
+      const userData =
+        email || firstName || lastName
+          ? {
+              email: email,
+              displayName: `${firstName} ${lastName}`.trim(),
+            }
+          : null;
       const checks = validatePassword(password, userData);
       setPasswordChecks(checks);
     } else {
@@ -116,14 +123,14 @@ const CreateAccountForm = ({
   // Check if all password requirements are met
   const isPasswordValid = passwordChecks
     ? passwordChecks.length &&
-    passwordChecks.upper &&
-    passwordChecks.lower &&
-    passwordChecks.number &&
-    passwordChecks.noSpaces &&
-    passwordChecks.noTriple &&
-    passwordChecks.special &&
-    passwordChecks.noNameParts &&
-    passwordChecks.noEmailParts
+      passwordChecks.upper &&
+      passwordChecks.lower &&
+      passwordChecks.number &&
+      passwordChecks.noSpaces &&
+      passwordChecks.noTriple &&
+      passwordChecks.special &&
+      passwordChecks.noNameParts &&
+      passwordChecks.noEmailParts
     : false;
 
   // Check if email is valid
@@ -178,7 +185,7 @@ const CreateAccountForm = ({
 
     try {
       // Extract username from email (part before @)
-      const username = email.split('@')[0];
+      const username = email.split("@")[0];
 
       // Call registration API
       const registrationResult = await authRegister({
@@ -186,31 +193,47 @@ const CreateAccountForm = ({
         email,
         firstName,
         lastName,
-        password
+        password,
       });
 
-      console.log('[CreateAccount] Registration successful:', registrationResult.message);
+      console.log(
+        "[CreateAccount] Registration successful:",
+        registrationResult.message,
+      );
 
       // After successful registration, automatically log in the user
       // Use the username (extracted from email) for login
       try {
-        const tokens = await handleAuthentication(username, password, rememberMe);
+        const tokens = await handleAuthentication(
+          username,
+          password,
+          rememberMe,
+        );
 
         // Call success callback with tokens
         onSuccess(tokens);
       } catch (loginError) {
-        console.error('[CreateAccount] Auto-login failed after registration:', loginError);
-        const loginErrorMsg = loginError instanceof Error ? loginError.message : 'Auto-login failed';
-        setErrorMessage(`Registration successful, but ${loginErrorMsg}. Please try logging in manually.`);
+        console.error(
+          "[CreateAccount] Auto-login failed after registration:",
+          loginError,
+        );
+        const loginErrorMsg =
+          loginError instanceof Error
+            ? loginError.message
+            : "Auto-login failed";
+        setErrorMessage(
+          `Registration successful, but ${loginErrorMsg}. Please try logging in manually.`,
+        );
         onError(loginErrorMsg);
       }
     } catch (error) {
-      console.error('[CreateAccount] Registration failed:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Registration failed';
+      console.error("[CreateAccount] Registration failed:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Registration failed";
 
       // Show toast for errors
       setToastMessage(errorMsg);
-      setToastType('error');
+      setToastType("error");
       setErrorMessage(errorMsg);
       onError(errorMsg);
     } finally {
@@ -238,23 +261,38 @@ const CreateAccountForm = ({
         <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
           <button
             onClick={handleClose}
-            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none!"
+            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
             type="button"
           >
-            <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6! h-6!"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
 
           <div className="mb-6! text-center!">
-            <h2 className="text-2xl! font-bold! text-gray-800! mb-1!">{title}</h2>
+            <h2 className="text-2xl! font-bold! text-gray-800! mb-1!">
+              {title}
+            </h2>
             <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4!">
             {/* Email Address */}
             <div className="mt-0! ml-0! mb-4! mr-0!">
-              <label htmlFor="email" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+              <label
+                htmlFor="email"
+                className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+              >
                 Email Address
               </label>
               <Input
@@ -270,22 +308,21 @@ const CreateAccountForm = ({
                 className="w-full!"
                 autoComplete="email"
                 error={
-                  touched && !email
-                    ? "Required"
-                    : emailError
-                      ? emailError
-                      : ""
+                  touched && !email ? "Required" : emailError ? emailError : ""
                 }
                 endIcon={
                   <>
                     {checkingEmail && <Loader />}
-                    {!checkingEmail && !emailExists && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
-                      <img
-                        src={checkSuccessImg}
-                        alt="available"
-                        style={{ width: 18, height: 18 }}
-                      />
-                    )}
+                    {!checkingEmail &&
+                      !emailExists &&
+                      email &&
+                      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
+                        <img
+                          src={checkSuccessImg}
+                          alt="available"
+                          style={{ width: 18, height: 18 }}
+                        />
+                      )}
                   </>
                 }
               />
@@ -309,7 +346,10 @@ const CreateAccountForm = ({
             {/* First Name and Last Name */}
             <div className="grid! grid-cols-2! gap-4! mt-0! ml-0! mb-4! mr-0!">
               <div>
-                <label htmlFor="firstName" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+                <label
+                  htmlFor="firstName"
+                  className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+                >
                   First Name
                 </label>
                 <Input
@@ -319,13 +359,16 @@ const CreateAccountForm = ({
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="First Name"
                   disabled={loading || emailExists || !isEmailValid}
-                  className="w-full!"
+                  className="w-[50%]!"
                   autoComplete="given-name"
                   error={touched && !firstName ? "Required" : ""}
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+                <label
+                  htmlFor="lastName"
+                  className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+                >
                   Last Name
                 </label>
                 <Input
@@ -333,9 +376,9 @@ const CreateAccountForm = ({
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="First Name"
+                  placeholder="Last Name"
                   disabled={loading || emailExists || !isEmailValid}
-                  className="w-full!"
+                  className="w-[50%]!"
                   autoComplete="family-name"
                   error={touched && !lastName ? "Required" : ""}
                 />
@@ -344,7 +387,10 @@ const CreateAccountForm = ({
 
             {/* Password */}
             <div className="mt-0! ml-0! mb-4! mr-0!">
-              <label htmlFor="password" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+              <label
+                htmlFor="password"
+                className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+              >
                 Password
               </label>
               <div className="relative! w-full!">
@@ -375,13 +421,38 @@ const CreateAccountForm = ({
                       tabIndex={-1}
                     >
                       {showPassword ? (
-                        <svg className="w-5! h-5!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        <svg
+                          className="w-5! h-5!"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-5! h-5!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <svg
+                          className="w-5! h-5!"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                          />
                         </svg>
                       )}
                     </button>
@@ -397,7 +468,7 @@ const CreateAccountForm = ({
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2! rounded! border-gray-300!"
+                  className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none!"
                 />
                 <span className="text-gray-600! text-sm!">Remember me</span>
               </label>
@@ -411,14 +482,29 @@ const CreateAccountForm = ({
             >
               {loading ? (
                 <span className="flex! items-center! justify-center!">
-                  <svg className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25!" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75!" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25!"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75!"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Creating Account...
                 </span>
               ) : (
-                'Create Account'
+                "Create Account"
               )}
             </Button>
 
@@ -437,7 +523,7 @@ const CreateAccountForm = ({
               type="button"
               onClick={onSignIn}
               disabled={loading}
-              className="w-full! flex! items-center! justify-center! gap-3! bg-white border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+              className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
             >
               <span>Sign In</span>
             </button>

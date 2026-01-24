@@ -21,10 +21,10 @@ npm install @colibri/identity-widget
 **Option 2: From Local Package (for testing)**
 ```bash
 # Install from .tgz file
-npm install ../path/to/colibri-identity-widget-1.0.0.tgz
+npm install ../path/to/colibri-identity-widget-1.0.3.tgz
 
 # Or use absolute path
-npm install D:/Users/Manoj.Ponugoti/Videos/PROJECTS/Colibri.Identity.Widget/colibri-identity-widget-1.0.0.tgz
+npm install D:/Users/Manoj.Ponugoti/Videos/PROJECTS/Colibri.Identity.Widget/colibri-identity-widget-1.0.3.tgz
 ```
 
 **Option 3: From AWS CodeArtifact (private registry)**
@@ -2244,6 +2244,12 @@ widget.addEventListener('redirect', handleRedirect);
 ---
 
 ##  Version History
+
+### Version 1.0.3
+- Updated styles in Banner component for improved visual consistency
+- Enhanced styling in Create Account form and Embedded Login form
+- Improved UI/UX with refined spacing, margins, and layout adjustments
+- Fixed styling issues for better cross-browser compatibility
 
 ### Version 1.0.2
 - Added registration page functionality
