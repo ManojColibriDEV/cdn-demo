@@ -33,11 +33,18 @@ if (renderMode === 'TEST') {
 
 ### CSS Injection Strategy
 
-**Critical**: CSS is injected into JS bundle, not served separately. Custom Vite plugin at `src/tools/vite-plugin-css-injector.ts`:
+**Critical**: CSS is injected into JS bundle and into Shadow DOM for style isolation. Custom Vite plugin at `src/tools/vite-plugin-css-injector.ts`:
 - Reads generated CSS from build
-- Injects as `<style>` tag via JavaScript
+- Exposes `window.injectWidgetStyles()` function for Shadow DOM injection
+- Injects styles into both Shadow DOM (production) and document head (TEST mode)
 - Deletes standalone CSS file from bundle
-- This ensures single-file distribution for web component
+- This ensures single-file distribution and prevents host page CSS conflicts
+
+**Shadow DOM Usage**:
+- Production builds use Shadow DOM (`attachShadow({ mode: 'open' })`) for complete style isolation
+- Styles are injected into each Shadow DOM instance via `injectWidgetStyles()`
+- Prevents host page styles from overriding widget styles
+- TEST mode still injects into document head for easier debugging
 
 ### Build Commands
 
@@ -172,10 +179,11 @@ Example: `common/ui/banner/index.tsx` for inline messages, `common/ui/toast/inde
 
 1. **Don't hardcode environment URLs** → Always use `VITE_RENDER_MODE` detection in services
 2. **CSS changes require full rebuild** → CSS injection happens at build time, not runtime
-3. **TypeScript imports** → Use `(import.meta as any).env` instead of `process.env`
-4. **Web component attributes** → Use kebab-case in HTML (`callback-url`), camelCase in TypeScript (`callbackUrl`)
-5. **Production testing** → Must build and test with `widget-test.html`, dev mode won't catch web component issues
-6. **Token encoding** → Access tokens are encoded in cookies, X-Credential is NOT (see `setAuthCookie` 3rd param)
+3. **Shadow DOM isolation** → Widget uses Shadow DOM for style isolation; host page styles won't affect widget
+4. **TypeScript imports** → Use `(import.meta as any).env` instead of `process.env`
+5. **Web component attributes** → Use kebab-case in HTML (`callback-url`), camelCase in TypeScript (`callbackUrl`)
+6. **Production testing** → Must build and test with `widget-test.html`, dev mode won't catch web component issues
+7. **Token encoding** → Access tokens are encoded in cookies, X-Credential is NOT (see `setAuthCookie` 3rd param)
 
 ## Documentation Resources
 

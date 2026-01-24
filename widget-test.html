@@ -36,6 +36,25 @@
       border-radius: 5px;
       margin-top: 20px;
     }
+
+    /* AGGRESSIVE STYLES TO TEST SHADOW DOM ISOLATION */
+    /* These should NOT affect the widget because of Shadow DOM */
+    input {
+      background-color: yellow !important;
+      border: 5px solid red !important;
+      color: purple !important;
+      font-size: 24px !important;
+    }
+    
+    label {
+      background-color: orange !important;
+      color: green !important;
+      font-size: 30px !important;
+    }
+    
+    div {
+      border: 3px dashed blue !important;
+    }
   </style>
 </head>
 

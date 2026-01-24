@@ -27,6 +27,7 @@ if (renderMode === 'TEST') {
   class KeycloakWidget extends HTMLElement {
     private root?: Root;
     private mountPoint!: HTMLDivElement;
+    private shadowRoot!: ShadowRoot;
 
     static get observedAttributes() {
       return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle", "show-login"];
@@ -38,8 +39,18 @@ if (renderMode === 'TEST') {
     public onLogout?: () => void;
 
     connectedCallback() {
+      // Use Shadow DOM for style isolation
+      if (!this.shadowRoot) {
+        this.shadowRoot = this.attachShadow({ mode: 'open' });
+        
+        // Inject widget styles into Shadow DOM
+        if (typeof (window as any).injectWidgetStyles === 'function') {
+          (window as any).injectWidgetStyles(this.shadowRoot);
+        }
+      }
+      
       this.mountPoint = document.createElement("div");
-      this.appendChild(this.mountPoint);
+      this.shadowRoot.appendChild(this.mountPoint);
       this.render();
     }
 

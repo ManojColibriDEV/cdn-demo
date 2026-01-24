@@ -28,15 +28,31 @@ export function cssInjectedByJsPlugin(): Plugin {
           })
           .join('\n');
 
-        // Create the CSS injection code
+        // Create the CSS injection code for Shadow DOM
+        // Export CSS content as a variable that can be injected into Shadow DOM
         const cssInjectionCode = `
+// CSS content for Shadow DOM injection
+var __WIDGET_CSS__ = ${JSON.stringify(cssContent)};
+
+// Function to inject CSS into Shadow DOM - exposed globally for web component
+window.injectWidgetStyles = function(shadowRoot) {
+  try {
+    var elementStyle = document.createElement('style');
+    elementStyle.appendChild(document.createTextNode(__WIDGET_CSS__));
+    shadowRoot.appendChild(elementStyle);
+  } catch(e) {
+    console.error('vite-plugin-css-injector: Shadow DOM injection failed', e);
+  }
+};
+
+// Also inject into document head for TEST mode (non-Shadow DOM)
 (function() {
   try {
     var elementStyle = document.createElement('style');
-    elementStyle.appendChild(document.createTextNode(${JSON.stringify(cssContent)}));
+    elementStyle.appendChild(document.createTextNode(__WIDGET_CSS__));
     document.head.appendChild(elementStyle);
   } catch(e) {
-    console.error('vite-plugin-css-injector', e);
+    console.error('vite-plugin-css-injector: Document head injection failed', e);
   }
 })();
 `;
