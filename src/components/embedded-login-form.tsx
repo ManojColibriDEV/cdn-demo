@@ -24,13 +24,15 @@ const EmbeddedLoginForm = ({
   handleClose,
   authority,
   title = "Continue to login",
-  subtitle = "Continue by signing in."
+  subtitle = "Continue by signing in.",
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(null);
+  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
+    null,
+  );
   const [errorMessage, setErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(true); // Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
@@ -76,7 +78,7 @@ const EmbeddedLoginForm = ({
           setShowBanner(true);
         }
       } catch (error) {
-        console.error('[EmbeddedLogin] Email check failed:', error);
+        console.error("[EmbeddedLogin] Email check failed:", error);
         // On error, allow user to proceed
         setEmailExists(true);
         setShowBanner(false);
@@ -106,12 +108,12 @@ const EmbeddedLoginForm = ({
   // Check if all password requirements are met
   const isPasswordValid = passwordChecks
     ? passwordChecks.length &&
-    passwordChecks.upper &&
-    passwordChecks.lower &&
-    passwordChecks.number &&
-    passwordChecks.noSpaces &&
-    passwordChecks.noTriple &&
-    passwordChecks.special
+      passwordChecks.upper &&
+      passwordChecks.lower &&
+      passwordChecks.number &&
+      passwordChecks.noSpaces &&
+      passwordChecks.noTriple &&
+      passwordChecks.special
     : false;
 
   // Check if email is valid
@@ -151,8 +153,9 @@ const EmbeddedLoginForm = ({
       // Call success callback with result
       onSuccess(tokens);
     } catch (error) {
-      console.error('[EmbeddedLogin] Login failed:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Authentication failed';
+      console.error("[EmbeddedLogin] Login failed:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Authentication failed";
       setErrorMessage(errorMsg);
       onError(errorMsg);
     } finally {
@@ -188,8 +191,18 @@ const EmbeddedLoginForm = ({
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
           type="button"
         >
-          <svg className="w-6! h-6!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-6! h-6!"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
 
@@ -200,10 +213,8 @@ const EmbeddedLoginForm = ({
 
         <form onSubmit={handleSubmit} className="space-y-2!">
           <div className="mt-0! ml-0! mb-4! mr-0!">
-            <label htmlFor="email" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
-              Email Address
-            </label>
             <Input
+              label="Email Address"
               id="email"
               type="email"
               value={email}
@@ -243,11 +254,9 @@ const EmbeddedLoginForm = ({
           )}
 
           <div className="mt-0! ml-0! mb-0! mr-0!">
-            <label htmlFor="password" className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
-              Password
-            </label>
             <div className="relative! w-full!">
               <Input
+                label="Password"
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -268,13 +277,38 @@ const EmbeddedLoginForm = ({
                     tabIndex={-1}
                   >
                     {showPassword ? (
-                      <svg className="w-5! h-5!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      <svg
+                        className="w-5! h-5!"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                        />
                       </svg>
                     ) : (
-                      <svg className="w-5! h-5!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      <svg
+                        className="w-5! h-5!"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
                       </svg>
                     )}
                   </button>
@@ -293,9 +327,9 @@ const EmbeddedLoginForm = ({
               />
               <span className="text-gray-600!">Remember me</span>
             </label>
-            <a 
-              href="#" 
-              className={`text-blue-600! hover:text-blue-700! no-underline! ${(!isEmailValid || !emailExists) ? 'opacity-50! pointer-events-none!' : ''}`}
+            <a
+              href="#"
+              className={`text-blue-600! hover:text-blue-700! no-underline! ${!isEmailValid || !emailExists ? "opacity-50! pointer-events-none!" : ""}`}
               onClick={(e) => {
                 if (!isEmailValid || !emailExists) {
                   e.preventDefault();
@@ -308,19 +342,41 @@ const EmbeddedLoginForm = ({
 
           <Button
             type="submit"
-            disabled={loading || !email || !password || !isPasswordValid || !isEmailValid || !emailExists}
+            disabled={
+              loading ||
+              !email ||
+              !password ||
+              !isPasswordValid ||
+              !isEmailValid ||
+              !emailExists
+            }
             className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">
-                <svg className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25!" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75!" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25!"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75!"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Signing in...
               </span>
             ) : (
-              'Sign In'
+              "Sign In"
             )}
           </Button>
 
