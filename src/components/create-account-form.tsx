@@ -37,8 +37,6 @@ const CreateAccountForm = ({
   const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
     null,
   );
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [errorMessage, setErrorMessage] = useState("");
   const [touched, setTouched] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
@@ -158,7 +156,6 @@ const CreateAccountForm = ({
     setTouched(true);
 
     if (!email || !firstName || !lastName || !password) {
-      setErrorMessage("Please fill in all required fields");
       onError("Please fill in all required fields");
       return;
     }
@@ -167,19 +164,16 @@ const CreateAccountForm = ({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setEmailError("Please enter a valid email address");
-      setErrorMessage("Please enter a valid email address");
       onError("Please enter a valid email address");
       return;
     }
 
     if (!isPasswordValid) {
-      setErrorMessage("Password does not meet requirements");
       onError("Password does not meet requirements");
       return;
     }
 
     setLoading(true);
-    setErrorMessage("");
     setEmailError("");
     setToastMessage("");
 
@@ -221,9 +215,6 @@ const CreateAccountForm = ({
           loginError instanceof Error
             ? loginError.message
             : "Auto-login failed";
-        setErrorMessage(
-          `Registration successful, but ${loginErrorMsg}. Please try logging in manually.`,
-        );
         onError(loginErrorMsg);
       }
     } catch (error) {
@@ -234,7 +225,6 @@ const CreateAccountForm = ({
       // Show toast for errors
       setToastMessage(errorMsg);
       setToastType("error");
-      setErrorMessage(errorMsg);
       onError(errorMsg);
     } finally {
       setLoading(false);
@@ -376,7 +366,6 @@ const CreateAccountForm = ({
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    setErrorMessage("");
                   }}
                   placeholder="Enter Password..."
                   disabled={loading || emailExists || !isEmailValid}
