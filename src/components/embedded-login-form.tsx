@@ -16,6 +16,7 @@ interface EmbeddedLoginFormProps {
   authority?: string;
   title?: string;
   subtitle?: string;
+  initialEmail?: string;
 }
 
 const EmbeddedLoginForm = ({
@@ -25,8 +26,9 @@ const EmbeddedLoginForm = ({
   authority,
   title = "Continue to login",
   subtitle = "Continue by signing in.",
+  initialEmail = "",
 }: EmbeddedLoginFormProps) => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -173,8 +175,14 @@ const EmbeddedLoginForm = ({
         }}
         onError={onError}
         handleClose={handleClose}
-        onSignIn={() => setShowCreateAccount(false)}
+        onSignIn={(returnedEmail) => {
+          setShowCreateAccount(false);
+          if (returnedEmail) {
+            setEmail(returnedEmail);
+          }
+        }}
         authority={authority}
+        initialEmail={email}
       />
     );
   }

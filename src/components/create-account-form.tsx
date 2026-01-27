@@ -13,10 +13,11 @@ interface CreateAccountFormProps {
   onSuccess: (userSession: any) => void;
   onError: (error: string) => void;
   handleClose: () => void;
-  onSignIn: () => void;
+  onSignIn: (email?: string) => void;
   authority?: string;
   title?: string;
   subtitle?: string;
+  initialEmail?: string;
 }
 
 const CreateAccountForm = ({
@@ -26,8 +27,9 @@ const CreateAccountForm = ({
   onSignIn,
   title = "Create your account",
   subtitle = "Create an account to continue to checkout",
+  initialEmail = "",
 }: CreateAccountFormProps) => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
@@ -321,7 +323,7 @@ const CreateAccountForm = ({
                 actionText="Want to sign in instead?"
                 onActionClick={() => {
                   setShowBanner(false);
-                  onSignIn();
+                  onSignIn(email);
                 }}
                 onClose={() => setShowBanner(false)}
                 className="mb-4!"
@@ -486,7 +488,7 @@ const CreateAccountForm = ({
             {/* Sign In Button */}
             <button
               type="button"
-              onClick={onSignIn}
+              onClick={() => onSignIn(email)}
               disabled={loading}
               className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
             >
