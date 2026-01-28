@@ -7,6 +7,7 @@ import { validatePassword, handleAuthentication } from "../functions";
 import { checkEmail } from "../services";
 import type { PasswordChecks } from "../types";
 import CreateAccountForm from "./create-account-form";
+import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/check-success.png";
 
 interface EmbeddedLoginFormProps {
@@ -38,6 +39,7 @@ const EmbeddedLoginForm = ({
   const [errorMessage, setErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(true); // Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -164,6 +166,17 @@ const EmbeddedLoginForm = ({
       setLoading(false);
     }
   };
+
+  // If showing reset password form, render that instead
+  if (showResetPassword) {
+    return (
+      <ResetPasswordForm
+        email={email}
+        onBack={() => setShowResetPassword(false)}
+        handleClose={handleClose}
+      />
+    );
+  }
 
   // If showing create account form, render that instead
   if (showCreateAccount) {
@@ -339,8 +352,9 @@ const EmbeddedLoginForm = ({
               href="#"
               className={`text-blue-600! hover:text-blue-700! no-underline! ${!isEmailValid || !emailExists ? "opacity-50! pointer-events-none!" : ""}`}
               onClick={(e) => {
-                if (!isEmailValid || !emailExists) {
-                  e.preventDefault();
+                e.preventDefault();
+                if (isEmailValid && emailExists) {
+                  setShowResetPassword(true);
                 }
               }}
             >
