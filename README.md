@@ -1,10 +1,10 @@
-# Colibri Identity Widget
+﻿# Colibri Identity Widget
 
 A reusable authentication widget for Colibri Identity platform. Available as both NPM package and CDN script.
 
----
 
-## 📦 NPM Installation & Usage
+
+## NPM Installation & Usage
 
 ### Prerequisites
 
@@ -125,7 +125,7 @@ function App() {
           <h2 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>User Status</h2>
           {userSession ? (
             <div>
-              <p style={{ color: '#059669', fontWeight: '500', marginBottom: '0.5rem' }}>✓ Authenticated</p>
+              <p style={{ color: '#059669', fontWeight: '500', marginBottom: '0.5rem' }}>âœ“ Authenticated</p>
               <pre style={{ 
                 background: '#f9fafb', 
                 padding: '1rem', 
@@ -362,7 +362,7 @@ export {};
 
 ---
 
-## 🌐 CDN Usage
+## ðŸŒ CDN Usage
 
 ### Basic HTML Implementation
 
@@ -570,7 +570,7 @@ widget.addEventListener('logout', () => {
 
 ---
 
-## 🔧 Development & Publishing
+## ðŸ”§ Development & Publishing
 
 ### Making Changes
 
@@ -606,13 +606,13 @@ This command automatically:
 - Creates a git tag (e.g., `v1.0.1`)
 
 ```bash
-# Patch version (1.0.0 → 1.0.1) - For bug fixes
+# Patch version (1.0.0 â†’ 1.0.1) - For bug fixes
 npm version patch
 
-# Minor version (1.0.0 → 1.1.0) - For new features (backward compatible)
+# Minor version (1.0.0 â†’ 1.1.0) - For new features (backward compatible)
 npm version minor
 
-# Major version (1.0.0 → 2.0.0) - For breaking changes
+# Major version (1.0.0 â†’ 2.0.0) - For breaking changes
 npm version major
 ```
 
@@ -651,8 +651,8 @@ git commit -m "UPDATE(UST_123): Bump version to 1.0.1"
 ```
 
 **When to use which:**
-- ✅ Use `npm version` - Faster, automatic, less error-prone
-- ⚠️ Manual update - Only when you need custom commit message
+- âœ… Use `npm version` - Faster, automatic, less error-prone
+- âš ï¸ Manual update - Only when you need custom commit message
 
 ---
 
@@ -770,10 +770,10 @@ npm pack
 This creates `colibri-identity-widget-<version>.tgz`
 
 **When to use npm pack:**
-- ✅ Testing widget in another project locally before publishing
-- ✅ Sharing widget with teammates without publishing to registry
-- ✅ Verifying package contents before publishing
-- ✅ Creating a backup of the package
+- âœ… Testing widget in another project locally before publishing
+- âœ… Sharing widget with teammates without publishing to registry
+- âœ… Verifying package contents before publishing
+- âœ… Creating a backup of the package
 
 **Example:**
 ```bash
@@ -789,7 +789,7 @@ npm install ../Colibri.Identity.Widget/colibri-identity-widget-1.0.0.tgz
 
 ---
 
-## 📤 Publishing to AWS CodeArtifact
+## ðŸ“¤ Publishing to AWS CodeArtifact
 
 ### Prerequisites
 
@@ -847,7 +847,7 @@ npm install @colibri/identity-widget
 
 ---
 
-## 📝 Git Commit Conventions
+## ðŸ“ Git Commit Conventions
 
 ### Commit Message Format
 
@@ -886,7 +886,7 @@ git commit -m "CHORE(UST_129): Update dependencies to latest versions"
 
 ---
 
-## 🏷️ Git Tagging & Version Management
+## ðŸ·ï¸ Git Tagging & Version Management
 
 ### Understanding Semantic Versioning
 
@@ -898,9 +898,9 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.3`)
 
 **Examples:**
 ```bash
-1.0.0 → 1.0.1  # Fixed login button styling (PATCH)
-1.0.1 → 1.1.0  # Added Remember Me feature (MINOR)
-1.1.0 → 2.0.0  # Changed authentication API (MAJOR - breaking)
+1.0.0 â†’ 1.0.1  # Fixed login button styling (PATCH)
+1.0.1 â†’ 1.1.0  # Added Remember Me feature (MINOR)
+1.1.0 â†’ 2.0.0  # Changed authentication API (MAJOR - breaking)
 ```
 
 ### Using npm version (Recommended)
@@ -908,20 +908,20 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.3`)
 **Automatic Version Update + Git Tag:**
 
 ```bash
-# Patch: Bug fixes (1.0.0 → 1.0.1)
+# Patch: Bug fixes (1.0.0 â†’ 1.0.1)
 npm version patch
 
-# Minor: New features (1.0.0 → 1.1.0)
+# Minor: New features (1.0.0 â†’ 1.1.0)
 npm version minor
 
-# Major: Breaking changes (1.0.0 → 2.0.0)
+# Major: Breaking changes (1.0.0 â†’ 2.0.0)
 npm version major
 ```
 
 **What `npm version` does automatically:**
-1. ✅ Updates `package.json` version field
-2. ✅ Creates a git commit with message like "v1.0.1"
-3. ✅ Creates a git tag named "v1.0.1"
+1. âœ… Updates `package.json` version field
+2. âœ… Creates a git commit with message like "v1.0.1"
+3. âœ… Creates a git tag named "v1.0.1"
 
 **Example:**
 ```bash
@@ -1071,7 +1071,7 @@ git push origin --delete v1.0.1
 git add .
 git commit -m "FIX(UST_200): Resolve modal close button not working"
 
-# Bump patch version (1.0.0 → 1.0.1)
+# Bump patch version (1.0.0 â†’ 1.0.1)
 npm version patch
 
 # Push to GitHub
@@ -1085,7 +1085,7 @@ git push origin v1.0.1
 git add .
 git commit -m "UPDATE(UST_201): Add dark mode support"
 
-# Bump minor version (1.0.1 → 1.1.0)
+# Bump minor version (1.0.1 â†’ 1.1.0)
 npm version minor
 
 # Push to GitHub
@@ -1165,9 +1165,9 @@ git pull origin main
 # STEP 6: Update Version (Auto-commits & Tags)
 # ========================================
 # Choose based on your changes:
-npm version patch   # For bug fixes: 1.0.0 → 1.0.1
-# npm version minor # For new features: 1.0.0 → 1.1.0
-# npm version major # For breaking changes: 1.0.0 → 2.0.0
+npm version patch   # For bug fixes: 1.0.0 â†’ 1.0.1
+# npm version minor # For new features: 1.0.0 â†’ 1.1.0
+# npm version major # For breaking changes: 1.0.0 â†’ 2.0.0
 
 # This command does 3 things:
 # 1. Updates "version" in package.json
@@ -1259,7 +1259,7 @@ npm publish                    # Publish to registry
 
 ---
 
-## 🧪 Testing the Widget
+## ðŸ§ª Testing the Widget
 
 ### Local Testing (Development)
 
@@ -1335,7 +1335,7 @@ function App() {
 
 ---
 
-## 📋 Widget Props & Attributes - Complete Guide
+## ðŸ“‹ Widget Props & Attributes - Complete Guide
 
 ### Overview
 
@@ -1483,7 +1483,7 @@ The URL where the OAuth server will redirect after authentication. This is where
 The final URL where users should be redirected after successful authentication. This is different from `callbackUrl`.
 
 **Flow:**
-1. User logs in → OAuth server authenticates
+1. User logs in â†’ OAuth server authenticates
 2. OAuth redirects to `callbackUrl` (with auth code)
 3. Widget processes auth code, gets tokens
 4. Widget redirects to `redirectUrl` (final destination)
@@ -2154,7 +2154,7 @@ export default App;
 
 ---
 
-## 📋 Props Quick Reference Table
+## ðŸ“‹ Props Quick Reference Table
 
 | Property | Type | Default | NPM Prop Name | CDN Attribute | Description |
 |----------|------|---------|---------------|---------------|-------------|
@@ -2171,7 +2171,7 @@ export default App;
 
 ---
 
-## 📋 Widget API Reference
+## ðŸ“‹ Widget API Reference
 
 ### Methods
 
@@ -2208,7 +2208,7 @@ export default App;
 
 ---
 
-## 🐛 Troubleshooting
+## ðŸ› Troubleshooting
 
 ### TypeScript Errors in React
 
@@ -2230,13 +2230,13 @@ Create `src/vite-env.d.ts` as shown in the TypeScript Support section above, the
 Make sure event listeners are attached after the widget element is in the DOM:
 
 ```javascript
-// ✅ Good - wait for DOM to load
+// âœ… Good - wait for DOM to load
 document.addEventListener('DOMContentLoaded', () => {
   const widget = document.getElementById('auth-widget');
   widget.addEventListener('redirect', handleRedirect);
 });
 
-// ❌ Bad - might run before widget is ready
+// âŒ Bad - might run before widget is ready
 const widget = document.getElementById('auth-widget');
 widget.addEventListener('redirect', handleRedirect);
 ```
@@ -2244,6 +2244,28 @@ widget.addEventListener('redirect', handleRedirect);
 ---
 
 ##  Version History
+
+### Version 1.0.5
+- **Theme Widget Integration**: Dynamic brand theming from Colibri CDN
+  - Automatically loads brand-specific colors based on `subsidiary` attribute (e.g., `subsidiary="elite"`)
+  - Auto-detects brand from URL domain when subsidiary not provided (matches against brands.json)
+  - Supports CSS variable system with CTA/primary color fallback priority (`--color-cta-rgb` â†’ `--color-primary-rgb`)
+  - Theme styles injected into Shadow DOM for proper style isolation
+  - RGB color format conversion (space-separated to comma-separated) for browser compatibility
+- **Reset Password Flow Improvements**
+  - "Forgot Password" link is now always enabled (no longer requires valid email in login form)
+  - Reset password form now has editable email field with real-time validation
+  - Integrated `checkEmail` API with debounced validation (500ms delay)
+  - "Send Reset Link" button only enables after successful email validation (matching login page UX)
+  - Added visual indicators (spinner during check, success icon when email found)
+- **UI Enhancements**: Updated info banner to use `info-warning-circle.svg` icon for better visual consistency
+
+### Version 1.0.4
+- **Enhanced Button Styling**: Converted all buttons to use inline styles with CSS variables for better theme compatibility
+- **Hover State Improvements**: Implemented `onMouseEnter`/`onMouseLeave` handlers for dynamic button hover effects
+- **TypeScript Interface Updates**: Updated Button component to support `style`, `onMouseEnter`, and `onMouseLeave` props
+- **Theme Variable System**: Created comprehensive `theme-variables.css` with default fallback values for all color schemes
+- **CSS Variable Architecture**: Implemented proper CSS custom property structure for buttons, links, and form components
 
 ### Version 1.0.3
 - Updated styles in Banner component for improved visual consistency
@@ -2264,4 +2286,5 @@ widget.addEventListener('redirect', handleRedirect);
 
 ### Version 1.0.1
 - Initial release with basic login functionality
+
 
