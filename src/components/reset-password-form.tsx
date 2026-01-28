@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
-import { forgotPassword } from "../services";
+import { forgotPassword, checkEmail } from "../services";
 import ResetPasswordSuccess from "./reset-password-success";
+import checkSuccessImg from "../icons/badge-check.svg";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -12,13 +13,17 @@ interface ResetPasswordFormProps {
 }
 
 const ResetPasswordForm = ({
-  email,
+  email: initialEmail,
   onBack,
   handleClose,
 }: ResetPasswordFormProps) => {
+  const [email, setEmail] = useState(initialEmail || "");
   const [loading, setLoading] = useState(false);
   const [successSent, setSuccessSent] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +33,36 @@ const ResetPasswordForm = ({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [handleClose]);
+
+  // Email validation effect
+  useEffect(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const valid = emailRegex.test(email);
+    setIsEmailValid(valid);
+
+    if (!valid || !email) {
+      setEmailExists(false);
+      return;
+    }
+
+    // Debounce email check
+    const timer = setTimeout(async () => {
+      setCheckingEmail(true);
+      try {
+        const response = await checkEmail(email);
+        console.log('[ResetPassword] Email check response:', response);
+        setEmailExists(response.exists);
+        console.log('[ResetPassword] Email exists:', response.exists);
+      } catch (error) {
+        console.error("[ResetPassword] Error checking email:", error);
+        setEmailExists(false);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
@@ -135,18 +170,35 @@ const ResetPasswordForm = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4!">
-          {/* Email Address - Read Only */}
+          {/* Email Address - Editable with validation */}
           <div className="mt-0! ml-0! mb-4! mr-0!">
             <Input
               label="Email Address"
               id="reset-email"
               type="email"
               value={email}
-              onChange={() => {}} // No-op since it's read-only
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setErrorMessage("");
+              }}
               placeholder="Enter email"
-              disabled={true}
+              disabled={loading}
               className="w-full!"
               autoComplete="email"
+              endIcon={
+                <>
+                  {checkingEmail && (
+                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"></div>
+                  )}
+                  {!checkingEmail && emailExists && isEmailValid && (
+                    <img
+                      src={checkSuccessImg}
+                      alt="user found"
+                      style={{ width: 18, height: 18 }}
+                    />
+                  )}
+                </>
+              }
             />
           </div>
 
@@ -165,8 +217,11 @@ const ResetPasswordForm = ({
           {/* Send Reset Link Button */}
           <Button
             type="submit"
-            disabled={loading || !email}
-            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            disabled={loading || !email || !isEmailValid || !emailExists}
+            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            onClick={() => {
+              console.log('[ResetPassword] Button state:', { loading, email, isEmailValid, emailExists });
+            }}
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">
@@ -201,7 +256,7 @@ const ResetPasswordForm = ({
             type="button"
             onClick={onBack}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! mt-4!"
+            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! mt-4!"
           >
             <span>Back to sign in</span>
           </button>

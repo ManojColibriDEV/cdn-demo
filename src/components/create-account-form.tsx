@@ -109,9 +109,9 @@ const CreateAccountForm = ({
       const userData =
         email || firstName || lastName
           ? {
-              email: email,
-              displayName: `${firstName} ${lastName}`.trim(),
-            }
+            email: email,
+            displayName: `${firstName} ${lastName}`.trim(),
+          }
           : null;
       const checks = validatePassword(password, userData);
       setPasswordChecks(checks);
@@ -123,14 +123,14 @@ const CreateAccountForm = ({
   // Check if all password requirements are met
   const isPasswordValid = passwordChecks
     ? passwordChecks.length &&
-      passwordChecks.upper &&
-      passwordChecks.lower &&
-      passwordChecks.number &&
-      passwordChecks.noSpaces &&
-      passwordChecks.noTriple &&
-      passwordChecks.special &&
-      passwordChecks.noNameParts &&
-      passwordChecks.noEmailParts
+    passwordChecks.upper &&
+    passwordChecks.lower &&
+    passwordChecks.number &&
+    passwordChecks.noSpaces &&
+    passwordChecks.noTriple &&
+    passwordChecks.special &&
+    passwordChecks.noNameParts &&
+    passwordChecks.noEmailParts
     : false;
 
   // Check if email is valid
@@ -435,7 +435,7 @@ const CreateAccountForm = ({
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none!"
+                  className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
                 />
                 <span className="text-gray-600! text-sm!">Remember me</span>
               </label>
@@ -445,7 +445,7 @@ const CreateAccountForm = ({
             <Button
               type="submit"
               disabled={loading || emailExists || !isEmailValid}
-              className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+              className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
                 <span className="flex! items-center! justify-center!">
@@ -490,7 +490,7 @@ const CreateAccountForm = ({
               type="button"
               onClick={() => onSignIn(email)}
               disabled={loading}
-              className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+              className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
             >
               <span>Sign In</span>
             </button>

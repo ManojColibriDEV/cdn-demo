@@ -2,13 +2,25 @@ import { StrictMode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { createRoot, Root } from 'react-dom/client';
 import './index.css';
+import './theme-variables.css';
 import App from './App';
+import { createThemeWidget } from './services/theme';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
 if (renderMode === 'TEST') {
   // Standalone testing mode with BrowserRouter
   console.log('[main.tsx] Rendering in TEST mode');
+  
+  // Load theme for testing
+  createThemeWidget({
+    brandFolder: 'elite', // Match the subsidiary in TEST mode
+  }).then(() => {
+    console.log('[main.tsx] Theme loaded in TEST mode');
+  }).catch((error) => {
+    console.error('[main.tsx] Failed to load theme in TEST mode:', error);
+  });
+  
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
@@ -47,11 +59,47 @@ if (renderMode === 'TEST') {
         if (typeof (window as any).injectWidgetStyles === 'function') {
           (window as any).injectWidgetStyles(this._shadowRoot);
         }
+        
+        // Load theme based on subsidiary attribute or auto-detect from domain
+        const subsidiary = this.getAttribute("subsidiary");
+        if (subsidiary && subsidiary.trim() !== '') {
+          this.loadTheme(subsidiary);
+        } else {
+          // Auto-detect brand from current domain if no subsidiary provided
+          this.loadThemeFromDomain();
+        }
       }
       
       this.mountPoint = document.createElement("div");
       this._shadowRoot.appendChild(this.mountPoint);
       this.render();
+    }
+    
+    private async loadTheme(subsidiary: string) {
+      try {
+        console.log(`[Widget] Loading theme for subsidiary: ${subsidiary}`);
+        await createThemeWidget({
+          brandFolder: subsidiary,
+          shadowRoot: this._shadowRoot,
+        });
+        console.log(`[Widget] Theme loaded successfully for ${subsidiary}`);
+      } catch (error) {
+        console.error('[Widget] Failed to load theme:', error);
+        // Continue with default theme if loading fails
+      }
+    }
+
+    private async loadThemeFromDomain() {
+      try {
+        console.log('[Widget] No subsidiary provided, attempting auto-detection from domain');
+        await createThemeWidget({
+          shadowRoot: this._shadowRoot,
+          autoDetect: true,
+        });
+      } catch (error) {
+        console.error('[Widget] Failed to auto-detect theme:', error);
+        console.log('[Widget] Using default colors');
+      }
     }
 
     attributeChangedCallback() {
