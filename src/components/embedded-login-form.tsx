@@ -7,6 +7,7 @@ import { validatePassword, handleAuthentication } from "../functions";
 import { checkEmail } from "../services";
 import type { PasswordChecks } from "../types";
 import CreateAccountForm from "./create-account-form";
+import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/check-success.png";
 
 interface EmbeddedLoginFormProps {
@@ -16,6 +17,7 @@ interface EmbeddedLoginFormProps {
   authority?: string;
   title?: string;
   subtitle?: string;
+  initialEmail?: string;
 }
 
 const EmbeddedLoginForm = ({
@@ -25,8 +27,9 @@ const EmbeddedLoginForm = ({
   authority,
   title = "Continue to login",
   subtitle = "Continue by signing in.",
+  initialEmail = "",
 }: EmbeddedLoginFormProps) => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +37,9 @@ const EmbeddedLoginForm = ({
     null,
   );
   const [errorMessage, setErrorMessage] = useState("");
-  const [rememberMe, setRememberMe] = useState(true); // Checked by default
+  const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -108,12 +112,12 @@ const EmbeddedLoginForm = ({
   // Check if all password requirements are met
   const isPasswordValid = passwordChecks
     ? passwordChecks.length &&
-      passwordChecks.upper &&
-      passwordChecks.lower &&
-      passwordChecks.number &&
-      passwordChecks.noSpaces &&
-      passwordChecks.noTriple &&
-      passwordChecks.special
+    passwordChecks.upper &&
+    passwordChecks.lower &&
+    passwordChecks.number &&
+    passwordChecks.noSpaces &&
+    passwordChecks.noTriple &&
+    passwordChecks.special
     : false;
 
   // Check if email is valid
@@ -163,6 +167,17 @@ const EmbeddedLoginForm = ({
     }
   };
 
+  // If showing reset password form, render that instead
+  if (showResetPassword) {
+    return (
+      <ResetPasswordForm
+        email={email}
+        onBack={() => setShowResetPassword(false)}
+        handleClose={handleClose}
+      />
+    );
+  }
+
   // If showing create account form, render that instead
   if (showCreateAccount) {
     return (
@@ -173,8 +188,14 @@ const EmbeddedLoginForm = ({
         }}
         onError={onError}
         handleClose={handleClose}
-        onSignIn={() => setShowCreateAccount(false)}
+        onSignIn={(returnedEmail) => {
+          setShowCreateAccount(false);
+          if (returnedEmail) {
+            setEmail(returnedEmail);
+          }
+        }}
         authority={authority}
+        initialEmail={email}
       />
     );
   }
@@ -323,17 +344,16 @@ const EmbeddedLoginForm = ({
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none!"
+                className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
               />
               <span className="text-gray-600!">Remember me</span>
             </label>
             <a
               href="#"
-              className={`text-blue-600! hover:text-blue-700! no-underline! ${!isEmailValid || !emailExists ? "opacity-50! pointer-events-none!" : ""}`}
+              className="text-[--button-link-text]-700! hover:text-[--button-link-text]-700! no-underline!"
               onClick={(e) => {
-                if (!isEmailValid || !emailExists) {
-                  e.preventDefault();
-                }
+                e.preventDefault();
+                setShowResetPassword(true);
               }}
             >
               Forgot Password?
@@ -350,7 +370,7 @@ const EmbeddedLoginForm = ({
               !isEmailValid ||
               !emailExists
             }
-            className="w-full! bg-[#17a2b8] enabled:bg-[#17a2b8] hover:bg-[#138496] text-white border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">
@@ -380,7 +400,7 @@ const EmbeddedLoginForm = ({
             )}
           </Button>
 
-          <div className="relative! mt-6! mb-6!">
+          <div className="relative! mt-4! mb-4!">
             <div className="absolute! inset-0! flex! items-center!">
               <div className="w-full! border-t! border-gray-300"></div>
             </div>
@@ -393,7 +413,7 @@ const EmbeddedLoginForm = ({
             type="button"
             onClick={() => setShowCreateAccount(true)}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[#17a2b8] text-[#17a2b8] py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             <span>Create an Account</span>
           </button>

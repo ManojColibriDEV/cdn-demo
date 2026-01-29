@@ -116,6 +116,33 @@ export const checkEmail = async (email: string): Promise<CheckEmailResponse> => 
 };
 
 /**
+ * Forgot Password API - Send password reset link to email
+ */
+export const forgotPassword = async (email: string): Promise<any> => {
+  const url = apiUrl("api/forgot-password");
+  const payload = { email };
+  try {
+    const response = await axios.post(url, payload);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error sending password reset:", error);
+    
+    // Extract error message from response
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 404) {
+      throw new Error("We couldn't find an account with that email.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    
+    throw new Error("Failed to send password reset link");
+  }
+};
+
+/**
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {
