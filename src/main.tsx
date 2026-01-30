@@ -21,9 +21,10 @@ if (renderMode === 'TEST') {
   class KeycloakWidget extends HTMLElement {
     private root?: Root;
     private mountPoint!: HTMLDivElement;
+    private showLoginState: boolean = false;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "theme", "callbackUrl", "isShowToggle", "authMode"];
+      return ["authority", "subsidiary", "redirectUrl", "show-login"];
     }
 
     connectedCallback() {
@@ -62,17 +63,65 @@ if (renderMode === 'TEST') {
       }
     }
 
+    private handleClose = () => {
+      console.log('[Widget] Close event triggered');
+      this.showLoginState = false;
+      this.removeAttribute("show-login");
+      
+      // Dispatch close event
+      const event = new CustomEvent("close", {
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
+      
+      this.render();
+    }
+
+    // Public API method to open login form
+    public login() {
+      console.log('[Widget] login() called');
+      this.showLoginState = true;
+      this.setAttribute("show-login", "true");
+      this.render();
+    }
+
+    // Public API method to logout
+    public logout() {
+      console.log('[Widget] logout() called');
+      // Clear authentication state
+      localStorage.removeItem('user_state');
+      localStorage.removeItem('decoded');
+      localStorage.removeItem('brand');
+      
+      // Clear cookies
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      
+      this.showLoginState = false;
+      this.removeAttribute("show-login");
+      
+      // Dispatch logout event
+      const event = new CustomEvent("logout", {
+        bubbles: true,
+        composed: true
+      });
+      this.dispatchEvent(event);
+      
+      this.render();
+    }
+
     private getProps() {
+      const showLogin = this.getAttribute("show-login") === "true" || this.showLoginState;
+      
       return {
         authority: resolveAuthority(this.getAttribute("authority")),
         subsidiary: this.getAttribute("subsidiary") || "allied",
-        theme: this.getAttribute("theme") || "light",
-        isShowToggle: this.getAttribute("isShowToggle") || "true",
-        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
-        redirectUrl: this.getAttribute("redirectUrl") || ``,
-        authMode: (this.getAttribute("authMode") as 'popup' | 'redirect' | 'embedded') || 'popup',
+        redirectUrl: this.getAttribute("redirectUrl") || undefined,
+        showLogin: showLogin,
         onRedirect: this.handleRedirect,
-
+        handleClose: this.handleClose,
       };
     }
 
