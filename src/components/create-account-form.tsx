@@ -7,7 +7,7 @@ import Loader from "../common/ui/loader";
 import { validatePassword, handleAuthentication } from "../functions";
 import { authRegister, checkEmail } from "../services";
 import type { PasswordChecks } from "../types";
-import checkSuccessImg from "../icons/check-success.png";
+import checkSuccessImg from "../icons/badge-check.svg";
 
 interface CreateAccountFormProps {
   onSuccess: (userSession: any) => void;
@@ -339,7 +339,7 @@ const CreateAccountForm = ({
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="First Name"
-                disabled={loading || emailExists || !isEmailValid}
+                disabled={loading}
                 className="w-full!"
                 autoComplete="given-name"
                 error={touched && !firstName ? "Required" : ""}
@@ -351,7 +351,7 @@ const CreateAccountForm = ({
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Last Name"
-                disabled={loading || emailExists || !isEmailValid}
+                disabled={loading}
                 className="w-full!"
                 autoComplete="family-name"
                 error={touched && !lastName ? "Required" : ""}
@@ -370,7 +370,7 @@ const CreateAccountForm = ({
                     setPassword(e.target.value);
                   }}
                   placeholder="Enter Password..."
-                  disabled={loading || emailExists || !isEmailValid}
+                  disabled={loading}
                   className="w-full!"
                   autoComplete="new-password"
                   error={
@@ -444,7 +444,16 @@ const CreateAccountForm = ({
             {/* Create Account Button */}
             <Button
               type="submit"
-              disabled={loading || emailExists || !isEmailValid}
+              disabled={
+                loading ||
+                emailExists ||
+                !isEmailValid ||
+                !email ||
+                !firstName ||
+                !lastName ||
+                !password ||
+                !isPasswordValid
+              }
               className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
