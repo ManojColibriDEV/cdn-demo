@@ -55,7 +55,7 @@ const EmbeddedLoginForm = ({ onSuccess, onError, onClose, authority }: EmbeddedL
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[2000]" 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-2000" 
       ref={overlayRef} 
       onMouseDown={onOverlayClick}
     >

@@ -1,301 +1,74 @@
-import { UserManager, WebStorageStateStore, UserManagerSettings } from 'oidc-client-ts';
-import { jwtDecode } from "jwt-decode";
-
-let userManagerCache: { [key: string]: UserManager } = {};
-
-// Environment to Keycloak host mapping
-const ENV_HOST_MAP: Record<string, string> = {
-  'development': 'dev-keycloak.colibricore.io',
-  'dev': 'dev-keycloak.colibricore.io',
-  'test': 'test-keycloak.colibricore.io',
-  'staging': 'staging-keycloak.colibricore.io',
-  'stage': 'staging-keycloak.colibricore.io',
-  'production': 'keycloak.colibricore.io',
-  'prod': 'keycloak.colibricore.io',
-};
-
-// Subsidiary to realm mapping
-const SUBSIDIARY_REALM_MAP: Record<string, string> = {
-  'elite': 'elite',
-  'allied': 'allied',
-  'mckissock': 'mckissock',
-};
+import { setAuthCookie } from "../utils/cookieHelper";
 
 /**
- * Get the cookie domain for cross-subdomain support
- * Extracts root domain (e.g., dev.elitelearning.com → .elitelearning.com)
- * Returns empty string for localhost/IP addresses
- */
-function getCookieDomain(): string {
-  const hostname = window.location.hostname;
-
-  // localhost or IP address - no domain restriction needed
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return '';
-  }
-
-  // Extract root domain: take last 2 parts (works for .com, .io, etc.)
-  const parts = hostname.split('.');
-  if (parts.length >= 2) {
-    return '.' + parts.slice(-2).join('.');
-  }
-
-  return '';
-}
-
-/**
- * Set a cookie with cross-subdomain support
- */
-function setAuthCookie(name: string, value: string, expiresInSeconds: number): void {
-  const expires = new Date();
-  expires.setSeconds(expires.getSeconds() + expiresInSeconds);
-
-  const domain = getCookieDomain();
-  const domainAttr = domain ? `; domain=${domain}` : '';
-  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
-
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
-
-  console.log(`[OIDC] Cookie set: ${name} (domain: ${domain || 'current'}, expires: ${expiresInSeconds}s)`);
-}
-
-/**
- * Get widget attributes from DOM
- */
-function getWidgetConfig(): { environment: string; subsidiary: string } {
-  const widget = document.querySelector('keycloak-widget');
-  return {
-    environment: widget?.getAttribute('environment') || localStorage.getItem('environment') || 'development',
-    subsidiary: widget?.getAttribute('subsidiary') || localStorage.getItem('subsidiary') || 'allied',
-  };
-}
-
-/**
- * Get OIDC settings based on environment and subsidiary
- */
-function getOidcSettings(environment?: string, subsidiary?: string): UserManagerSettings {
-  const widgetConfig = getWidgetConfig();
-  const env = environment || widgetConfig.environment;
-  const sub = subsidiary || widgetConfig.subsidiary;
-
-  const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
-  const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
-  const baseUrl = `https://${host}/realms/${realm}`;
-
-  const customCallbackUrl = localStorage.getItem('callbackUrl');
-  const redirect_uri = customCallbackUrl || window.location.origin + window.location.pathname;
-
-  console.log('[OIDC] Config:', { env, subsidiary: sub, host, realm, redirect_uri });
-
-  return {
-    authority: baseUrl,
-    client_id: 'colibricore',
-    redirect_uri,
-    post_logout_redirect_uri: window.location.origin,
-    response_type: 'code',
-    scope: 'openid profile email',
-    automaticSilentRenew: true,
-    filterProtocolClaims: true,
-    loadUserInfo: true,
-    metadata: {
-      issuer: baseUrl,
-      authorization_endpoint: `${baseUrl}/protocol/openid-connect/auth`,
-      token_endpoint: `${baseUrl}/protocol/openid-connect/token`,
-      userinfo_endpoint: `${baseUrl}/protocol/openid-connect/userinfo`,
-      end_session_endpoint: `${baseUrl}/protocol/openid-connect/logout`,
-      jwks_uri: `${baseUrl}/protocol/openid-connect/certs`,
-    },
-  };
-}
-
-/**
- * Get UserManager instance (cached per environment+subsidiary combo)
- */
-function getUserManager(environment?: string, subsidiary?: string): UserManager {
-  const widgetConfig = getWidgetConfig();
-  const env = environment || widgetConfig.environment;
-  const sub = subsidiary || widgetConfig.subsidiary;
-  const cacheKey = `${env}:${sub}`;
-
-  if (!userManagerCache[cacheKey]) {
-    const settings = getOidcSettings(env, sub);
-
-    userManagerCache[cacheKey] = new UserManager({
-      ...settings,
-      userStore: new WebStorageStateStore({ store: window.localStorage }),
-    });
-
-    // Listen for token renewal events (silent refresh)
-    userManagerCache[cacheKey].events.addUserLoaded((user) => {
-      const decoded: any = jwtDecode(user.access_token);
-      const expiresIn = user.expires_in || 300;
-      
-      // Update cookie with new token
-      setAuthCookie('access_token', user.access_token, expiresIn);
-      
-      // Update localStorage and cookie for X-Credential
-      if (decoded.x_credentials) {
-        localStorage.setItem('X-Credential', decoded.x_credentials);
-        setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
-      }
-      
-      console.log('[OIDC] Token silently renewed');
-    });
-
-    console.log('[OIDC] UserManager initialized:', { env, subsidiary: sub, cacheKey });
-  }
-
-  return userManagerCache[cacheKey];
-}
-
-/**
- * Sign in via popup window to Keycloak
- */
-export async function signIn(environment?: string): Promise<any> {
-  const manager = getUserManager(environment);
-
-  try {
-    const user = await manager.signinPopup();
-    const decoded: any = jwtDecode(user.access_token);
-    const expiresIn = user.expires_in || 300;
-
-    // Set access_token as cookie (cross-subdomain for WordPress PHP access)
-    setAuthCookie('access_token', user.access_token, expiresIn);
-
-    // Minimal localStorage - only for OIDC library state and quick JS checks
-    localStorage.setItem('user_state', 'authenticated');
-    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-
-    // Store xCredentials from JWT custom claim (claim name: x_credential)
-    if (decoded.x_credentials) {
-      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
-    }
-
-    console.log('[OIDC] Authentication complete via popup');
-
-    return {
-      tokens: { access_token: user.access_token },
-      userInfo: user.profile,
-      userSession: decoded
-    };
-  } catch (error) {
-    console.error('[OIDC] Sign in popup error:', error);
-    throw error;
-  }
-}
-
-/**
- * Sign in via redirect to Keycloak (same tab)
- */
-export async function signInRedirect(environment?: string): Promise<void> {
-  const manager = getUserManager(environment);
-
-  try {
-    console.log('[OIDC] Redirecting to Keycloak for authentication...');
-    await manager.signinRedirect();
-  } catch (error) {
-    console.error('[OIDC] Sign in redirect error:', error);
-    throw error;
-  }
-}
-
-/**
- * Sign in with username/password using ROPC flow (Resource Owner Password Credentials)
- * Note: ROPC must be enabled in Keycloak client settings (Direct Access Grants Enabled)
+ * Sign in with username/password using custom authentication API
  */
 export async function signInWithPassword(
   username: string,
   password: string,
-  environment?: string
+  _environment?: string
 ): Promise<any> {
-  const widgetConfig = getWidgetConfig();
-  const env = environment || widgetConfig.environment;
-  const sub = widgetConfig.subsidiary;
-
-  const host = ENV_HOST_MAP[env] || ENV_HOST_MAP['development'];
-  const realm = SUBSIDIARY_REALM_MAP[sub] || 'allied';
-  const tokenEndpoint = `https://${host}/realms/${realm}/protocol/openid-connect/token`;
+  const tokenEndpoint = `https://dev-demo-env.colibrilearning.com/api/auth`;
 
   try {
     const response = await fetch(tokenEndpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        client_id: 'colibricore',
+      body: JSON.stringify({
         username,
         password,
-        scope: 'openid profile email',
-      }),
+      })
     });
+
+    console.log("response", response)
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error_description || 'Authentication failed');
     }
 
-    const tokenData = await response.json();
-    const decoded: any = jwtDecode(tokenData.access_token);
-    const expiresIn = tokenData.expires_in || 300;
+    const data = await response.json();
+    
+    // Check if the response is successful
+    if (!data.success || !data.tokens || !data.userinfo) {
+      throw new Error('Invalid response from authentication server');
+    }
+
+    const { tokens, userinfo, brand } = data;
+    const expiresIn = tokens.expires_in || 300;
 
     // Set access_token as cookie (cross-subdomain)
-    setAuthCookie('access_token', tokenData.access_token, expiresIn);
+    setAuthCookie('access_token', tokens.access_token, expiresIn, true);
 
     // Store in localStorage
     localStorage.setItem('user_state', 'authenticated');
-    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-
-    // Store xCredentials from JWT
-    if (decoded.x_credentials) {
-      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+    localStorage.setItem('decoded', JSON.stringify(userinfo) || '');
+    
+    // Store brand information if available
+    if (brand) {
+      localStorage.setItem('brand', JSON.stringify(brand));
     }
 
-    console.log('[OIDC] ROPC authentication complete');
-
-    return {
-      tokens: { access_token: tokenData.access_token, refresh_token: tokenData.refresh_token },
-      userInfo: decoded,
-      userSession: decoded,
-    };
-  } catch (error) {
-    console.error('[OIDC] ROPC sign in error:', error);
-    throw error;
-  }
-}
-
-/**
- * Handle sign-in callback - sets access_token as cross-subdomain cookie
- */
-export async function handleSignInCallback(environment?: string): Promise<any> {
-  const manager = getUserManager(environment);
-
-  try {
-    const user = await manager.signinRedirectCallback();
-    const decoded: any = jwtDecode(user.access_token);
-    const expiresIn = user.expires_in || 300;
-
-    // Set access_token as cookie (cross-subdomain for WordPress PHP access)
-    // Refresh token NOT stored - rely on Keycloak SSO session for re-auth
-    setAuthCookie('access_token', user.access_token, expiresIn);
-
-    // Minimal localStorage - only for OIDC library state and quick JS checks
-    localStorage.setItem('user_state', 'authenticated');
-    localStorage.setItem('decoded', JSON.stringify(decoded) || '');
-
-    // Store xCredentials from JWT custom claim (claim name: x_credential)
-    if (decoded.x_credentials) {
-      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn);
+    // Store X-Credential from userinfo without encoding
+    if (userinfo.x_credentials) {
+      setAuthCookie('X-Credential', userinfo.x_credentials, expiresIn, false);
     }
 
+    console.log('[Auth] Password authentication complete');
+
     return {
-      tokens: { access_token: user.access_token },
-      userInfo: user.profile,
-      userSession: decoded
+      tokens: { 
+        access_token: tokens.access_token, 
+        refresh_token: tokens.refresh_token 
+      },
+      userInfo: userinfo,
+      userSession: userinfo,
+      brand: brand
     };
   } catch (error) {
-    console.error('[OIDC] Sign-in callback error:', error);
+    console.error('[Auth] Password sign in error:', error);
     throw error;
   }
 }

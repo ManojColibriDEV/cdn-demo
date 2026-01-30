@@ -12,7 +12,7 @@ if (renderMode === 'TEST') {
   createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <StrictMode>
-        <App  authority="dev" subsidiary="elite" isShowToggle={"true"} callbackUrl="http://localhost:5173/" redirectUrl="www.google.com" authMode="redirect"/>
+        <App authority="dev" subsidiary="elite" redirectUrl="www.google.com" showLogin={true} />
       </StrictMode>
     </BrowserRouter>
   );
