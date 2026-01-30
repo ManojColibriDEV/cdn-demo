@@ -3,14 +3,12 @@ import { Routes, Route } from "react-router-dom";
 import EmbeddedLoginForm from "./components/embedded-login-form";
 import { checkTokenAndRedirect, isRefreshTokenValid } from "./functions";
 import { authRefresh } from "./services";
-import { setAuthCookie } from "./utils/cookieHelper";
+import { setAuthCookie, getDefaultRedirectUrl } from "./utils/cookieHelper";
 import { jwtDecode } from "jwt-decode";
 
 const App = (props: {
   authority?: string;
   subsidiary?: string;
-  isShowToggle?: string;
-  callbackUrl: string;
   redirectUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
   loginTitle?: string;
@@ -18,10 +16,10 @@ const App = (props: {
   showLogin?: boolean;
   handleClose?: () => void;
 }) => {
-  const { authority, subsidiary, callbackUrl, onRedirect } = props;
+  const { authority, subsidiary, onRedirect } = props;
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  console.log("isAuthenticated", isAuthenticated)
+
   // Auto-login using refresh token if available
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -69,7 +67,7 @@ const App = (props: {
               console.log('[App] Auto-login successful');
 
               // Trigger onRedirect callback with userSession from decoded token
-              const targetUrl = props.redirectUrl || callbackUrl;
+              const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               if (onRedirect) {
                 const userSession = {
                   access_token: tokens.access_token,
@@ -113,13 +111,7 @@ const App = (props: {
   useEffect(() => {
     authority && localStorage.setItem("authority", authority);
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
-
-    if (callbackUrl) {
-      localStorage.setItem("callbackUrl", callbackUrl);
-    } else if (!localStorage.getItem("callbackUrl")) {
-      localStorage.setItem("callbackUrl", window.location.href.split('?')[0]);
-    }
-  }, [authority, subsidiary, callbackUrl]);
+  }, [authority, subsidiary]);
 
   const handleEmbeddedLoginSuccess = (userSession: any) => {
     if (props.handleClose) {
@@ -127,7 +119,7 @@ const App = (props: {
     }
     setIsAuthenticated(true);
 
-    const targetUrl = props.redirectUrl || callbackUrl;
+    const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
       onRedirect(targetUrl, userSession);
     }

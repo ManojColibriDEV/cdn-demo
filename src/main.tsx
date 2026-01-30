@@ -5,14 +5,11 @@ import './index.css';
 import './theme-variables.css';
 import App from './App';
 import { createThemeWidget } from './services/theme';
+import { getAuthorityFromUrl } from './utils/cookieHelper';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
 if (renderMode === 'TEST') {
-  // Standalone testing mode with BrowserRouter
-  console.log('[main.tsx] Rendering in TEST mode');
-  
-  // Load theme for testing
   createThemeWidget({
     brandFolder: 'elite', // Match the subsidiary in TEST mode
   }).then(() => {
@@ -27,8 +24,6 @@ if (renderMode === 'TEST') {
         <App 
           authority="dev" 
           subsidiary="elite" 
-          isShowToggle={"true"} 
-          callbackUrl="http://localhost:5173/"
           showLogin={true}
         />
       </StrictMode>
@@ -42,7 +37,7 @@ if (renderMode === 'TEST') {
     protected _shadowRoot!: ShadowRoot;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "callbackUrl", "redirectUrl", "isShowToggle", "loginTitle", "loginSubtitle", "show-login"];
+      return ["authority", "subsidiary", "redirectUrl", "loginTitle", "loginSubtitle", "show-login"];
     }
 
     // Store function props
@@ -164,12 +159,13 @@ if (renderMode === 'TEST') {
     }
 
     private getProps() {
+      const authorityAttr = this.getAttribute("authority");
+      const detectedAuthority = authorityAttr || getAuthorityFromUrl();
+      
       return {
-        authority: this.getAttribute("authority") || "dev",
-        subsidiary: this.getAttribute("subsidiary") || "allied",
-        isShowToggle: this.getAttribute("isShowToggle") || "true",
-        callbackUrl: this.getAttribute("callbackUrl") || `${window.location.origin}`,
-        redirectUrl: this.getAttribute("redirectUrl") || ``,
+        authority: detectedAuthority,
+        subsidiary: this.getAttribute("subsidiary") || undefined,
+        redirectUrl: this.getAttribute("redirectUrl") || undefined,
         loginTitle: this.getAttribute("loginTitle") || undefined,
         loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
         showLogin: this.getAttribute("show-login") === "true",

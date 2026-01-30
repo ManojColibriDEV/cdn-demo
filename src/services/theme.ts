@@ -66,6 +66,7 @@ export class ThemeWidget {
             
             if (brand) {
                 console.log(`[ThemeWidget] Auto-detected brand from domain: ${brand.name} (${brand.token})`);
+                localStorage.setItem("subsidiary", brand.token);
                 return brand.token;
             }
             
@@ -96,6 +97,8 @@ export class ThemeWidget {
                 );
                 return;
             }
+
+             localStorage.setItem("subsidiary", brand.token);
 
             // Fetch theme configuration
             const themeUrl = `${this.cdnBaseUrl}/${brand.folder}/theme.json`;
