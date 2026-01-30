@@ -8,7 +8,7 @@ import { checkEmail } from "../services";
 import type { PasswordChecks } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
-import checkSuccessImg from "../icons/check-success.png";
+import checkSuccessImg from "../icons/badge-check.svg";
 
 interface EmbeddedLoginFormProps {
   onSuccess: (userSession: any) => void;
@@ -286,7 +286,7 @@ const EmbeddedLoginForm = ({
                   setErrorMessage(""); // Clear error when user types
                 }}
                 placeholder="Enter Password..."
-                disabled={loading || !isEmailValid || !emailExists}
+                disabled={loading}
                 className="w-full!"
                 autoComplete="current-password"
                 error={errorMessage}
@@ -366,9 +366,7 @@ const EmbeddedLoginForm = ({
               loading ||
               !email ||
               !password ||
-              !isPasswordValid ||
-              !isEmailValid ||
-              !emailExists
+              !isEmailValid
             }
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
