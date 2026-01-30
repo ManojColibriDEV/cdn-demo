@@ -26,6 +26,81 @@ export function getCookieDomain(): string {
 }
 
 /**
+ * Auto-detect authority/environment from URL hostname
+ * @returns The authority string: 'dev', 'test', 'stage', or 'prod'
+ * 
+ * Examples:
+ * - dev.elitelearning.com → 'dev'
+ * - test.elitelearning.com → 'test'
+ * - stage.elitelearning.com → 'stage'
+ * - elitelearning.com → 'prod'
+ * - localhost → 'dev' (defaults to dev for local development)
+ */
+export function getAuthorityFromUrl(): string {
+  const hostname = window.location.hostname;
+
+  // localhost defaults to dev
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return 'dev';
+  }
+
+  // Check for environment prefixes
+  if (hostname.startsWith('dev.') || hostname.startsWith('dev-')) {
+    return 'dev';
+  } else if (hostname.startsWith('test.') || hostname.startsWith('test-')) {
+    return 'test';
+  } else if (hostname.startsWith('stage.') || hostname.startsWith('stage-')) {
+    return 'stage';
+  } else {
+    // Production (no prefix)
+    return 'prod';
+  }
+}
+
+/**
+ * Transform the current domain URL to the appropriate redirect URL based on environment
+ * @returns The transformed redirect URL
+ * 
+ * Examples:
+ * - https://dev.elitelearning.com/login-widget-test/ → https://dev-learn.elitelearning.com/courses
+ * - https://test.elitelearning.com/login-widget-test/ → https://test-learn.elitelearning.com/courses
+ * - https://stage.elitelearning.com/login-widget-test/ → https://stage-learn.elitelearning.com/courses
+ * - https://elitelearning.com/login-widget-test/ → https://learn.elitelearning.com/courses
+ */
+export function getDefaultRedirectUrl(): string {
+  const currentUrl = window.location.href;
+  const url = new URL(currentUrl);
+  const hostname = url.hostname;
+
+  // Check for different environments
+  if (hostname.startsWith('dev.')) {
+    // dev.elitelearning.com → dev-learn.elitelearning.com
+    const newHostname = hostname.replace('dev.', 'dev-learn.');
+    return `${url.protocol}//${newHostname}/courses`;
+  } else if (hostname.startsWith('test.')) {
+    // test.elitelearning.com → test-learn.elitelearning.com
+    const newHostname = hostname.replace('test.', 'test-learn.');
+    return `${url.protocol}//${newHostname}/courses`;
+  } else if (hostname.startsWith('stage.')) {
+    // stage.elitelearning.com → stage-learn.elitelearning.com
+    const newHostname = hostname.replace('stage.', 'stage-learn.');
+    return `${url.protocol}//${newHostname}/courses`;
+  } else {
+    // Production: elitelearning.com → learn.elitelearning.com
+    // Check if it's already a subdomain or the root domain
+    const parts = hostname.split('.');
+    if (parts.length === 2) {
+      // Root domain (e.g., elitelearning.com)
+      const newHostname = `learn.${hostname}`;
+      return `${url.protocol}//${newHostname}/courses`;
+    } else {
+      // Already a subdomain, don't transform
+      return `${url.protocol}//${hostname}/courses`;
+    }
+  }
+}
+
+/**
  * Set a cookie with cross-subdomain support
  * @param name - Cookie name
  * @param value - Cookie value

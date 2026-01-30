@@ -43,7 +43,6 @@ declare global {
         ref?: React.Ref<KeycloakWidgetElement>;
         authority?: string;
         subsidiary?: string;
-        callbackUrl?: string;
         redirectUrl?: string;
         isShowToggle?: string;
         loginTitle?: string;

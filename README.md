@@ -2245,6 +2245,25 @@ widget.addEventListener('redirect', handleRedirect);
 
 ##  Version History
 
+### Version 1.0.7
+- **Removed `callbackUrl` Parameter**: Completely removed `callbackUrl` from the codebase
+  - Eliminated `callbackUrl` from web component attributes, props interfaces, and all related logic
+  - Widget now relies solely on `redirectUrl` (if provided) or auto-generated URL for redirection
+  - Simplified API surface with one less parameter to configure
+- **Smart Auto-Detection Features**:
+  - **Authority Auto-Detection**: Widget automatically detects environment (dev/test/stage/prod) from URL hostname when `authority` attribute is not provided
+    - `dev.*` or `dev-*` domains → `'dev'`
+    - `test.*` or `test-*` domains → `'test'`
+    - `stage.*` or `stage-*` domains → `'stage'`
+    - Production domains (no prefix) → `'prod'`
+    - `localhost` → defaults to `'dev'`
+  - **Redirect URL Auto-Generation**: When `redirectUrl` is not provided, widget intelligently transforms current domain to learning platform URL
+    - `https://dev.elitelearning.com/*` → `https://dev-learn.elitelearning.com/courses`
+    - `https://test.elitelearning.com/*` → `https://test-learn.elitelearning.com/courses`
+    - `https://stage.elitelearning.com/*` → `https://stage-learn.elitelearning.com/courses`
+    - `https://elitelearning.com/*` → `https://learn.elitelearning.com/courses`
+- **Developer Experience**: Widget now requires fewer configuration parameters - `authority` and `redirectUrl` are both optional with smart defaults
+
 ### Version 1.0.6
 - **Improved Form Field UX**:
   - Login form: Removed password field disabling logic - users can now enter password immediately without waiting for email validation
