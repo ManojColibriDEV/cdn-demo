@@ -15372,7 +15372,7 @@ const fb = (u) => {
             Bi,
             {
               type: "submit",
-              disabled: T || !p || !y || !X,
+              disabled: T || !p || !y,
               className: "w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
               children: T ? /* @__PURE__ */ x.jsxs("span", { className: "flex! items-center! justify-center!", children: [
                 /* @__PURE__ */ x.jsxs(
