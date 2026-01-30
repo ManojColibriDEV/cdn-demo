@@ -2245,6 +2245,15 @@ widget.addEventListener('redirect', handleRedirect);
 
 ##  Version History
 
+### Version 1.0.6
+- **Improved Form Field UX**:
+  - Login form: Removed password field disabling logic - users can now enter password immediately without waiting for email validation
+  - Login form: Submit button only enables when valid email format is entered (maintains email validation on submit)
+  - Registration form: Removed field disabling logic - all fields (First Name, Last Name, Password) are now always enabled regardless of email validity
+  - Registration form: Added comprehensive password validation to submit button (checks length, uppercase, lowercase, number, special characters, no name/email parts)
+  - Submit buttons in both forms now properly validate all requirements before allowing submission
+- **Visual Updates**: Replaced `check-success.png` with `badge-check.svg` icon for email validation indicators in both login and registration forms
+
 ### Version 1.0.5
 - **Theme Widget Integration**: Dynamic brand theming from Colibri CDN
   - Automatically loads brand-specific colors based on `subsidiary` attribute (e.g., `subsidiary="elite"`)
