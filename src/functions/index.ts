@@ -79,26 +79,42 @@ export function onlyLetters(input: string): string {
 
 export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
   try {
-    // Check if X-Credential cookie exists
+    // First try cookies
     const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith('X-Credential='));
-    if (!xCredCookie) {
-      return false;
-    }
-
-    // Check if access token cookie exists
     const accessTokenCookie = document.cookie.split(';').find(row => row.trim().startsWith('access_token='));
-    if (!accessTokenCookie) {
-      return false;
+
+    let token: string | null = null;
+    let hasXCred = false;
+
+    // Try to get token from cookie first
+    if (accessTokenCookie) {
+      token = accessTokenCookie.split('=')[1] || null;
+    }
+    if (xCredCookie) {
+      hasXCred = true;
     }
 
-    // Extract and decode the access token
-    const token = accessTokenCookie.split('=')[1];
+    // Fallback to localStorage for cross-domain scenarios
     if (!token) {
+      token = localStorage.getItem('access_token');
+    }
+    if (!hasXCred) {
+      hasXCred = !!localStorage.getItem('x_credential');
+    }
+
+    // Check if we have both token and x_credential
+    if (!token || !hasXCred) {
       return false;
     }
 
+    // Check localStorage expiration first (faster than JWT decode)
+    const expiresAt = localStorage.getItem('access_token_expires');
+    if (expiresAt && Date.now() >= parseInt(expiresAt)) {
+      return false;
+    }
+
+    // Decode and validate the token
     try {
-      const { jwtDecode } = require('jwt-decode');
       const decoded: any = jwtDecode(token);
       const currentTime = Math.floor(Date.now() / 1000);
 
@@ -149,12 +165,18 @@ export const isRefreshTokenValid = (): boolean => {
  * Clear all authentication tokens and state
  */
 export const clearAuthTokens = (): void => {
-  // Clear localStorage
-  localStorage.removeItem('user_state');
-  localStorage.removeItem('refresh_token');
-  localStorage.removeItem('refresh_token_time');
-  localStorage.removeItem('access_token');
-  
+  // Clear all auth-related localStorage items
+  const authKeys = [
+    'user_state',
+    'refresh_token',
+    'refresh_token_time',
+    'access_token',
+    'access_token_expires',
+    'x_credential',
+    'user_info'
+  ];
+  authKeys.forEach(key => localStorage.removeItem(key));
+
   // Clear cookies
   document.cookie.split(";").forEach((c) => {
     document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
@@ -174,8 +196,9 @@ export const handleAuthentication = async (
   password: string,
   rememberMe: boolean = true
 ): Promise<AuthenticationTokens> => {
-  // Use the service function
-  const { tokens } = await authLogin(username, password);
+  // Use the service function - returns { tokens, userinfo, x_credential }
+  const authResponse = await authLogin(username, password);
+  const { tokens, userinfo, x_credential } = authResponse;
 
   // Store tokens if provided
   if (tokens.access_token) {
@@ -185,13 +208,34 @@ export const handleAuthentication = async (
     // Set cookies for access token (with encoding)
     setAuthCookie('access_token', tokens.access_token, expiresIn, true);
 
+    // Get x_credential from response or decoded token
+    const xCred = x_credential || decoded.x_credentials;
+
     // Set X-Credential cookie without encoding to preserve the exact format
-    if (decoded.x_credentials) {
-      setAuthCookie('X-Credential', decoded.x_credentials, expiresIn, false);
+    if (xCred) {
+      setAuthCookie('X-Credential', xCred, expiresIn, false);
     }
 
-    // Store user state
+    // === CROSS-DOMAIN STORAGE ===
+    // Store in localStorage for cross-domain access (widget can read these)
+    // This helps when cookies fail due to cross-origin restrictions
     localStorage.setItem('user_state', 'authenticated');
+    localStorage.setItem('access_token', tokens.access_token);
+    localStorage.setItem('access_token_expires', (Date.now() + expiresIn * 1000).toString());
+
+    // Store x_credential in localStorage
+    if (xCred) {
+      localStorage.setItem('x_credential', xCred);
+    }
+
+    // Store user info for UI purposes
+    if (userinfo) {
+      localStorage.setItem('user_info', JSON.stringify({
+        email: userinfo.email,
+        name: userinfo.name || `${userinfo.given_name || ''} ${userinfo.family_name || ''}`.trim(),
+        studentId: userinfo.studentId || userinfo.student_id
+      }));
+    }
 
     // Only store refresh token if Remember Me is checked
     if (rememberMe && tokens.refresh_token) {

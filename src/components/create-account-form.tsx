@@ -198,10 +198,10 @@ const CreateAccountForm = ({
       );
 
       // After successful registration, automatically log in the user
-      // Use the username (extracted from email) for login
+      // Use the full email for login (Keycloak uses email as username)
       try {
         const tokens = await handleAuthentication(
-          username,
+          email,
           password,
           rememberMe,
         );
