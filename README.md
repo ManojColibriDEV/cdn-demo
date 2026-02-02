@@ -532,6 +532,10 @@ export {};
 
 ### CDN Widget Attributes
 
+> **📖 Complete Reference:** See [Props and Events Reference](./docs/PROPS-AND-EVENTS-REFERENCE.md) for detailed documentation of all properties, events, methods, and user session structure.
+> 
+> **📖 For React projects:** See our [React CDN Component Guide](./docs/REACT-CDN-COMPONENT.md) for a complete TypeScript wrapper component with event handlers, refs, and auto-open functionality.
+
 | Attribute | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `authority` | string | Yes | Environment: `dev`, `stage`, `prod` |
