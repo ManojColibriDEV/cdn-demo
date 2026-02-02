@@ -6,6 +6,28 @@ import { authRefresh } from "./services";
 import { setAuthCookie, getDefaultRedirectUrl } from "./utils/cookieHelper";
 import { jwtDecode } from "jwt-decode";
 
+// Helper function to build redirect URL with xcred for cross-domain authentication
+const buildRedirectUrl = (baseUrl: string, xCredential?: string | null): string => {
+  if (!xCredential) {
+    // Try to get from localStorage as fallback
+    xCredential = localStorage.getItem('x_credential') || localStorage.getItem('X-Credential');
+  }
+
+  if (!xCredential) {
+    return baseUrl;
+  }
+
+  try {
+    const url = new URL(baseUrl);
+    url.searchParams.set('xcred', xCredential);
+    return url.toString();
+  } catch (e) {
+    // If URL parsing fails, append manually
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}xcred=${encodeURIComponent(xCredential)}`;
+  }
+};
+
 const App = (props: {
   authority?: string;
   subsidiary?: string;
@@ -29,7 +51,7 @@ const App = (props: {
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
           if (props.redirectUrl) {
-            window.location.href = props.redirectUrl;
+            window.location.href = buildRedirectUrl(props.redirectUrl);
           }
           return;
         }
@@ -86,9 +108,9 @@ const App = (props: {
                 onRedirect(targetUrl, userSession);
               }
 
-              // Redirect to target URL if provided
+              // Redirect to target URL if provided (with xcred for cross-domain auth)
               if (props.redirectUrl) {
-                window.location.href = props.redirectUrl;
+                window.location.href = buildRedirectUrl(props.redirectUrl, decoded.x_credentials);
               }
             }
           }
@@ -119,6 +141,9 @@ const App = (props: {
     }
     setIsAuthenticated(true);
 
+    // Get x_credentials from userSession for cross-domain auth
+    const xCredential = userSession?.userInfo?.x_credentials || userSession?.x_credentials;
+
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
       onRedirect(targetUrl, userSession);
@@ -126,7 +151,8 @@ const App = (props: {
 
     if (props.redirectUrl) {
       setTimeout(() => {
-        window.location.href = props.redirectUrl!;
+        // Append xcred to redirect URL for cross-domain authentication
+        window.location.href = buildRedirectUrl(props.redirectUrl!, xCredential);
       }, 100);
     }
   };
