@@ -34,18 +34,56 @@ const CreateAccountForm = ({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true); // Checked by default
+  const [rememberMe, setRememberMe] = useState(false); // Checked by default
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     "success" | "warning" | "error" | "info"
   >("info");
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Password validation function
+  const validatePasswordRules = (pw: string): { isValid: boolean; error: string } => {
+    if (!pw) {
+      return { isValid: false, error: "Password is required" };
+    }
+
+    if (pw.length < 9 || pw.length > 15) {
+      return { isValid: false, error: "Password must be 9-15 characters long" };
+    }
+
+    if (!/[A-Z]/.test(pw)) {
+      return { isValid: false, error: "Password must contain at least one uppercase letter" };
+    }
+
+    if (!/[a-z]/.test(pw)) {
+      return { isValid: false, error: "Password must contain at least one lowercase letter" };
+    }
+
+    if (!/[0-9]/.test(pw)) {
+      return { isValid: false, error: "Password must contain at least one number" };
+    }
+
+    // Check for allowed special characters only: ! @ # $ % ^ & * . - _
+    const allowedSpecialChars = /[!@#$%^&*._-]/;
+    if (!allowedSpecialChars.test(pw)) {
+      return { isValid: false, error: "Password must contain at least one special character (!@#$%^&*._-)" };
+    }
+
+    // Check for disallowed special characters
+    const onlyAllowedChars = /^[A-Za-z0-9!@#$%^&*._-]+$/;
+    if (!onlyAllowedChars.test(pw)) {
+      return { isValid: false, error: "Password contains invalid characters. Only !@#$%^&*._- are allowed" };
+    }
+
+    return { isValid: true, error: "" };
+  };
 
   // Check email existence when user types
   useEffect(() => {
@@ -123,8 +161,17 @@ const CreateAccountForm = ({
     // Mark form as touched to show validation errors
     setTouched(true);
 
-    if (!email || !firstName || !lastName || !password) {
+    if (!email || !firstName || !lastName) {
       onError("Please fill in all required fields");
+      return;
+    }
+
+    // Validate password
+    const passwordValidation = validatePasswordRules(password);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.error);
+      onError(passwordValidation.error);
+      setLoading(false);
       return;
     }
 
@@ -329,12 +376,13 @@ const CreateAccountForm = ({
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
+                    setPasswordError(""); // Clear error on change
                   }}
                   placeholder="Enter Password..."
                   disabled={loading}
                   className="w-full!"
                   autoComplete="new-password"
-                  error={touched && !password ? "Required" : ""}
+                  error={passwordError}
                   endIcon={
                     <button
                       type="button"
@@ -404,7 +452,7 @@ const CreateAccountForm = ({
                 emailExists ||
                 !isEmailValid
               }
-              className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+              className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
                 <span className="flex! items-center! justify-center!">
