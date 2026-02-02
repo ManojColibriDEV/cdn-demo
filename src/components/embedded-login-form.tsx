@@ -49,15 +49,23 @@ const EmbeddedLoginForm = ({
       clearTimeout(emailCheckTimeoutRef.current);
     }
 
-    // Reset email exists state when email is empty or invalid
+    // Reset email exists state when email is empty
     if (!email) {
       setEmailExists(false);
       setShowBanner(false);
       return;
     }
 
-    // Validate email format before making API call
+    // Only validate email if input contains @ (is an email, not username)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.includes('@')) {
+      // If it's a username (no @), allow login without checking
+      setEmailExists(true);
+      setShowBanner(false);
+      return;
+    }
+
+    // Validate email format before making API call
     if (!emailRegex.test(email)) {
       setEmailExists(false);
       setShowBanner(false);
@@ -117,8 +125,8 @@ const EmbeddedLoginForm = ({
     e.preventDefault();
 
     if (!email || !password) {
-      setErrorMessage("Please enter both email and password");
-      onError("Please enter both email and password");
+      setErrorMessage("Please enter both username/email and password");
+      onError("Please enter both username/email and password");
       return;
     }
 
@@ -210,15 +218,15 @@ const EmbeddedLoginForm = ({
         <form onSubmit={handleSubmit} className="space-y-2!">
           <div className="mt-0! ml-0! mb-4! mr-0!">
             <Input
-              label="Email Address"
+              label="Email or Username"
               id="email"
-              type="email"
+              type="text"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email address"
+              placeholder="Enter email or username"
               disabled={loading}
               className="w-full!"
-              autoComplete="email"
+              autoComplete="username"
               endIcon={
                 <>
                   {checkingEmail && <Loader />}
@@ -341,7 +349,7 @@ const EmbeddedLoginForm = ({
               loading ||
               !email
             }
-            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
               <span className="flex! items-center! justify-center!">

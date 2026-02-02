@@ -39,7 +39,7 @@ const CreateAccountForm = ({
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true); // Checked by default
+  const [rememberMe, setRememberMe] = useState(false); // Checked by default
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     "success" | "warning" | "error" | "info"
@@ -123,7 +123,7 @@ const CreateAccountForm = ({
     // Mark form as touched to show validation errors
     setTouched(true);
 
-    if (!email || !firstName || !lastName || !password) {
+    if (!email || !firstName || !lastName) {
       onError("Please fill in all required fields");
       return;
     }
@@ -334,7 +334,6 @@ const CreateAccountForm = ({
                   disabled={loading}
                   className="w-full!"
                   autoComplete="new-password"
-                  error={touched && !password ? "Required" : ""}
                   endIcon={
                     <button
                       type="button"
@@ -404,7 +403,7 @@ const CreateAccountForm = ({
                 emailExists ||
                 !isEmailValid
               }
-              className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+              className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
                 <span className="flex! items-center! justify-center!">
