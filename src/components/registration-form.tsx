@@ -1,7 +1,6 @@
 import { FC, useState, useEffect, useRef } from "react";
 import type {
   RegistrationFormProps,
-  PasswordChecks,
   TenantDetailsResponse,
 } from "../types";
 import {
@@ -9,7 +8,7 @@ import {
   getTenentDetails,
 } from "../services";
 import Loader from "../common/ui/loader";
-import { validatePassword, onlyDigits, onlyLetters } from "../functions";
+import { onlyDigits, onlyLetters } from "../functions";
 import InputField from "../common/ui/input";
 import infoErrorImg from "../icons/info-error.png";
 import checkSuccessImg from "../icons/check-success.png";
@@ -81,18 +80,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
       setConsentChecked(Boolean(initialValues.acceptTermsOfService));
     }
 
-    // Recompute password checks (so rules clear) and revalidate fields
-    try {
-      const first = mapped.firstName || "";
-      const last = mapped.lastName || "";
-      const email = mapped.email || "";
-      const user = { displayName: `${first} ${last}`.trim(), email } as any;
-      const checks = validatePassword(mapped.password || "", user);
-      setPasswordChecks(checks);
-    } catch (err) {
-      setPasswordChecks(null);
-    }
-
     // Re-run validation for visible fields to clear any stale errors
     const newErrors: Record<string, string | null> = { ...fieldErrors };
     (visibleFields || []).forEach((fk) => {
@@ -134,9 +121,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
     {}
   );
   const debounceRef = useRef<number | null>(null);
-  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
-    null
-  );
 
   const [consentChecked, setConsentChecked] = useState<boolean>(false);
 
@@ -153,19 +137,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
   const requiredFields = (visibleFields || []).filter(
     (fk) => FIELD_DEFINITIONS[fk] && FIELD_DEFINITIONS[fk].required
   );
-
-  const isPasswordValid =
-    !visibleFields.includes("password") ||
-    (!!passwordChecks &&
-      !!passwordChecks.length &&
-      passwordChecks.noEmailParts &&
-      passwordChecks.noNameParts &&
-      passwordChecks.noSpaces &&
-      passwordChecks.noTriple &&
-      passwordChecks.upper &&
-      passwordChecks.lower &&
-      passwordChecks.number &&
-      passwordChecks.special);
 
   const isConfirmPasswordMatch =
     !visibleFields.includes("confirmPassword") ||
@@ -192,7 +163,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
   const isContinueEnabled =
     areRequiredFieldsFilled &&
     noBlockingFieldErrors &&
-    isPasswordValid &&
+
     isConfirmPasswordMatch &&
     consentOk &&
     !loading;
@@ -217,8 +188,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
     if (errs.length)
       continueDisabledReasons.push(`Field errors: ${errs.join(", ")}`);
   }
-  if (!isPasswordValid)
-    continueDisabledReasons.push("Password does not meet all requirements");
   if (!isConfirmPasswordMatch)
     continueDisabledReasons.push("Passwords do not match");
   if (!consentOk) continueDisabledReasons.push("Consent is required");
@@ -430,21 +399,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
                 // render password via InputField so labels align consistently; pass eye button as endIcon
                 const handlePasswordChange = (val: string) => {
                   handleInputChange(fieldKey, val);
-                  if (fieldKey === "password") {
-                    const first = formValues.firstName || "";
-                    const last = formValues.lastName || "";
-                    const email = formValues.email || "";
-                    const user = {
-                      displayName: `${first} ${last}`.trim(),
-                      email,
-                    };
-                    try {
-                      const checks = validatePassword(val || "", user as any);
-                      setPasswordChecks(checks);
-                    } catch (err) {
-                      setPasswordChecks(null);
-                    }
-                  }
                 };
 
                 return (
@@ -521,80 +475,6 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
                       }
                       error={fieldErrors[fieldKey]}
                     />
-                    {fieldKey === "password" && passwordChecks && (
-                      <div className="mt-2! py-2.5! px-3! bg-black/2 rounded-md! text-[0.95rem]! text-[#4b5563]">
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.length ? "ok" : "bad"
-                          }`}
-                        >
-                          9–15 characters
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.upper ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          At least one uppercase letter
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.lower ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          At least one lowercase letter
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.number ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          At least one number
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.special ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          At least one special character (!@#$%^&*_-.)
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.special ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          Only !@#$%^&*_-_. symbols allowed
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.noSpaces ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          No spaces
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.noTriple ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          No more than 2 repeating characters
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.noNameParts ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          Cannot contain your first or last name
-                        </div>
-                        <div
-                          className={`my-0.5! flex! items-center! ${
-                            passwordChecks.noEmailParts ? "text-[#2ea44f]" : "text-[#d64545]"
-                          }`}
-                        >
-                          Cannot contain parts of your email
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               }
@@ -772,7 +652,7 @@ const RegistrationForm: FC<RegistrationFormProps> = ({
                 setFieldErrors({});
                 setEmailAvailable(null);
                 setEmailChecking(false);
-                setPasswordChecks(null);
+
                 setConsentChecked(false);
                 setShowPassword(false);
                 setShowConfirmPassword(false);

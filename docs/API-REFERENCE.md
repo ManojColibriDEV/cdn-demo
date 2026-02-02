@@ -168,6 +168,67 @@ All attributes are **optional** and have default values.
 
 ---
 
+### `customPrimaryColor`
+
+**Type**: `string` (CSS color value)  
+**Default**: Uses brand theme color  
+**Description**: Override the primary color for the entire widget with a custom color.
+
+```html
+<!-- Using hex color -->
+<keycloak-widget customPrimaryColor="#dc3545"></keycloak-widget>
+
+<!-- Using hex without # -->
+<keycloak-widget customPrimaryColor="dc3545"></keycloak-widget>
+
+<!-- Using named CSS color -->
+<keycloak-widget customPrimaryColor="red"></keycloak-widget>
+
+<!-- Using RGB -->
+<keycloak-widget customPrimaryColor="rgb(220, 53, 69)"></keycloak-widget>
+```
+
+**Valid Values**:
+- Hex colors: `#FF5733`, `FF5733`
+- Named colors: `red`, `blue`, `green`, etc.
+- RGB/RGBA: `rgb(255, 87, 51)`, `rgba(255, 87, 51, 0.8)`
+- HSL/HSLA: `hsl(9, 100%, 60%)`
+
+**Affects**:
+- Primary buttons background
+- Button hover states
+- Input field focus borders
+- Links and interactive elements
+- All primary color variants throughout the widget
+
+**Use Cases**:
+- Brand customization without theme files
+- A/B testing different colors
+- Dynamic color based on user preferences
+- White-label implementations
+
+**Example - Dynamic Color Change**:
+```javascript
+const widget = document.querySelector('keycloak-widget');
+
+// Change to purple
+widget.setAttribute('customPrimaryColor', '#6f42c1');
+
+// Change to green
+widget.setAttribute('customPrimaryColor', '#28a745');
+
+// Reset to brand default
+widget.removeAttribute('customPrimaryColor');
+```
+
+**Notes**:
+- Overrides brand theme colors
+- Applied immediately when attribute changes
+- Works with Shadow DOM isolation
+- Does not persist across page reloads
+
+---
+
 ### `theme`
 
 **Type**: `"light" | "dark"`  

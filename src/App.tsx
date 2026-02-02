@@ -15,6 +15,7 @@ const App = (props: {
   loginSubtitle?: string;
   showLogin?: boolean;
   handleClose?: () => void;
+  customPrimaryColor?: string;
 }) => {
   const { authority, subsidiary, onRedirect } = props;
 

@@ -2,7 +2,15 @@
 
 A reusable authentication widget for Colibri Identity platform. Available as both NPM package and CDN script.
 
+## Key Features
 
+- 🎨 **Custom Primary Color** - Override brand colors with any custom color (hex, RGB, or named colors)
+- 🔐 **OIDC Authentication** - Secure authentication via Keycloak
+- 🎯 **Multi-Brand Support** - Automatic theme loading based on subsidiary
+- 📦 **Dual Distribution** - Available as NPM package and CDN script
+- ⚛️ **React-Ready** - Full TypeScript support with React integration
+- 🌐 **Web Component** - Native custom element with Shadow DOM isolation
+- 🔄 **Auto-Refresh** - Automatic token refresh for seamless sessions
 
 ## NPM Installation & Usage
 
@@ -2244,6 +2252,16 @@ widget.addEventListener('redirect', handleRedirect);
 ---
 
 ##  Version History
+
+### Version 1.0.9
+- **Removed Password Validations**: Simplified authentication flow by removing password complexity requirements
+  - Removed password validation logic from login form (`embedded-login-form.tsx`)
+  - Removed password validation from registration form (`create-account-form.tsx`)
+  - Removed password validation and validation UI checklist from legacy registration form (`registration-form.tsx`)
+  - Passwords no longer require minimum length, uppercase, lowercase, numbers, special characters, or name/email checks
+- **Custom Primary Color Feature**: Added ability to override brand theme colors with custom colors
+  - New `customPrimaryColor` attribute/prop accepts any CSS color value (hex, RGB, named colors, HSL)
+  - Supports both HTML (`customPrimaryColor="#dc3545"`) and React (`customPrimaryColor={myColor}`) usage
 
 ### Version 1.0.7
 - **Removed `callbackUrl` Parameter**: Completely removed `callbackUrl` from the codebase

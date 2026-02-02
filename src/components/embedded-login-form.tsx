@@ -3,9 +3,8 @@ import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Loader from "../common/ui/loader";
-import { validatePassword, handleAuthentication } from "../functions";
+import { handleAuthentication } from "../functions";
 import { checkEmail } from "../services";
-import type { PasswordChecks } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
@@ -33,9 +32,6 @@ const EmbeddedLoginForm = ({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
-    null,
-  );
   const [errorMessage, setErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
@@ -98,27 +94,6 @@ const EmbeddedLoginForm = ({
       }
     };
   }, [email]);
-
-  // Validate password whenever it changes
-  useEffect(() => {
-    if (password) {
-      const checks = validatePassword(password, null);
-      setPasswordChecks(checks);
-    } else {
-      setPasswordChecks(null);
-    }
-  }, [password]);
-
-  // Check if all password requirements are met
-  const isPasswordValid = passwordChecks
-    ? passwordChecks.length &&
-    passwordChecks.upper &&
-    passwordChecks.lower &&
-    passwordChecks.number &&
-    passwordChecks.noSpaces &&
-    passwordChecks.noTriple &&
-    passwordChecks.special
-    : false;
 
   // Check if email is valid
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -364,8 +339,7 @@ const EmbeddedLoginForm = ({
             type="submit"
             disabled={
               loading ||
-              !email ||
-              !password
+              !email
             }
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >

@@ -18,7 +18,7 @@ export function validatePassword(
   upgradeUser?: UpgradeUser | null
 ): PasswordChecks {
   const checks = {
-    length: pw.length >= 9 && pw.length <= 15,
+    length: pw.length >= 9,
     upper: /[A-Z]/.test(pw),
     lower: /[a-z]/.test(pw),
     number: /[0-9]/.test(pw),

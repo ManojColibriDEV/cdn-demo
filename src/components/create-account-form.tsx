@@ -4,9 +4,8 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { validatePassword, handleAuthentication } from "../functions";
+import { handleAuthentication } from "../functions";
 import { authRegister, checkEmail } from "../services";
-import type { PasswordChecks } from "../types";
 import checkSuccessImg from "../icons/badge-check.svg";
 
 interface CreateAccountFormProps {
@@ -36,9 +35,6 @@ const CreateAccountForm = ({
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [passwordChecks, setPasswordChecks] = useState<PasswordChecks | null>(
-    null,
-  );
   const [touched, setTouched] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
@@ -103,36 +99,6 @@ const CreateAccountForm = ({
     };
   }, [email]);
 
-  // Validate password whenever it changes
-  useEffect(() => {
-    if (password) {
-      const userData =
-        email || firstName || lastName
-          ? {
-            email: email,
-            displayName: `${firstName} ${lastName}`.trim(),
-          }
-          : null;
-      const checks = validatePassword(password, userData);
-      setPasswordChecks(checks);
-    } else {
-      setPasswordChecks(null);
-    }
-  }, [password, email, firstName, lastName]);
-
-  // Check if all password requirements are met
-  const isPasswordValid = passwordChecks
-    ? passwordChecks.length &&
-    passwordChecks.upper &&
-    passwordChecks.lower &&
-    passwordChecks.number &&
-    passwordChecks.noSpaces &&
-    passwordChecks.noTriple &&
-    passwordChecks.special &&
-    passwordChecks.noNameParts &&
-    passwordChecks.noEmailParts
-    : false;
-
   // Check if email is valid
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailValid = email && emailRegex.test(email);
@@ -167,11 +133,6 @@ const CreateAccountForm = ({
     if (!emailRegex.test(email)) {
       setEmailError("Please enter a valid email address");
       onError("Please enter a valid email address");
-      return;
-    }
-
-    if (!isPasswordValid) {
-      onError("Password does not meet requirements");
       return;
     }
 
@@ -373,13 +334,7 @@ const CreateAccountForm = ({
                   disabled={loading}
                   className="w-full!"
                   autoComplete="new-password"
-                  error={
-                    touched && !password
-                      ? "Required"
-                      : touched && password && !isPasswordValid
-                        ? "Password must be 9-15 characters with at least one uppercase, lowercase, number, and special character (@.$%^_-). Example: MyPass123$"
-                        : ""
-                  }
+                  error={touched && !password ? "Required" : ""}
                   endIcon={
                     <button
                       type="button"
@@ -447,12 +402,7 @@ const CreateAccountForm = ({
               disabled={
                 loading ||
                 emailExists ||
-                !isEmailValid ||
-                !email ||
-                !firstName ||
-                !lastName ||
-                !password ||
-                !isPasswordValid
+                !isEmailValid
               }
               className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
