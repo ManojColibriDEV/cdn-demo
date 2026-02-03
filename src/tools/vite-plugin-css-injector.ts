@@ -45,16 +45,9 @@ window.injectWidgetStyles = function(shadowRoot) {
   }
 };
 
-// Also inject into document head for TEST mode (non-Shadow DOM)
-(function() {
-  try {
-    var elementStyle = document.createElement('style');
-    elementStyle.appendChild(document.createTextNode(__WIDGET_CSS__));
-    document.head.appendChild(elementStyle);
-  } catch(e) {
-    console.error('vite-plugin-css-injector: Document head injection failed', e);
-  }
-})();
+// DO NOT inject into document head - this would pollute global scope and override
+// CSS variables from other widgets on the page. Shadow DOM provides isolation.
+// In TEST mode, Vite dev server handles CSS automatically via HMR.
 `;
 
         // Prepend CSS injection to JS

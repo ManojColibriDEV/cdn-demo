@@ -8,9 +8,11 @@
       font-family: Arial, sans-serif;
       padding: 20px;
     }
+
     .controls {
       margin-bottom: 20px;
     }
+
     button {
       background-color: #17a2b8;
       color: white;
@@ -20,16 +22,19 @@
       font-weight: bold;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       transition: background-color 0.3s;
     }
+
     button:hover {
       background-color: #138496;
     }
+
     button:disabled {
       opacity: 0.7;
       cursor: not-allowed;
     }
+
     .info {
       background-color: #f0f0f0;
       padding: 15px;
@@ -45,13 +50,13 @@
       color: purple !important;
       font-size: 24px !important;
     }
-    
+
     label {
       background-color: orange !important;
       color: green !important;
       font-size: 30px !important;
     }
-    
+
     div {
       border: 3px dashed blue !important;
     }
@@ -73,49 +78,29 @@
     <p id="colorStatus">Using default brand color</p>
   </div>
 
-  <keycloak-widget id="auth-embedded" 
-    authority="dev"
-    redirectUrl="http://www.google.com"
-    login-title="Continue to login"
-    login-subtitle="Continue by signing in."
-    customPrimaryColor="#007bff"
-    >
+  <!-- 
+    Example 1: No auto-redirection (default behavior)
+    User will need to handle redirect event manually
+  -->
+  <keycloak-widget id="auth-embedded" authority="dev" redirectUrl="http://127.0.0.1:5500/widget-test.html"
+    login-title="Continue to login" login-subtitle="Continue by signing in." customPrimaryColor="#007bff">
   </keycloak-widget>
+  
+  <!-- 
+    Example 2: With auto-redirection enabled
+    Widget will automatically redirect after successful login
+    Uncomment to test:
+    <keycloak-widget id="auth-embedded" authority="dev" redirectUrl="http://127.0.0.1:5500/widget-test.html"
+      login-title="Continue to login" login-subtitle="Continue by signing in." 
+      customPrimaryColor="#007bff" auto-redirection="true">
+    </keycloak-widget>
+  -->
 
   <script src="./dist/keycloak-widget.umd.js"></script>
 
   <script>
     const widget = document.getElementById('auth-embedded');
     const loginBtn = document.getElementById('loginBtn');
-    const changeColorBtn = document.getElementById('changeColorBtn');
-    const statusEl = document.getElementById('status');
-    const colorStatusEl = document.getElementById('colorStatus');
-
-    // Colors to cycle through
-    const colors = [
-      { name: 'Red', value: '#dc3545' },
-      { name: 'Purple', value: '#6f42c1' },
-      { name: 'Green', value: '#28a745' },
-      { name: 'Orange', value: '#fd7e14' },
-      { name: 'Blue', value: '#007bff' },
-      { name: 'Pink', value: '#e83e8c' },
-      { name: 'Default (remove)', value: null }
-    ];
-    let currentColorIndex = 0;
-
-    // Function to change primary color
-    function changePrimaryColor() {
-      currentColorIndex = (currentColorIndex + 1) % colors.length;
-      const color = colors[currentColorIndex];
-      
-      if (color.value) {
-        widget.setAttribute('customPrimaryColor', color.value);
-        colorStatusEl.textContent = `Primary color: ${color.name} (${color.value})`;
-      } else {
-        widget.removeAttribute('customPrimaryColor');
-        colorStatusEl.textContent = 'Using default brand color';
-      }
-    }
 
     // Function to open the login form using login() method
     function openLoginForm() {
@@ -143,10 +128,9 @@
 
     // Add click event to the button
     loginBtn.addEventListener('click', openLoginForm);
-    changeColorBtn.addEventListener('click', changePrimaryColor);
 
     // Listen for close event
-    widget.addEventListener('close', function(e) {
+    widget.addEventListener('close', function (e) {
       closeLoginForm();
     });
 
@@ -154,23 +138,6 @@
     widget.addEventListener('redirect', function (e) {
       const { url, userSession } = e.detail;
       console.log('Redirect event received:', { url, userSession });
-    });
-
-    // Check if already authenticated on page load
-    window.addEventListener('load', function() {
-      const userState = localStorage.getItem('user_state');
-      if (userState === 'authenticated') {
-        const decoded = localStorage.getItem('decoded');
-        if (decoded) {
-          try {
-            const user = JSON.parse(decoded);
-            statusEl.textContent = 'Already authenticated! User: ' + (user?.email || 'Unknown');
-            loginBtn.textContent = 'Logged In';
-          } catch (e) {
-            console.error('Failed to parse user data', e);
-          }
-        }
-      }
     });
   </script>
 </body>

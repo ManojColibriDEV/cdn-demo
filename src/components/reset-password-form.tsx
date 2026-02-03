@@ -3,14 +3,9 @@ import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import { forgotPassword, checkEmail } from "../services";
+import type { ResetPasswordFormProps } from "../types";
 import ResetPasswordSuccess from "./reset-password-success";
 import checkSuccessImg from "../icons/badge-check.svg";
-
-interface ResetPasswordFormProps {
-  email: string;
-  onBack: () => void;
-  handleClose: () => void;
-}
 
 const ResetPasswordForm = ({
   email: initialEmail,

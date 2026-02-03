@@ -7,6 +7,42 @@ import { jwtDecode } from "jwt-decode";
 import { setAuthCookie } from "../utils/cookieHelper";
 import { authLogin } from "../services";
 
+// Re-export cookie helper functions for convenience
+export { 
+  setAuthCookie, 
+  clearAuthCookie, 
+  getCookieDomain, 
+  getAuthorityFromUrl, 
+  getDefaultRedirectUrl 
+} from "../utils/cookieHelper";
+
+/**
+ * Build redirect URL with xcred parameter for cross-domain authentication
+ * @param baseUrl - Base URL to redirect to
+ * @param xCredential - Optional x-credential token
+ * @returns URL with xcred parameter appended
+ */
+export const buildRedirectUrl = (baseUrl: string, xCredential?: string | null): string => {
+  if (!xCredential) {
+    // Try to get from localStorage as fallback
+    xCredential = localStorage.getItem('x_credential') || localStorage.getItem('X-Credential');
+  }
+
+  if (!xCredential) {
+    return baseUrl;
+  }
+
+  try {
+    const url = new URL(baseUrl);
+    url.searchParams.set('xcred', xCredential);
+    return url.toString();
+  } catch (e) {
+    // If URL parsing fails, append manually
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}xcred=${encodeURIComponent(xCredential)}`;
+  }
+};
+
 /**
  * Validate new password against security rules
  * @param pw The password to validate
@@ -54,27 +90,6 @@ export function validatePassword(
   }
 
   return checks;
-}
-
-/**
- * Return only the digit characters from a string.
- * Useful for sanitizing phone/mobile inputs where only numbers are allowed.
- */
-export function onlyDigits(input: string): string {
-  if (!input) return "";
-  return String(input).replace(/\D+/g, "");
-}
-
-/**
- * Strip out any characters that are not letters, spaces, hyphens or apostrophes.
- * Uses Unicode property escapes to allow letters beyond ASCII.
- */
-export function onlyLetters(input: string): string {
-  if (!input) return "";
-  // Allow letters (Unicode), spaces, apostrophes and hyphens
-  return String(input)
-    .replace(/[^^\p{L}' \-]+/gu, "")
-    .replace(/\s+/g, " ");
 }
 
 export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
