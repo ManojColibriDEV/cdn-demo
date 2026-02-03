@@ -1,14 +1,7 @@
 import { useRef, useEffect } from "react";
 import Button from "../common/ui/button";
+import type { ResetPasswordSuccessProps } from "../types";
 import badgeCheckIcon from "../icons/badge-check.svg";
-
-interface ResetPasswordSuccessProps {
-  email: string;
-  loading: boolean;
-  onResendLink: () => void;
-  onBack: () => void;
-  onClose: () => void;
-}
 
 const ResetPasswordSuccess = ({
   email,

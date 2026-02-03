@@ -5,19 +5,10 @@ import Banner from "../common/ui/banner";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
 import { checkEmail } from "../services";
+import type { EmbeddedLoginFormProps } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
-
-interface EmbeddedLoginFormProps {
-  onSuccess: (userSession: any) => void;
-  onError: (error: string) => void;
-  handleClose: () => void;
-  authority?: string;
-  title?: string;
-  subtitle?: string;
-  initialEmail?: string;
-}
 
 const EmbeddedLoginForm = ({
   onSuccess,

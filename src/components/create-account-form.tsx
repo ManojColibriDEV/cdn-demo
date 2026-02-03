@@ -6,18 +6,8 @@ import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
 import { authRegister, checkEmail } from "../services";
+import type { CreateAccountFormProps } from "../types";
 import checkSuccessImg from "../icons/badge-check.svg";
-
-interface CreateAccountFormProps {
-  onSuccess: (userSession: any) => void;
-  onError: (error: string) => void;
-  handleClose: () => void;
-  onSignIn: (email?: string) => void;
-  authority?: string;
-  title?: string;
-  subtitle?: string;
-  initialEmail?: string;
-}
 
 const CreateAccountForm = ({
   onSuccess,

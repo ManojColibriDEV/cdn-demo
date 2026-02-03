@@ -5,7 +5,7 @@ import './index.css';
 import './theme-variables.css';
 import App from './App';
 import { createThemeWidget } from './services/theme';
-import { getAuthorityFromUrl } from './utils/cookieHelper';
+import { getAuthorityFromUrl } from './functions';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
@@ -46,6 +46,7 @@ if (renderMode === 'TEST') {
           authority="dev" 
           subsidiary="elite" 
           showLogin={true}
+          autoRedirection={false}
         />
       </StrictMode>
     </BrowserRouter>
@@ -58,7 +59,7 @@ if (renderMode === 'TEST') {
     protected _shadowRoot!: ShadowRoot;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "redirectUrl", "loginTitle", "loginSubtitle", "show-login", "custom-primary-color", "customPrimaryColor"];
+      return ["authority", "subsidiary", "redirectUrl", "loginTitle", "loginSubtitle", "show-login", "custom-primary-color", "customPrimaryColor", "auto-redirection", "autoRedirection"];
     }
 
     // Store function props
@@ -228,6 +229,10 @@ if (renderMode === 'TEST') {
       const authorityAttr = this.getAttribute("authority");
       const detectedAuthority = authorityAttr || getAuthorityFromUrl();
       
+      // Support both kebab-case (HTML) and camelCase (React/JSX) for autoRedirection
+      const autoRedirectionAttr = this.getAttribute("auto-redirection") || this.getAttribute("autoRedirection");
+      const autoRedirection = autoRedirectionAttr === "true";
+      
       return {
         authority: detectedAuthority,
         subsidiary: this.getAttribute("subsidiary") || undefined,
@@ -236,6 +241,7 @@ if (renderMode === 'TEST') {
         loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
         showLogin: this.getAttribute("show-login") === "true",
         customPrimaryColor: this.getAttribute("custom-primary-color") || this.getAttribute("customPrimaryColor") || undefined,
+        autoRedirection: autoRedirection,
         onRedirect: this.handleRedirect,
         handleClose: this.handleClose,
       };

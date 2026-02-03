@@ -4,21 +4,7 @@
  * Based on @bloom-elements/core-theme functionality
  */
 
-export interface BrandConfig {
-    folder: string; // Brand folder name
-    name: string; // Display name
-    domain: string; // Associated domain
-    token: string; // Brand token identifier
-}
-
-export interface ThemeStyle {
-    name: string; // CSS variable name (without --)
-    value: string; // Color value (hex or RGB numbers)
-}
-
-export interface ThemeConfig {
-    styles: ThemeStyle[];
-}
+import type { BrandConfig, ThemeStyle, ThemeConfig } from "../types";
 
 export class ThemeWidget {
     private cdnBaseUrl: string;
