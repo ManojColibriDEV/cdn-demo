@@ -39,7 +39,9 @@ const CreateAccountForm = ({
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Password validation function
-  const validatePasswordRules = (pw: string): { isValid: boolean; error: string } => {
+  const validatePasswordRules = (
+    pw: string,
+  ): { isValid: boolean; error: string } => {
     if (!pw) {
       return { isValid: false, error: "Password is required" };
     }
@@ -49,27 +51,44 @@ const CreateAccountForm = ({
     }
 
     if (!/[A-Z]/.test(pw)) {
-      return { isValid: false, error: "Password must contain at least one uppercase letter" };
+      return {
+        isValid: false,
+        error: "Password must contain at least one uppercase letter",
+      };
     }
 
     if (!/[a-z]/.test(pw)) {
-      return { isValid: false, error: "Password must contain at least one lowercase letter" };
+      return {
+        isValid: false,
+        error: "Password must contain at least one lowercase letter",
+      };
     }
 
     if (!/[0-9]/.test(pw)) {
-      return { isValid: false, error: "Password must contain at least one number" };
+      return {
+        isValid: false,
+        error: "Password must contain at least one number",
+      };
     }
 
     // Check for allowed special characters only: ! @ # $ % ^ & * . - _
     const allowedSpecialChars = /[!@#$%^&*._-]/;
     if (!allowedSpecialChars.test(pw)) {
-      return { isValid: false, error: "Password must contain at least one special character (!@#$%^&*._-)" };
+      return {
+        isValid: false,
+        error:
+          "Password must contain at least one special character (!@#$%^&*._-)",
+      };
     }
 
     // Check for disallowed special characters
     const onlyAllowedChars = /^[A-Za-z0-9!@#$%^&*._-]+$/;
     if (!onlyAllowedChars.test(pw)) {
-      return { isValid: false, error: "Password contains invalid characters. Only !@#$%^&*._- are allowed" };
+      return {
+        isValid: false,
+        error:
+          "Password contains invalid characters. Only !@#$%^&*._- are allowed",
+      };
     }
 
     return { isValid: true, error: "" };
@@ -198,11 +217,7 @@ const CreateAccountForm = ({
       // After successful registration, automatically log in the user
       // Use the full email for login (Keycloak uses email as username)
       try {
-        const tokens = await handleAuthentication(
-          email,
-          password,
-          rememberMe,
-        );
+        const tokens = await handleAuthentication(email, password, rememberMe);
 
         // Call success callback with tokens
         onSuccess(tokens);
@@ -249,9 +264,10 @@ const CreateAccountForm = ({
         onMouseDown={onOverlayClick}
       >
         <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
-          <button
+          <Button
             onClick={handleClose}
-            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
+            variant="link"
+            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
             type="button"
           >
             <svg
@@ -267,7 +283,7 @@ const CreateAccountForm = ({
                 d="M6 18L18 6M6 6l12 12"
               />
             </svg>
-          </button>
+          </Button>
 
           <div className="mb-6! text-center!">
             <h2 className="text-2xl! font-bold! text-gray-800! mb-1!">
@@ -430,18 +446,22 @@ const CreateAccountForm = ({
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
                 />
-                <span className="text-gray-600! text-sm!">Remember me</span>
+                <span
+                  className="text-gray-600! text-sm!"
+                  style={{
+                    fontWeight: "500",
+                    color: "#5F5B7D",
+                  }}
+                >
+                  Remember me
+                </span>
               </label>
             </div>
 
             {/* Create Account Button */}
             <Button
               type="submit"
-              disabled={
-                loading ||
-                emailExists ||
-                !isEmailValid
-              }
+              disabled={loading || emailExists || !isEmailValid}
               className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
@@ -473,9 +493,9 @@ const CreateAccountForm = ({
             </Button>
 
             {/* Divider */}
-            <div className="relative! mt-6! mb-6!">
+            <div className="relative! mt-4! mb-4!">
               <div className="absolute! inset-0! flex! items-center!">
-                <div className="w-full! border-t! border-gray-300"></div>
+                <div className="w-full! border-t! border-solid! border-gray-300!"></div>
               </div>
               <div className="relative! flex! justify-center! text-sm!">
                 <span className="px-2! bg-white text-gray-500">OR</span>
@@ -483,14 +503,15 @@ const CreateAccountForm = ({
             </div>
 
             {/* Sign In Button */}
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => onSignIn(email)}
               disabled={loading}
-              className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+              className="w-full! flex! items-center! justify-center! gap-3!"
             >
               <span>Sign In</span>
-            </button>
+            </Button>
           </form>
         </div>
       </div>

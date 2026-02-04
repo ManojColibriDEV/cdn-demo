@@ -9,6 +9,17 @@ import { getAuthorityFromUrl } from './functions';
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
+// Get widget styles from global (injected by vite plugin)
+// Following bloom-elements standard pattern
+declare global {
+  interface Window {
+    __widgetStyles?: Record<string, string>;
+  }
+}
+
+const widgetStyles =
+  typeof window !== 'undefined' ? window.__widgetStyles?.['widget'] || '' : '';
+
 if (renderMode === 'TEST') {
   // Apply custom primary color if provided
   const customPrimaryColor = 'red'; // Can be dynamic from config
@@ -53,13 +64,23 @@ if (renderMode === 'TEST') {
   );
 } else {
   // Web Component mode for production deployment
+  // Following bloom-elements standard pattern with Shadow DOM
   class KeycloakWidget extends HTMLElement {
-    private root?: Root;
-    private mountPoint!: HTMLDivElement;
-    protected _shadowRoot!: ShadowRoot;
+    private root: Root | null = null;
 
     static get observedAttributes() {
-      return ["authority", "subsidiary", "redirectUrl", "loginTitle", "loginSubtitle", "show-login", "custom-primary-color", "customPrimaryColor", "auto-redirection", "autoRedirection"];
+      return [
+        "authority", 
+        "subsidiary", 
+        "redirectUrl", 
+        "loginTitle", 
+        "loginSubtitle", 
+        "show-login", 
+        "custom-primary-color", 
+        "customPrimaryColor", 
+        "auto-redirection", 
+        "autoRedirection"
+      ];
     }
 
     // Store function props
@@ -68,34 +89,38 @@ if (renderMode === 'TEST') {
     public onLogout?: () => void;
 
     connectedCallback() {
-      // Use Shadow DOM for style isolation
-      if (!this._shadowRoot) {
-        this._shadowRoot = this.attachShadow({ mode: 'open' });
-        
-        // Inject widget styles into Shadow DOM
-        if (typeof (window as any).injectWidgetStyles === 'function') {
-          (window as any).injectWidgetStyles(this._shadowRoot);
-        }
-        
-        // Apply custom primary color if provided
-        this.applyCustomPrimaryColor();
-        
-        // Load theme based on subsidiary attribute or auto-detect from domain
-        const subsidiary = this.getAttribute("subsidiary");
-        if (subsidiary && subsidiary.trim() !== '') {
-          this.loadTheme(subsidiary);
-        } else {
-          // Auto-detect brand from current domain if no subsidiary provided
-          this.loadThemeFromDomain();
-        }
+      // Attach shadow DOM for style isolation (bloom-elements standard)
+      const shadowRoot = this.attachShadow({ mode: 'open' });
+      
+      // Inject widget styles into Shadow DOM if available
+      if (widgetStyles) {
+        const styleElement = document.createElement('style');
+        styleElement.textContent = widgetStyles;
+        shadowRoot.appendChild(styleElement);
       }
       
-      this.mountPoint = document.createElement("div");
-      this._shadowRoot.appendChild(this.mountPoint);
+      // Apply custom primary color if provided
+      this.applyCustomPrimaryColor(shadowRoot);
+      
+      // Load theme based on subsidiary attribute or auto-detect from domain
+      const subsidiary = this.getAttribute("subsidiary");
+      if (subsidiary && subsidiary.trim() !== '') {
+        this.loadTheme(subsidiary, shadowRoot);
+      } else {
+        // Auto-detect brand from current domain if no subsidiary provided
+        this.loadThemeFromDomain(shadowRoot);
+      }
+      
+      // Create mount point for React
+      const mountPoint = document.createElement("div");
+      shadowRoot.appendChild(mountPoint);
+      
+      // Create React root and render
+      this.root = createRoot(mountPoint);
       this.render();
     }
     
-    private applyCustomPrimaryColor() {
+    private applyCustomPrimaryColor(shadowRoot: ShadowRoot) {
       // Support both kebab-case (HTML) and camelCase (React/JSX)
       const customColor = this.getAttribute("custom-primary-color") || this.getAttribute("customPrimaryColor");
       if (customColor && customColor.trim() !== '') {
@@ -107,7 +132,6 @@ if (renderMode === 'TEST') {
         // Validate and format color
         let colorValue = customColor.trim();
         
-        // If it's a named color or hex without #, use as-is
         // If it's just hex digits, add # prefix
         if (/^[0-9A-Fa-f]{6}$/.test(colorValue)) {
           colorValue = `#${colorValue}`;
@@ -121,24 +145,19 @@ if (renderMode === 'TEST') {
             --button-primary-bg-hover: ${colorValue};
             --color-border-focus: ${colorValue};
           }
-          
-          /* Apply to any elements using primary color */
-          * {
-            --color-primary: ${colorValue} !important;
-          }
         `;
         
-        this._shadowRoot.appendChild(styleElement);
+        shadowRoot.appendChild(styleElement);
         console.log(`[Widget] Custom primary color applied successfully`);
       }
     }
     
-    private async loadTheme(subsidiary: string) {
+    private async loadTheme(subsidiary: string, shadowRoot: ShadowRoot) {
       try {
         console.log(`[Widget] Loading theme for subsidiary: ${subsidiary}`);
         await createThemeWidget({
           brandFolder: subsidiary,
-          shadowRoot: this._shadowRoot,
+          shadowRoot: shadowRoot,
         });
         console.log(`[Widget] Theme loaded successfully for ${subsidiary}`);
       } catch (error) {
@@ -147,11 +166,11 @@ if (renderMode === 'TEST') {
       }
     }
 
-    private async loadThemeFromDomain() {
+    private async loadThemeFromDomain(shadowRoot: ShadowRoot) {
       try {
         console.log('[Widget] No subsidiary provided, attempting auto-detection from domain');
         await createThemeWidget({
-          shadowRoot: this._shadowRoot,
+          shadowRoot: shadowRoot,
           autoDetect: true,
         });
       } catch (error) {
@@ -161,15 +180,24 @@ if (renderMode === 'TEST') {
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+      if (oldValue === newValue) return;
+      
       // Re-apply custom color if it changed (support both naming conventions)
-      if ((name === 'custom-primary-color' || name === 'customPrimaryColor') && oldValue !== newValue) {
-        this.applyCustomPrimaryColor();
+      if (name === 'custom-primary-color' || name === 'customPrimaryColor') {
+        const shadowRoot = this.shadowRoot;
+        if (shadowRoot) {
+          this.applyCustomPrimaryColor(shadowRoot);
+        }
       }
+      
       this.render();
     }
 
     disconnectedCallback() {
-      this.root?.unmount();
+      if (this.root) {
+        this.root.unmount();
+        this.root = null;
+      }
     }
 
     private handleRedirect = (url: string, userSession?: any) => {
@@ -284,11 +312,7 @@ if (renderMode === 'TEST') {
     }
 
     private render() {
-      if (!this.mountPoint) return;
-
-      if (!this.root) {
-        this.root = createRoot(this.mountPoint);
-      }
+      if (!this.root) return;
 
       const props = this.getProps();
 
@@ -304,7 +328,13 @@ if (renderMode === 'TEST') {
     }
   }
 
-  customElements.define("keycloak-widget", KeycloakWidget);
+  // Define the custom element
+  if (!customElements.get('keycloak-widget')) {
+    customElements.define('keycloak-widget', KeycloakWidget);
+    console.log(
+      `✅ keycloak-widget web component defined successfully ${widgetStyles ? 'with shadow DOM' : ''}`
+    );
+  }
 }
 
 

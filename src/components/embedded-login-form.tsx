@@ -49,7 +49,7 @@ const EmbeddedLoginForm = ({
 
     // Only validate email if input contains @ (is an email, not username)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.includes('@')) {
+    if (!email.includes("@")) {
       // If it's a username (no @), allow login without checking
       setEmailExists(true);
       setShowBanner(false);
@@ -181,9 +181,10 @@ const EmbeddedLoginForm = ({
       onMouseDown={onOverlayClick}
     >
       <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
-        <button
+        <Button
           onClick={handleClose}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
+          variant="link"
+          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type="button"
         >
           <svg
@@ -199,7 +200,7 @@ const EmbeddedLoginForm = ({
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+        </Button>
 
         <div className="mb-3! text-center!">
           <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
@@ -320,11 +321,23 @@ const EmbeddedLoginForm = ({
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
               />
-              <span className="text-gray-600!">Remember me</span>
+              <span
+                className="text-gray-600!"
+                style={{
+                  fontWeight: "500",
+                  color: "#5F5B7D",
+                }}
+              >
+                Remember me
+              </span>
             </label>
             <a
               href="#"
-              className="text-[--button-link-text]-700! hover:text-[--button-link-text]-700! no-underline!"
+              className="no-underline!"
+              style={{
+                fontWeight: "500",
+                color: "#5F5B7D",
+              }}
               onClick={(e) => {
                 e.preventDefault();
                 setShowResetPassword(true);
@@ -336,10 +349,7 @@ const EmbeddedLoginForm = ({
 
           <Button
             type="submit"
-            disabled={
-              loading ||
-              !email
-            }
+            disabled={loading || !email}
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
@@ -372,21 +382,22 @@ const EmbeddedLoginForm = ({
 
           <div className="relative! mt-4! mb-4!">
             <div className="absolute! inset-0! flex! items-center!">
-              <div className="w-full! border-t! border-gray-300"></div>
+              <div className="w-full! border-t! border-solid! border-gray-300!"></div>
             </div>
             <div className="relative! flex! justify-center! text-sm!">
               <span className="px-2! bg-white text-gray-500">OR</span>
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => setShowCreateAccount(true)}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
             <span>Create an Account</span>
-          </button>
+          </Button>
         </form>
       </div>
     </div>

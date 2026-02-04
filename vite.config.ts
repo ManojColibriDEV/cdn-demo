@@ -60,10 +60,6 @@ export default defineConfig(({ mode }) => ({
       external: [],
       output: {
         globals: {},
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name === 'style.css') return 'keycloak-widget.css';
-          return assetInfo.name || 'asset';
-        },
         inlineDynamicImports: true,
       },
     },
