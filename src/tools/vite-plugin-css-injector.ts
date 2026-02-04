@@ -1,63 +1,58 @@
 import { Plugin } from 'vite';
 
+/**
+ * Vite plugin to inline CSS into JavaScript bundle
+ * Perfect for widget distribution - only need one .js file!
+ * Supports both light DOM and shadow DOM injection
+ * 
+ * Follows bloom-elements standard pattern
+ */
 export function cssInjectedByJsPlugin(): Plugin {
   return {
     name: 'vite-plugin-css-injector',
     apply: 'build',
     enforce: 'post',
     generateBundle(_, bundle) {
-      const cssFiles: string[] = [];
-      let jsFile: any = null;
+      const cssFiles = Object.keys(bundle).filter((i) => i.endsWith('.css'));
+      const jsFiles = Object.keys(bundle).filter(
+        (i) => i.endsWith('.js') && !i.includes('polyfill')
+      );
 
-      // Find CSS and JS files
-      for (const fileName in bundle) {
-        const file = bundle[fileName];
-        if (file.type === 'asset' && fileName.endsWith('.css')) {
-          cssFiles.push(fileName);
-        } else if (file.type === 'chunk' && fileName.endsWith('.js')) {
-          jsFile = file;
-        }
+      if (cssFiles.length === 0 || jsFiles.length === 0) {
+        return;
       }
 
-      // Inject CSS into JS
-      if (cssFiles.length > 0 && jsFile) {
-        const cssContent = cssFiles
-          .map((fileName) => {
-            const cssFile = bundle[fileName] as any;
-            return cssFile.source;
-          })
-          .join('\n');
+      // Get CSS content
+      const cssCode = cssFiles.map((file) => bundle[file].source).join('\n');
 
-        // Create the CSS injection code for Shadow DOM
-        // Export CSS content as a variable that can be injected into Shadow DOM
-        const cssInjectionCode = `
-// CSS content for Shadow DOM injection
-var __WIDGET_CSS__ = ${JSON.stringify(cssContent)};
+      // Find the main JS file
+      const mainJsFile = jsFiles[0];
+      const jsBundle = bundle[mainJsFile];
 
-// Function to inject CSS into Shadow DOM - exposed globally for web component
-window.injectWidgetStyles = function(shadowRoot) {
-  try {
-    var elementStyle = document.createElement('style');
-    elementStyle.appendChild(document.createTextNode(__WIDGET_CSS__));
-    shadowRoot.appendChild(elementStyle);
-  } catch(e) {
-    console.error('vite-plugin-css-injector: Shadow DOM injection failed', e);
+      // Inject CSS that works with both light DOM and shadow DOM
+      // For shadow DOM, the widget will use __widgetStyles
+      const cssInjectionCode = `
+(function(){
+  var cssContent=${JSON.stringify(cssCode)};
+  
+  // Export for shadow DOM usage
+  if (typeof window !== 'undefined') {
+    window.__widgetStyles = window.__widgetStyles || {};
+    window.__widgetStyles['widget'] = cssContent;
   }
-};
+  
+  // DO NOT inject into document head - this would pollute global scope
+  // Shadow DOM provides complete style isolation
+})();`;
 
-// DO NOT inject into document head - this would pollute global scope and override
-// CSS variables from other widgets on the page. Shadow DOM provides isolation.
-// In TEST mode, Vite dev server handles CSS automatically via HMR.
-`;
-
-        // Prepend CSS injection to JS
-        jsFile.code = cssInjectionCode + jsFile.code;
-
-        // Remove CSS files from bundle
-        cssFiles.forEach((fileName) => {
-          delete bundle[fileName];
-        });
+      if (jsBundle.type === 'chunk') {
+        jsBundle.code = cssInjectionCode + jsBundle.code;
       }
+
+      // Remove CSS files from bundle
+      cssFiles.forEach((file) => {
+        delete bundle[file];
+      });
     },
   };
 }

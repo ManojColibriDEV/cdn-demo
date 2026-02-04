@@ -42,7 +42,8 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         <div className="flex! items-center! relative!">
           {startIcon && (
             <span
-              className="flex! items-center! justify-center! px-2! mr-1.5!"
+              className="flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!"
+              style={{ top: '50%', transform: 'translateY(-50%)' }}
               aria-hidden
             >
               {startIcon}
@@ -51,7 +52,13 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           {isSelect ? (
             <select
               ref={ref as any}
-              className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? "border-[#d64545]!" : "border-[#cbd5d5]!"} rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
+              className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
+              style={{ 
+                borderWidth: '1px', 
+                borderStyle: 'solid', 
+                borderColor: hasError ? '#d64545' : '#cbd5d5',
+                ...rest.style 
+              }}
               {...(rest as any)}
             >
               {options &&
@@ -64,13 +71,20 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           ) : (
             <input
               ref={ref}
-              className={`flex-1! py-2.5! pr-11! pl-3! border! ${hasError ? "border-[#d64545]!" : "border-[#cbd5d5]!"} rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]! focus:border-[#60a5fa]!`}
+              className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
+              style={{ 
+                borderWidth: '1px', 
+                borderStyle: 'solid', 
+                borderColor: hasError ? '#d64545' : '#cbd5d5',
+                ...rest.style 
+              }}
               {...(rest as any)}
             />
           )}
           {endIcon && (
             <span
-              className="flex! items-center! justify-center! absolute! right-2.5! top-1/2! -translate-y-1/2! pointer-events-auto! z-2!"
+              className="flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!"
+              style={{ top: '50%', transform: 'translateY(-50%)' }}
               aria-hidden
             >
               {endIcon}

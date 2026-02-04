@@ -34,9 +34,10 @@ const ResetPasswordSuccess = ({
     >
       <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
         {/* Close Button */}
-        <button
+        <Button
           onClick={onClose}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none!"
+          variant="link"
+          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type="button"
         >
           <svg
@@ -52,7 +53,7 @@ const ResetPasswordSuccess = ({
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </button>
+        </Button>
 
         {/* Success Icon */}
         <div className="flex! justify-center! mb-4!">
@@ -120,14 +121,15 @@ const ResetPasswordSuccess = ({
         </Button>
 
         {/* Back to Sign In Button */}
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={onBack}
           disabled={loading}
-          className="w-full! flex! items-center! justify-center! gap-3! bg-transparent! border-2! border-[var(--button-primary-bg)]! text-[var(--button-primary-bg)]! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-all! duration-300! hover:bg-gray-50 active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!"
+          className="w-full! flex! items-center! justify-center! gap-3!"
         >
           <span>Back to sign in</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

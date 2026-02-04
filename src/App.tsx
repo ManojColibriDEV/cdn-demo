@@ -19,18 +19,48 @@ const App = (props: AppProps) => {
         const hasValidAccessToken = checkTokenAndRedirect();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
-          if (props.redirectUrl && props.autoRedirection) {
-            window.location.href = buildRedirectUrl(props.redirectUrl);
+          // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
+          const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+          if (props.autoRedirection) {
+            window.location.href = buildRedirectUrl(targetUrl);
+          } else {
+            // If auto-redirect is disabled, trigger onRedirect callback only
+            if (onRedirect && props.redirectUrl) {
+              const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+              // Try to get user session from stored data
+              const accessToken = localStorage.getItem('access_token');
+              if (accessToken) {
+                try {
+                  const decoded: any = jwtDecode(accessToken);
+                  const userSession = {
+                    access_token: accessToken,
+                    userInfo: {
+                      studentId: decoded.studentId,
+                      sub: decoded.sub,
+                      email_verified: decoded.email_verified,
+                      x_credentials: decoded.x_credentials,
+                      name: decoded.name,
+                      preferred_username: decoded.preferred_username,
+                      given_name: decoded.given_name,
+                      family_name: decoded.family_name,
+                      email: decoded.email
+                    }
+                  };
+                  onRedirect(targetUrl, userSession);
+                } catch (e) {
+                  console.error('[App] Failed to decode access token:', e);
+                }
+              }
+            }
           }
           return;
         }
 
-        // If no valid access token, try to use refresh token
+        // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
         if (hasValidRefreshToken) {
           const refreshToken = localStorage.getItem('refresh_token');
           if (refreshToken) {
-            console.log('[App] Attempting auto-login with refresh token');
             const response = await authRefresh(refreshToken);
 
             if (response && response.tokens && response.tokens.access_token) {
@@ -77,10 +107,10 @@ const App = (props: AppProps) => {
                 onRedirect(targetUrl, userSession);
               }
 
-              // Redirect to target URL if provided (with xcred for cross-domain auth)
+              // Redirect to target URL (with xcred for cross-domain auth)
               // Only auto-redirect if autoRedirection prop is true
-              if (props.redirectUrl && props.autoRedirection) {
-                window.location.href = buildRedirectUrl(props.redirectUrl, decoded.x_credentials);
+              if (props.autoRedirection) {
+                window.location.href = buildRedirectUrl(targetUrl, decoded.x_credentials);
               }
             }
           }
@@ -120,10 +150,16 @@ const App = (props: AppProps) => {
     }
 
     // Only auto-redirect if autoRedirection prop is true
-    if (props.redirectUrl && props.autoRedirection) {
+    console.log('[App handleEmbeddedLoginSuccess] autoRedirection check:', { 
+      redirectUrl: props.redirectUrl, 
+      targetUrl: targetUrl,
+      autoRedirection: props.autoRedirection,
+      willRedirect: !!props.autoRedirection
+    });
+    if (props.autoRedirection) {
       setTimeout(() => {
         // Append xcred to redirect URL for cross-domain authentication
-        window.location.href = buildRedirectUrl(props.redirectUrl!, xCredential);
+        window.location.href = buildRedirectUrl(targetUrl, xCredential);
       }, 100);
     }
   };
@@ -142,8 +178,10 @@ const App = (props: AppProps) => {
     <Routes>
       <Route path="*" element={
         <>
-          {/* Show login form when showLogin prop is true and not authenticated */}
-          {!isAuthenticated && props.showLogin && (
+          {/* Show login form when showLogin prop is true (regardless of auth state) */}
+          {/* Auto-login will redirect if user has valid refresh token */}
+          {/* But widget should still be accessible for fresh login attempts */}
+          {props.showLogin && (
             <EmbeddedLoginForm
               onSuccess={handleEmbeddedLoginSuccess}
               onError={handleEmbeddedLoginError}
