@@ -42,7 +42,8 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
         <div className="flex! items-center! relative!">
           {startIcon && (
             <span
-              className="flex! items-center! justify-center! px-2! mr-1.5!"
+              className="flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!"
+              style={{ top: '50%', transform: 'translateY(-50%)' }}
               aria-hidden
             >
               {startIcon}
@@ -82,7 +83,8 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           )}
           {endIcon && (
             <span
-              className="flex! items-center! justify-center! absolute! right-2.5! top-1/2! -translate-y-1/2! pointer-events-auto! z-2!"
+              className="flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!"
+              style={{ top: '50%', transform: 'translateY(-50%)' }}
               aria-hidden
             >
               {endIcon}

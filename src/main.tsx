@@ -38,8 +38,6 @@ if (renderMode === 'TEST') {
     root.style.setProperty('--button-primary-bg', colorValue);
     root.style.setProperty('--button-primary-bg-hover', colorValue);
     root.style.setProperty('--color-border-focus', colorValue);
-    
-    console.log('[TEST mode] Custom primary color applied:', colorValue);
   }
   
   createThemeWidget({
@@ -124,7 +122,6 @@ if (renderMode === 'TEST') {
       // Support both kebab-case (HTML) and camelCase (React/JSX)
       const customColor = this.getAttribute("custom-primary-color") || this.getAttribute("customPrimaryColor");
       if (customColor && customColor.trim() !== '') {
-        console.log(`[Widget] Applying custom primary color: ${customColor}`);
         
         // Create a style element for custom color overrides
         const styleElement = document.createElement('style');
@@ -154,12 +151,10 @@ if (renderMode === 'TEST') {
     
     private async loadTheme(subsidiary: string, shadowRoot: ShadowRoot) {
       try {
-        console.log(`[Widget] Loading theme for subsidiary: ${subsidiary}`);
         await createThemeWidget({
           brandFolder: subsidiary,
           shadowRoot: shadowRoot,
         });
-        console.log(`[Widget] Theme loaded successfully for ${subsidiary}`);
       } catch (error) {
         console.error('[Widget] Failed to load theme:', error);
         // Continue with default theme if loading fails
@@ -201,7 +196,6 @@ if (renderMode === 'TEST') {
     }
 
     private handleRedirect = (url: string, userSession?: any) => {
-      console.log('[Widget] handleRedirect called, url:', url);
       
       // Call function prop if provided (for React/NPM usage)
       if (this.onRedirect) {
@@ -224,14 +218,9 @@ if (renderMode === 'TEST') {
       this.dispatchEvent(event);
       console.log('[Widget] Redirect event dispatched');
       
-      // Auto-redirect in main window if URL is provided (only if no function prop)
-      // Add small delay to allow event handlers to process
-      if (url && !this.onRedirect) {
-        console.log('[Widget] Will redirect to:', url, 'in 200ms');
-        setTimeout(() => {
-          window.location.href = url;
-        }, 200);
-      }
+      // NOTE: Auto-redirect is now controlled by the App component via autoRedirection prop
+      // This widget component should NOT redirect automatically
+      // The App component will handle window.location.href if autoRedirection=true
     }
 
     private handleClose = () => {
@@ -259,7 +248,8 @@ if (renderMode === 'TEST') {
       
       // Support both kebab-case (HTML) and camelCase (React/JSX) for autoRedirection
       const autoRedirectionAttr = this.getAttribute("auto-redirection") || this.getAttribute("autoRedirection");
-      const autoRedirection = autoRedirectionAttr === "true";
+      // Default to true if attribute is not set, false only if explicitly set to "false"
+      const autoRedirection = autoRedirectionAttr !== "false";
       
       return {
         authority: detectedAuthority,
@@ -316,8 +306,6 @@ if (renderMode === 'TEST') {
 
       const props = this.getProps();
 
-      console.log('[Widget] Rendering with props:', props);
-
       this.root.render(
         <BrowserRouter>
           <StrictMode>
@@ -331,9 +319,6 @@ if (renderMode === 'TEST') {
   // Define the custom element
   if (!customElements.get('keycloak-widget')) {
     customElements.define('keycloak-widget', KeycloakWidget);
-    console.log(
-      `✅ keycloak-widget web component defined successfully ${widgetStyles ? 'with shadow DOM' : ''}`
-    );
   }
 }
 
