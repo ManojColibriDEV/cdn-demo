@@ -10,6 +10,13 @@ import type { EmbeddedLoginFormProps } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
+import {
+  MessageType,
+  EMAIL_REGEX,
+  ButtonType,
+  ButtonVariant,
+  INFO_MESSAGES,
+} from "../constants";
 
 const EmbeddedLoginForm = ({
   onSuccess,
@@ -33,7 +40,7 @@ const EmbeddedLoginForm = ({
   const [showBanner, setShowBanner] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "warning" | "error" | "info">("info");
+  const [toastType, setToastType] = useState<MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO>(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -53,7 +60,6 @@ const EmbeddedLoginForm = ({
     }
 
     // Only validate email if input contains @ (is an email, not username)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.includes("@")) {
       // If it's a username (no @), allow login without checking
       setEmailExists(true);
@@ -62,7 +68,7 @@ const EmbeddedLoginForm = ({
     }
 
     // Validate email format before making API call
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(email)) {
       setEmailExists(false);
       setShowBanner(false);
       return;
@@ -142,7 +148,7 @@ const EmbeddedLoginForm = ({
         error instanceof Error ? error.message : "Authentication failed";
       setErrorMessage(errorMsg);
       setToastMessage(errorMsg);
-      setToastType("error");
+      setToastType(MessageType.ERROR);
       onError(errorMsg);
     } finally {
       setLoading(false);
@@ -194,9 +200,9 @@ const EmbeddedLoginForm = ({
       <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         <Button
           onClick={handleClose}
-          variant="link"
+          variant={ButtonVariant.LINK}
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
-          type="button"
+          type={ButtonType.BUTTON}
           ariaLabel="Close dialog"
         >
           <svg
@@ -251,8 +257,8 @@ const EmbeddedLoginForm = ({
           {/* Banner for non-existing user - appears after email field */}
           {showBanner && !emailExists && isEmailValid && !emailCheckError && (
             <Banner
-              type="info"
-              message="We couldn't find an account with this email."
+              type={MessageType.INFO}
+              message={INFO_MESSAGES.EMAIL_NOT_FOUND}
               actionText="Let's create one to continue?"
               onActionClick={() => {
                 setShowBanner(false);
@@ -266,7 +272,7 @@ const EmbeddedLoginForm = ({
           {/* Banner for API error */}
           {showBanner && emailCheckError && (
             <Banner
-              type="error"
+              type={MessageType.ERROR}
               message="Unable to verify email. You can still proceed with login."
               onClose={() => {
                 setShowBanner(false);
@@ -379,7 +385,7 @@ const EmbeddedLoginForm = ({
           </div>
 
           <Button
-            type="submit"
+            type={ButtonType.SUBMIT}
             disabled={loading || !email}
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
@@ -421,8 +427,8 @@ const EmbeddedLoginForm = ({
           </div>
 
           <Button
-            type="button"
-            variant="outline"
+            type={ButtonType.BUTTON}
+            variant={ButtonVariant.OUTLINE}
             onClick={() => setShowCreateAccount(true)}
             disabled={loading}
             className="w-full! flex! items-center! justify-center! gap-3! m-0!"

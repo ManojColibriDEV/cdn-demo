@@ -3,6 +3,8 @@
  * Shared cookie operations for cross-subdomain support
  */
 
+import { LOCALHOST, ENV_PREFIXES, DEFAULT_PATHS, Authority } from "../constants";
+
 
 /**
  * Get the cookie domain for cross-subdomain support
@@ -13,7 +15,7 @@ export function getCookieDomain(): string {
   const hostname = window.location.hostname;
 
   // localhost or IP address - no domain restriction needed
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+  if (hostname === LOCALHOST.HOSTNAME || hostname === LOCALHOST.IP || LOCALHOST.IP_PATTERN.test(hostname)) {
     return '';
   }
 
@@ -41,20 +43,20 @@ export function getAuthorityFromUrl(): string {
   const hostname = window.location.hostname;
 
   // localhost defaults to dev
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-    return 'dev';
+  if (hostname === LOCALHOST.HOSTNAME || hostname === LOCALHOST.IP || LOCALHOST.IP_PATTERN.test(hostname)) {
+    return Authority.DEV;
   }
 
   // Check for environment prefixes
-  if (hostname.startsWith('dev.') || hostname.startsWith('dev-')) {
-    return 'dev';
-  } else if (hostname.startsWith('test.') || hostname.startsWith('test-')) {
-    return 'test';
-  } else if (hostname.startsWith('stage.') || hostname.startsWith('stage-')) {
-    return 'stage';
+  if (hostname.startsWith(`${ENV_PREFIXES.DEV}.`) || hostname.startsWith(`${ENV_PREFIXES.DEV}-`)) {
+    return Authority.DEV;
+  } else if (hostname.startsWith(`${ENV_PREFIXES.TEST}.`) || hostname.startsWith(`${ENV_PREFIXES.TEST}-`)) {
+    return Authority.TEST;
+  } else if (hostname.startsWith(`${ENV_PREFIXES.STAGE}.`) || hostname.startsWith(`${ENV_PREFIXES.STAGE}-`)) {
+    return Authority.STAGE;
   } else {
     // Production (no prefix)
-    return 'prod';
+    return Authority.PROD;
   }
 }
 
@@ -74,29 +76,29 @@ export function getDefaultRedirectUrl(): string {
   const hostname = url.hostname;
 
   // Check for different environments
-  if (hostname.startsWith('dev.')) {
+  if (hostname.startsWith(`${ENV_PREFIXES.DEV}.`)) {
     // dev.elitelearning.com → dev-learn.elitelearning.com
-    const newHostname = hostname.replace('dev.', 'dev-learn.');
-    return `${url.protocol}//${newHostname}/courses`;
-  } else if (hostname.startsWith('test.')) {
+    const newHostname = hostname.replace(`${ENV_PREFIXES.DEV}.`, `${ENV_PREFIXES.DEV_LEARN}.`);
+    return `${url.protocol}//${newHostname}${DEFAULT_PATHS.COURSES}`;
+  } else if (hostname.startsWith(`${ENV_PREFIXES.TEST}.`)) {
     // test.elitelearning.com → test-learn.elitelearning.com
-    const newHostname = hostname.replace('test.', 'test-learn.');
-    return `${url.protocol}//${newHostname}/courses`;
-  } else if (hostname.startsWith('stage.')) {
+    const newHostname = hostname.replace(`${ENV_PREFIXES.TEST}.`, `${ENV_PREFIXES.TEST_LEARN}.`);
+    return `${url.protocol}//${newHostname}${DEFAULT_PATHS.COURSES}`;
+  } else if (hostname.startsWith(`${ENV_PREFIXES.STAGE}.`)) {
     // stage.elitelearning.com → stage-learn.elitelearning.com
-    const newHostname = hostname.replace('stage.', 'stage-learn.');
-    return `${url.protocol}//${newHostname}/courses`;
+    const newHostname = hostname.replace(`${ENV_PREFIXES.STAGE}.`, `${ENV_PREFIXES.STAGE_LEARN}.`);
+    return `${url.protocol}//${newHostname}${DEFAULT_PATHS.COURSES}`;
   } else {
     // Production: elitelearning.com → learn.elitelearning.com
     // Check if it's already a subdomain or the root domain
     const parts = hostname.split('.');
     if (parts.length === 2) {
       // Root domain (e.g., elitelearning.com)
-      const newHostname = `learn.${hostname}`;
-      return `${url.protocol}//${newHostname}/courses`;
+      const newHostname = `${ENV_PREFIXES.LEARN}.${hostname}`;
+      return `${url.protocol}//${newHostname}${DEFAULT_PATHS.COURSES}`;
     } else {
       // Already a subdomain, don't transform
-      return `${url.protocol}//${hostname}/courses`;
+      return `${url.protocol}//${hostname}${DEFAULT_PATHS.COURSES}`;
     }
   }
 }
@@ -129,5 +131,4 @@ export function clearAuthCookie(name: string): void {
   const domain = getCookieDomain();
   const domainAttr = domain ? `; domain=${domain}` : '';
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${domainAttr}`;
-  console.log(`[Cookie] Cleared: ${name}`);
 }

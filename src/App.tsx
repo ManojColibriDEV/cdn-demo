@@ -11,6 +11,7 @@ import {
 } from "./functions";
 import { authRefresh } from "./services";
 import type { AppProps } from "./types";
+import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect } = props;
@@ -33,7 +34,7 @@ const App = (props: AppProps) => {
             if (onRedirect && props.redirectUrl) {
               const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               // Try to get user session from stored data
-              const accessToken = localStorage.getItem("access_token");
+              const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
               if (accessToken) {
                 const userSession = createUserSessionFromToken(accessToken);
                 if (userSession) {
@@ -48,7 +49,7 @@ const App = (props: AppProps) => {
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
         if (hasValidRefreshToken) {
-          const refreshToken = localStorage.getItem("refresh_token");
+          const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (refreshToken) {
             const response = await authRefresh(refreshToken);
 
@@ -66,7 +67,7 @@ const App = (props: AppProps) => {
 
               // Store new access token in cookies (with encoding)
               setAuthCookie(
-                "access_token",
+                COOKIE_NAMES.ACCESS_TOKEN,
                 tokens.access_token,
                 expiresIn,
                 true,
@@ -74,7 +75,7 @@ const App = (props: AppProps) => {
               // Store X-Credential without encoding to preserve exact format
               if (userSession.decoded.x_credentials) {
                 setAuthCookie(
-                  "X-Credential",
+                  COOKIE_NAMES.X_CREDENTIAL,
                   userSession.decoded.x_credentials,
                   expiresIn,
                   false,
@@ -82,32 +83,32 @@ const App = (props: AppProps) => {
               }
 
               // Store access token in localStorage (always)
-              localStorage.setItem("access_token", tokens.access_token);
-              localStorage.setItem("access_token_expires", (Date.now() + expiresIn * 1000).toString());
+              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
               
               // NOTE: X-Credential is stored in cookies only, not localStorage
 
               // Update refresh token in localStorage (always store it)
               if (tokens.refresh_token) {
-                localStorage.setItem("refresh_token", tokens.refresh_token);
+                localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
                 // Only update timestamp if remember me was originally checked
                 // This preserves the original user choice
-                const hadRememberMe = localStorage.getItem("refresh_token_time");
+                const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
                 if (hadRememberMe) {
                   localStorage.setItem(
-                    "refresh_token_time",
+                    STORAGE_KEYS.REFRESH_TOKEN_TIME,
                     Date.now().toString(),
                   );
                 }
               }
-              console.log("[App] Auto-login successful");
+              console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
               setIsAuthenticated(true);
 
               // Trigger onRedirect callback with userSession from decoded token
               const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               if (onRedirect) {
                 console.log(
-                  "[App] Triggering onRedirect callback with user session:",
+                  `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
                   userSession,
                 );
                 onRedirect(targetUrl, userSession);
@@ -125,14 +126,14 @@ const App = (props: AppProps) => {
           }
         } else {
           // Clear expired refresh token
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("refresh_token_time");
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
         }
       } catch (error) {
-        console.error("[App] Auto-login failed:", error);
+        console.error(`${LOG_PREFIX.AUTH} Auto-login failed:`, error);
         // Clear invalid tokens
-        localStorage.removeItem("refresh_token");
-        localStorage.removeItem("refresh_token_time");
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
       }
     };
 
@@ -140,8 +141,8 @@ const App = (props: AppProps) => {
   }, [props.redirectUrl]);
 
   useEffect(() => {
-    authority && localStorage.setItem("authority", authority);
-    subsidiary && localStorage.setItem("subsidiary", subsidiary);
+    authority && localStorage.setItem('authority', authority);
+    subsidiary && localStorage.setItem('subsidiary', subsidiary);
   }, [authority, subsidiary]);
 
   const handleEmbeddedLoginSuccess = (userSession: any) => {
@@ -157,7 +158,7 @@ const App = (props: AppProps) => {
       userSession?.userInfo?.x_credentials || userSession?.x_credentials;
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
-      const accessToken = localStorage.getItem("access_token");
+      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (accessToken) {
         const userSession = createUserSessionFromToken(accessToken);
         if (userSession) {
@@ -175,7 +176,7 @@ const App = (props: AppProps) => {
   };
 
   const handleEmbeddedLoginError = (error: string) => {
-    console.log("[App] Embedded login error:", error);
+    console.log(`${LOG_PREFIX.AUTH} Embedded login error:`, error);
   };
 
   const handleClose = () => {

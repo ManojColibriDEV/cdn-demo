@@ -6,26 +6,6 @@
 
 import type { BrandConfig, ThemeConfig } from "../types";
 
-
-export const getSubsidiaryId = {
-  mckissock: 1,
-  elite: 2,
-  cre: 3,
-  superior: 16,
-  allied: 20,
-  xcel: 21,
-  western: 22,
-  cex: 23,
-  fhea: 25,
-  hondros: 29,
-  compucram: 31,
-  rockwell: 35,
-  goldcoast: 36,
-  netce: 58,
-  stc: 137,
-  colibrigroup: 142
-}
-
 export class ThemeWidget {
     private cdnBaseUrl: string;
     private currentBrand: BrandConfig | null = null;
@@ -109,7 +89,6 @@ export class ThemeWidget {
                 id: brand.folder,
                 domain: brand.domain,
                 name: brand.name,
-                subsidiaryId: getSubsidiaryId[brand.token as keyof typeof getSubsidiaryId] || 0
              })); // Assuming token format like "dev-brand1"
 
             // Fetch theme configuration

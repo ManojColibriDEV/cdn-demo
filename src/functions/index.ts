@@ -6,6 +6,15 @@ import type {
 import { jwtDecode } from "jwt-decode";
 import { setAuthCookie, clearAuthCookie } from "../utils/cookieHelper";
 import { authLogin } from "../services";
+import {
+  STORAGE_KEYS,
+  COOKIE_NAMES,
+  TOKEN_EXPIRY,
+  PASSWORD_RULES,
+  PASSWORD_REGEX,
+  LOG_PREFIX,
+  URL_PARAMS,
+} from "../constants";
 
 // Re-export cookie helper functions for convenience
 export {
@@ -25,7 +34,7 @@ export {
 export const buildRedirectUrl = (baseUrl: string, xCredential?: string | null): string => {
   if (!xCredential) {
     // Try to get from cookies only (X-Credential)
-    const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith('X-Credential='));
+    const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith(`${COOKIE_NAMES.X_CREDENTIAL}=`));
     if (xCredCookie) {
       xCredential = xCredCookie.split('=')[1] || null;
     }
@@ -37,12 +46,12 @@ export const buildRedirectUrl = (baseUrl: string, xCredential?: string | null): 
 
   try {
     const url = new URL(baseUrl);
-    url.searchParams.set('xcred', xCredential);
+    url.searchParams.set(URL_PARAMS.XCRED, xCredential);
     return url.toString();
   } catch (e) {
     // If URL parsing fails, append manually
     const separator = baseUrl.includes('?') ? '&' : '?';
-    return `${baseUrl}${separator}xcred=${encodeURIComponent(xCredential)}`;
+    return `${baseUrl}${separator}${URL_PARAMS.XCRED}=${encodeURIComponent(xCredential)}`;
   }
 };
 
@@ -57,13 +66,13 @@ export function validatePassword(
   upgradeUser?: UpgradeUser | null
 ): PasswordChecks {
   const checks = {
-    length: pw.length >= 9,
-    upper: /[A-Z]/.test(pw),
-    lower: /[a-z]/.test(pw),
-    number: /[0-9]/.test(pw),
-    noSpaces: !/\s/.test(pw),
-    noTriple: !/(.)\1\1/.test(pw),
-    special: /[@.$%^_\-]/.test(pw) && /^[A-Za-z0-9@.$%^_\-]+$/.test(pw),
+    length: pw.length >= PASSWORD_RULES.MIN_LENGTH,
+    upper: PASSWORD_REGEX.UPPERCASE.test(pw),
+    lower: PASSWORD_REGEX.LOWERCASE.test(pw),
+    number: PASSWORD_REGEX.NUMBER.test(pw),
+    noSpaces: !PASSWORD_REGEX.NO_SPACES.test(pw),
+    noTriple: !PASSWORD_REGEX.NO_TRIPLE.test(pw),
+    special: PASSWORD_REGEX.SPECIAL_CHAR.test(pw) && PASSWORD_REGEX.ALLOWED_CHARS.test(pw),
     noNameParts: true,
     noEmailParts: true,
   };
@@ -72,7 +81,7 @@ export function validatePassword(
   if (upgradeUser && upgradeUser.displayName) {
     const parts = upgradeUser.displayName
       .split(/\s+/)
-      .filter((p) => p.length >= 2);
+      .filter((p) => p.length >= PASSWORD_RULES.MIN_PART_LENGTH_FOR_NAME_CHECK);
     for (const part of parts) {
       if (part && low.includes(part.toLowerCase())) {
         checks.noNameParts = false;
@@ -83,7 +92,7 @@ export function validatePassword(
 
   if (upgradeUser && upgradeUser.email) {
     const local = (upgradeUser.email || "").split("@")[0] || "";
-    const tokens = local.split(/[^A-Za-z0-9]+/).filter((t) => t.length >= 3);
+    const tokens = local.split(/[^A-Za-z0-9]+/).filter((t) => t.length >= PASSWORD_RULES.MIN_TOKEN_LENGTH_FOR_EMAIL_CHECK);
     for (const t of tokens) {
       if (t && low.includes(t.toLowerCase())) {
         checks.noEmailParts = false;
@@ -116,19 +125,19 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
   try {
     // CRITICAL: Check if Remember Me was enabled
     // If user didn't check Remember Me, ignore existing tokens and require fresh login
-    const rememberMeEnabled = localStorage.getItem('refresh_token_time');
+    const rememberMeEnabled = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
     if (!rememberMeEnabled) {
       // Tokens exist but Remember Me was not checked
       // User must login again manually
-      console.log('[checkTokenAndRedirect] Remember Me not enabled - requires manual login');
+      console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me not enabled - requires manual login`);
       return false;
     }
 
-    console.log('[checkTokenAndRedirect] Remember Me enabled - validating tokens');
+    console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me enabled - validating tokens`);
     
     // First try cookies
-    const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith('X-Credential='));
-    const accessTokenCookie = document.cookie.split(';').find(row => row.trim().startsWith('access_token='));
+    const xCredCookie = document.cookie.split(';').find(row => row.trim().startsWith(`${COOKIE_NAMES.X_CREDENTIAL}=`));
+    const accessTokenCookie = document.cookie.split(';').find(row => row.trim().startsWith(`${COOKIE_NAMES.ACCESS_TOKEN}=`));
 
     let token: string | null = null;
     let hasXCred = false;
@@ -143,7 +152,7 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
 
     // Fallback to localStorage for cross-domain scenarios
     if (!token) {
-      token = localStorage.getItem('access_token');
+      token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
     // X-Credential only in cookies, not in localStorage
     // (Already checked xCredCookie above)
@@ -154,7 +163,7 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
     }
 
     // Check expiration from localStorage first (faster than JWT decode)
-    const expiresAt = localStorage.getItem('access_token_expires');
+    const expiresAt = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
     if (expiresAt && Date.now() >= parseInt(expiresAt)) {
       return false;
     }
@@ -174,11 +183,11 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
       }
       return true;
     } catch (decodeError) {
-      console.error('[checkTokenAndRedirect] Token decode error:', decodeError);
+      console.error(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Token decode error:`, decodeError);
       return false;
     }
   } catch (error) {
-    console.error('[checkTokenAndRedirect] Error:', error);
+    console.error(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Error:`, error);
     return false;
   }
 }
@@ -202,7 +211,7 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
  */
 export const isRefreshTokenValid = (): boolean => {
   try {
-    const refreshTokenTime = localStorage.getItem('refresh_token_time');
+    const refreshTokenTime = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
 
     if (!refreshTokenTime) {
       // No timestamp means "Remember Me" was not checked
@@ -211,12 +220,11 @@ export const isRefreshTokenValid = (): boolean => {
     }
 
     // Check if timestamp is still valid (7 days)
-    const REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
     const tokenAge = Date.now() - parseInt(refreshTokenTime);
 
-    return tokenAge < REFRESH_TOKEN_VALIDITY;
+    return tokenAge < TOKEN_EXPIRY.REFRESH_TOKEN_MAX_AGE_MS;
   } catch (error) {
-    console.error('[isRefreshTokenValid] Error:', error);
+    console.error(`${LOG_PREFIX.TOKEN} isRefreshTokenValid Error:`, error);
     return false;
   }
 }
@@ -231,16 +239,16 @@ export const isRefreshTokenValid = (): boolean => {
  */
 export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
-  clearAuthCookie('access_token');
-  clearAuthCookie('X-Credential');
-  clearAuthCookie('refresh_token');
+  clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
+  clearAuthCookie(COOKIE_NAMES.X_CREDENTIAL);
+  clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
 
   // Clear all auth-related localStorage items
   const authKeys = [
-    'refresh_token',
-    'refresh_token_time',
-    'access_token',
-    'access_token_expires',
+    STORAGE_KEYS.REFRESH_TOKEN,
+    STORAGE_KEYS.REFRESH_TOKEN_TIME,
+    STORAGE_KEYS.ACCESS_TOKEN,
+    STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
     'user_info',
     'authority',
     'subsidiary'
@@ -250,7 +258,7 @@ export const clearAuthTokens = (): void => {
     localStorage.removeItem(key);
   });
 
-  console.log('[Auth] All authentication tokens and state cleared');
+  console.log(`${LOG_PREFIX.AUTH} All authentication tokens and state cleared`);
 }
 
 /**
@@ -294,25 +302,25 @@ export const handleAuthentication = async (
     const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
     // Set cookies for access token (with encoding)
-    setAuthCookie('access_token', tokens.access_token, expiresIn, true);
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // Get x_credential from response or decoded token
     const xCred = x_credential || decoded.x_credentials;
 
     // Set X-Credential cookie without encoding to preserve the exact format
     if (xCred) {
-      setAuthCookie('X-Credential', xCred, expiresIn, false);
+      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
     }
 
     // === MANDATORY STORAGE ===
     // ALWAYS store in localStorage (required for cross-domain scenarios and token persistence)
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('access_token_expires', (Date.now() + expiresIn * 1000).toString());
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
 
     // ALWAYS store refresh token in localStorage and cookies
-    localStorage.setItem('refresh_token', tokens.refresh_token);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
     const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
-    setAuthCookie('refresh_token', tokens.refresh_token, refreshTokenExpiry, true);
+    setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
     // NOTE: X-Credential is ONLY stored in cookies, not localStorage
     // This prevents duplicate x_credentials from different storage sources
@@ -323,11 +331,11 @@ export const handleAuthentication = async (
     // - If present: Auto-login will work (tokens exist + flag exists)
     // - If absent: Manual login required (tokens exist but flag missing)
     if (rememberMe && tokens.refresh_token) {
-      localStorage.setItem('refresh_token_time', Date.now().toString());
-      console.log('[Auth] Remember Me enabled - auto-login will work on page revisit');
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      console.log(`${LOG_PREFIX.AUTH} Remember Me enabled - auto-login will work on page revisit`);
     } else {
-      localStorage.removeItem('refresh_token_time');
-      console.log('[Auth] Remember Me disabled - manual login required on page revisit');
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      console.log(`${LOG_PREFIX.AUTH} Remember Me disabled - manual login required on page revisit`);
     }
   }
 
@@ -362,7 +370,7 @@ export const createUserSessionFromToken = (accessToken: string) => {
       },
     };
   } catch (e) {
-    console.error("[createUserSessionFromToken] Failed to decode access token:", e);
+    console.error(`${LOG_PREFIX.TOKEN} createUserSessionFromToken - Failed to decode access token:`, e);
     return null;
   }
 };
