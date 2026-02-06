@@ -1,13 +1,20 @@
-import { useEffect, Fragment } from "react";
+import { useEffect, Fragment, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import EmbeddedLoginForm from "./components/embedded-login-form";
-import { checkTokenAndRedirect, isRefreshTokenValid, buildRedirectUrl, setAuthCookie, getDefaultRedirectUrl } from "./functions";
+import {
+  checkTokenAndRedirect,
+  isRefreshTokenValid,
+  buildRedirectUrl,
+  setAuthCookie,
+  getDefaultRedirectUrl,
+  createUserSessionFromToken,
+} from "./functions";
 import { authRefresh } from "./services";
 import type { AppProps } from "./types";
-import { jwtDecode } from "jwt-decode";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect } = props;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Auto-login using refresh token if available
   useEffect(() => {
@@ -16,6 +23,7 @@ const App = (props: AppProps) => {
         // First check if access token is already valid
         const hasValidAccessToken = checkTokenAndRedirect();
         if (hasValidAccessToken) {
+          setIsAuthenticated(true);
           // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
           const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
           if (props.autoRedirection) {
@@ -25,27 +33,11 @@ const App = (props: AppProps) => {
             if (onRedirect && props.redirectUrl) {
               const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               // Try to get user session from stored data
-              const accessToken = localStorage.getItem('access_token');
+              const accessToken = localStorage.getItem("access_token");
               if (accessToken) {
-                try {
-                  const decoded: any = jwtDecode(accessToken);
-                  const userSession = {
-                    access_token: accessToken,
-                    userInfo: {
-                      studentId: decoded.studentId,
-                      sub: decoded.sub,
-                      email_verified: decoded.email_verified,
-                      x_credentials: decoded.x_credentials,
-                      name: decoded.name,
-                      preferred_username: decoded.preferred_username,
-                      given_name: decoded.given_name,
-                      family_name: decoded.family_name,
-                      email: decoded.email
-                    }
-                  };
+                const userSession = createUserSessionFromToken(accessToken);
+                if (userSession) {
                   onRedirect(targetUrl, userSession);
-                } catch (e) {
-                  console.error('[App] Failed to decode access token:', e);
                 }
               }
             }
@@ -56,68 +48,91 @@ const App = (props: AppProps) => {
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
         if (hasValidRefreshToken) {
-          const refreshToken = localStorage.getItem('refresh_token');
+          const refreshToken = localStorage.getItem("refresh_token");
           if (refreshToken) {
             const response = await authRefresh(refreshToken);
 
             if (response && response.tokens && response.tokens.access_token) {
               const tokens = response.tokens;
 
-              // Decode token to get expiry time and user info
-              const decoded: any = jwtDecode(tokens.access_token);
-              const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+              // Create user session from token (includes decoded metadata)
+              const userSession = createUserSessionFromToken(tokens.access_token);
+              if (!userSession) {
+                return;
+              }
+
+              const expiresIn =
+                (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
               // Store new access token in cookies (with encoding)
-              setAuthCookie('access_token', tokens.access_token, expiresIn, true);
+              setAuthCookie(
+                "access_token",
+                tokens.access_token,
+                expiresIn,
+                true,
+              );
               // Store X-Credential without encoding to preserve exact format
-              if (decoded.x_credentials) {
-                setAuthCookie('X-Credential', decoded.x_credentials, expiresIn, false);
+              if (userSession.decoded.x_credentials) {
+                setAuthCookie(
+                  "X-Credential",
+                  userSession.decoded.x_credentials,
+                  expiresIn,
+                  false,
+                );
               }
 
-              // Update refresh token if new one provided
+              // Store access token in localStorage (always)
+              localStorage.setItem("access_token", tokens.access_token);
+              localStorage.setItem("access_token_expires", (Date.now() + expiresIn * 1000).toString());
+              
+              // NOTE: X-Credential is stored in cookies only, not localStorage
+
+              // Update refresh token in localStorage (always store it)
               if (tokens.refresh_token) {
-                localStorage.setItem('refresh_token', tokens.refresh_token);
-                localStorage.setItem('refresh_token_time', Date.now().toString());
+                localStorage.setItem("refresh_token", tokens.refresh_token);
+                // Only update timestamp if remember me was originally checked
+                // This preserves the original user choice
+                const hadRememberMe = localStorage.getItem("refresh_token_time");
+                if (hadRememberMe) {
+                  localStorage.setItem(
+                    "refresh_token_time",
+                    Date.now().toString(),
+                  );
+                }
               }
-              console.log('[App] Auto-login successful');
+              console.log("[App] Auto-login successful");
+              setIsAuthenticated(true);
 
               // Trigger onRedirect callback with userSession from decoded token
               const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               if (onRedirect) {
-                const userSession = {
-                  access_token: tokens.access_token,
-                  userInfo: {
-                    studentId: decoded.studentId,
-                    sub: decoded.sub,
-                    email_verified: decoded.email_verified,
-                    x_credentials: decoded.x_credentials,
-                    name: decoded.name,
-                    preferred_username: decoded.preferred_username,
-                    given_name: decoded.given_name,
-                    family_name: decoded.family_name,
-                    email: decoded.email
-                  }
-                };
+                console.log(
+                  "[App] Triggering onRedirect callback with user session:",
+                  userSession,
+                );
                 onRedirect(targetUrl, userSession);
               }
 
               // Redirect to target URL (with xcred for cross-domain auth)
               // Only auto-redirect if autoRedirection prop is true
               if (props.autoRedirection) {
-                window.location.href = buildRedirectUrl(targetUrl, decoded.x_credentials);
+                window.location.href = buildRedirectUrl(
+                  targetUrl,
+                  userSession.decoded.x_credentials,
+                );
               }
             }
           }
         } else {
           // Clear expired refresh token
-          localStorage.removeItem('refresh_token');
-          localStorage.removeItem('refresh_token_time');
+          localStorage.removeItem("refresh_token");
+          localStorage.removeItem("refresh_token_time");
         }
       } catch (error) {
-        console.error('[App] Auto-login failed:', error);
+        console.error("[App] Auto-login failed:", error);
         // Clear invalid tokens
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('refresh_token_time');
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("refresh_token_time");
       }
     };
 
@@ -134,12 +149,21 @@ const App = (props: AppProps) => {
       props.handleClose();
     }
 
-    // Get x_credentials from userSession for cross-domain auth
-    const xCredential = userSession?.userInfo?.x_credentials || userSession?.x_credentials;
+    // Mark user as authenticated
+    setIsAuthenticated(true);
 
+    // Get x_credentials from userSession for cross-domain auth
+    const xCredential =
+      userSession?.userInfo?.x_credentials || userSession?.x_credentials;
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
-      onRedirect(targetUrl, userSession);
+      const accessToken = localStorage.getItem("access_token");
+      if (accessToken) {
+        const userSession = createUserSessionFromToken(accessToken);
+        if (userSession) {
+          onRedirect(targetUrl, userSession);
+        }
+      }
     }
 
     if (props.autoRedirection) {
@@ -163,23 +187,25 @@ const App = (props: AppProps) => {
   return (
     <div role="application" aria-label="Authentication Widget">
       <Routes>
-        <Route path="*" element={
-          <Fragment>
-            {/* Show login form when showLogin prop is true (regardless of auth state) */}
-            {/* Auto-login will redirect if user has valid refresh token */}
-            {/* But widget should still be accessible for fresh login attempts */}
-            {props.showLogin && (
-              <EmbeddedLoginForm
-                onSuccess={handleEmbeddedLoginSuccess}
-                onError={handleEmbeddedLoginError}
-                handleClose={handleClose}
-                authority={authority}
-                title={props.loginTitle}
-                subtitle={props.loginSubtitle}
-              />
-            )}
-          </Fragment>
-        } />
+        <Route
+          path="*"
+          element={
+            <Fragment>
+              {/* Show login form only when user is NOT authenticated and showLogin prop is true */}
+              {/* If user is authenticated (has valid access token or remember me), hide the form */}
+              {props.showLogin && !isAuthenticated && (
+                <EmbeddedLoginForm
+                  onSuccess={handleEmbeddedLoginSuccess}
+                  onError={handleEmbeddedLoginError}
+                  handleClose={handleClose}
+                  authority={authority}
+                  title={props.loginTitle}
+                  subtitle={props.loginSubtitle}
+                />
+              )}
+            </Fragment>
+          }
+        />
       </Routes>
     </div>
   );
