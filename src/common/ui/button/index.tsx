@@ -8,6 +8,7 @@ interface ButtonProps {
   variant?: 'primary' | 'outline' | 'link';
   className?: string;
   children?: ReactNode;
+  ariaLabel?: string;
   mainButtonStyle?: {
     backgroundColor?: string;
     color?: string;
@@ -23,6 +24,7 @@ const Button: FC<ButtonProps> = ({
   variant = 'primary',
   className, 
   children, 
+  ariaLabel,
   mainButtonStyle 
 }) => {
   // Base classes shared by all variants
@@ -46,6 +48,8 @@ const Button: FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       type={type}
+      aria-label={ariaLabel || (typeof label === 'string' ? label : undefined)}
+      aria-disabled={disabled}
       style={{ ...mainButtonStyle, borderStyle: 'solid !important' }}
     >
       {children || label}

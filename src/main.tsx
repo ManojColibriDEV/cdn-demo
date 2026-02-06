@@ -22,7 +22,7 @@ const widgetStyles =
 
 if (renderMode === 'TEST') {
   // Apply custom primary color if provided
-  const customPrimaryColor = 'red'; // Can be dynamic from config
+  const customPrimaryColor = "violet"; // Can be dynamic from config
   if (customPrimaryColor) {
     let colorValue = customPrimaryColor.trim();
     
@@ -41,7 +41,7 @@ if (renderMode === 'TEST') {
   }
   
   createThemeWidget({
-    brandFolder: 'elite', // Match the subsidiary in TEST mode
+    brandFolder: 'allied', // Match the subsidiary in TEST mode
   }).then(() => {
     console.log('[main.tsx] Theme loaded in TEST mode');
   }).catch((error) => {
@@ -53,7 +53,7 @@ if (renderMode === 'TEST') {
       <StrictMode>
         <App 
           authority="dev" 
-          subsidiary="elite" 
+          subsidiary="allied" 
           showLogin={true}
           autoRedirection={false}
         />
@@ -274,7 +274,6 @@ if (renderMode === 'TEST') {
     public logout() {
       console.log('[Widget] logout() called');
       // Clear authentication state
-      localStorage.removeItem('user_state');
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('refresh_token_time');

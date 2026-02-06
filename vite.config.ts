@@ -9,13 +9,19 @@ export default defineConfig(({ mode }) => ({
   server: {
     proxy: {
       "/api": {
-        target: "https://dev-demo-env.colibrilearning.com",
+        target: "https://dev-auth-gateway.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api/, "/api"),
       },
+      "/global": {
+        target: "https://test-api-ms.colibrigroup.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/global/, "/global"),
+      },
       "/admin": {
-        target: "https://dev-demo-env.colibrilearning.com",
+        target: "https://dev-auth-gateway.colibrilearning.com",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/admin/, "/admin"),

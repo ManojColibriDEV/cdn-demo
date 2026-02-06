@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, Fragment } from "react";
 import { Routes, Route } from "react-router-dom";
 import EmbeddedLoginForm from "./components/embedded-login-form";
 import { checkTokenAndRedirect, isRefreshTokenValid, buildRedirectUrl, setAuthCookie, getDefaultRedirectUrl } from "./functions";
@@ -9,8 +9,6 @@ import { jwtDecode } from "jwt-decode";
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect } = props;
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
   // Auto-login using refresh token if available
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -18,7 +16,6 @@ const App = (props: AppProps) => {
         // First check if access token is already valid
         const hasValidAccessToken = checkTokenAndRedirect();
         if (hasValidAccessToken) {
-          setIsAuthenticated(true);
           // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
           const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
           if (props.autoRedirection) {
@@ -82,9 +79,6 @@ const App = (props: AppProps) => {
                 localStorage.setItem('refresh_token', tokens.refresh_token);
                 localStorage.setItem('refresh_token_time', Date.now().toString());
               }
-
-              localStorage.setItem('user_state', 'authenticated');
-              setIsAuthenticated(true);
               console.log('[App] Auto-login successful');
 
               // Trigger onRedirect callback with userSession from decoded token
@@ -139,7 +133,6 @@ const App = (props: AppProps) => {
     if (props.handleClose) {
       props.handleClose();
     }
-    setIsAuthenticated(true);
 
     // Get x_credentials from userSession for cross-domain auth
     const xCredential = userSession?.userInfo?.x_credentials || userSession?.x_credentials;
@@ -149,13 +142,6 @@ const App = (props: AppProps) => {
       onRedirect(targetUrl, userSession);
     }
 
-    // Only auto-redirect if autoRedirection prop is true
-    console.log('[App handleEmbeddedLoginSuccess] autoRedirection check:', { 
-      redirectUrl: props.redirectUrl, 
-      targetUrl: targetUrl,
-      autoRedirection: props.autoRedirection,
-      willRedirect: !!props.autoRedirection
-    });
     if (props.autoRedirection) {
       setTimeout(() => {
         // Append xcred to redirect URL for cross-domain authentication
@@ -175,25 +161,27 @@ const App = (props: AppProps) => {
   };
 
   return (
-    <Routes>
-      <Route path="*" element={
-        <>
-          {/* Show login form when showLogin prop is true (regardless of auth state) */}
-          {/* Auto-login will redirect if user has valid refresh token */}
-          {/* But widget should still be accessible for fresh login attempts */}
-          {props.showLogin && (
-            <EmbeddedLoginForm
-              onSuccess={handleEmbeddedLoginSuccess}
-              onError={handleEmbeddedLoginError}
-              handleClose={handleClose}
-              authority={authority}
-              title={props.loginTitle}
-              subtitle={props.loginSubtitle}
-            />
-          )}
-        </>
-      } />
-    </Routes>
+    <div role="application" aria-label="Authentication Widget">
+      <Routes>
+        <Route path="*" element={
+          <Fragment>
+            {/* Show login form when showLogin prop is true (regardless of auth state) */}
+            {/* Auto-login will redirect if user has valid refresh token */}
+            {/* But widget should still be accessible for fresh login attempts */}
+            {props.showLogin && (
+              <EmbeddedLoginForm
+                onSuccess={handleEmbeddedLoginSuccess}
+                onError={handleEmbeddedLoginError}
+                handleClose={handleClose}
+                authority={authority}
+                title={props.loginTitle}
+                subtitle={props.loginSubtitle}
+              />
+            )}
+          </Fragment>
+        } />
+      </Routes>
+    </div>
   );
 };
 

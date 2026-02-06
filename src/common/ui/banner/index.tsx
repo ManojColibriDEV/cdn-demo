@@ -102,9 +102,29 @@ const Banner: FC<BannerProps> = ({
 
   const styles = getTypeStyles();
 
+  // Map banner types to ARIA roles
+  const getAriaRole = () => {
+    switch (type) {
+      case 'error':
+        return 'alert';
+      case 'warning':
+      case 'info':
+        return 'status';
+      case 'success':
+        return 'status';
+      default:
+        return 'status';
+    }
+  };
+
   return (
-    <div className={`flex! items-center! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}>
-      <div className={`flex-shrink-0! ${styles.iconColor}!`}>
+    <div 
+      role={getAriaRole()}
+      aria-live={type === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+      className={`flex! items-center! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}
+    >
+      <div className={`flex-shrink-0! ${styles.iconColor}!`} aria-hidden="true">
         {getIcon()}
       </div>
       <div className="ml-3! flex-1! flex! items-center! gap-2!">
@@ -115,6 +135,7 @@ const Banner: FC<BannerProps> = ({
           <button
             type="button"
             onClick={onActionClick}
+            aria-label={actionText}
             className={`text-sm! font-medium! ${styles.actionColor} ${styles.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! shadow-none!`}
           >
             {actionText}
@@ -126,10 +147,11 @@ const Banner: FC<BannerProps> = ({
         <button
           type="button"
           onClick={onClose}
+          aria-label="Dismiss banner"
           className={`ml-2! flex-shrink-0! inline-flex! ${styles.iconColor} ${styles.closeButtonHover} bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`}
         >
           <span className="sr-only">Dismiss</span>
-          <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </button>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
+import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
 import { checkEmail } from "../services";
@@ -30,6 +31,9 @@ const EmbeddedLoginForm = ({
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
+  const [emailCheckError, setEmailCheckError] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "warning" | "error" | "info">("info");
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -44,6 +48,7 @@ const EmbeddedLoginForm = ({
     if (!email) {
       setEmailExists(false);
       setShowBanner(false);
+      setEmailCheckError(false);
       return;
     }
 
@@ -78,9 +83,10 @@ const EmbeddedLoginForm = ({
         }
       } catch (error) {
         console.error("[EmbeddedLogin] Email check failed:", error);
-        // On error, allow user to proceed
-        setEmailExists(true);
-        setShowBanner(false);
+        // Show error banner for API failure (no toast for check-email)
+        setEmailCheckError(true);
+        setShowBanner(true);
+        setEmailExists(false);
       } finally {
         setCheckingEmail(false);
       }
@@ -135,6 +141,8 @@ const EmbeddedLoginForm = ({
       const errorMsg =
         error instanceof Error ? error.message : "Authentication failed";
       setErrorMessage(errorMsg);
+      setToastMessage(errorMsg);
+      setToastType("error");
       onError(errorMsg);
     } finally {
       setLoading(false);
@@ -179,19 +187,24 @@ const EmbeddedLoginForm = ({
       className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
+      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         <Button
           onClick={handleClose}
           variant="link"
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type="button"
+          ariaLabel="Close dialog"
         >
           <svg
             className="w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -203,11 +216,11 @@ const EmbeddedLoginForm = ({
         </Button>
 
         <div className="mb-3! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
+          <h2 id="login-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
           <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2!">
+        <form onSubmit={handleSubmit} className="space-y-2!" aria-label="Login form">
           <div className="mt-0! ml-0! mb-4! mr-0!">
             <Input
               label="Email or Username"
@@ -222,10 +235,11 @@ const EmbeddedLoginForm = ({
               endIcon={
                 <>
                   {checkingEmail && <Loader />}
-                  {!checkingEmail && emailExists && isEmailValid && (
+                  {!checkingEmail && emailExists && isEmailValid && !emailCheckError && (
                     <img
                       src={checkSuccessImg}
-                      alt="user found"
+                      alt="User verified"
+                      aria-label="User found"
                       style={{ width: 18, height: 18 }}
                     />
                   )}
@@ -235,7 +249,7 @@ const EmbeddedLoginForm = ({
           </div>
 
           {/* Banner for non-existing user - appears after email field */}
-          {showBanner && !emailExists && isEmailValid && (
+          {showBanner && !emailExists && isEmailValid && !emailCheckError && (
             <Banner
               type="info"
               message="We couldn't find an account with this email."
@@ -245,6 +259,19 @@ const EmbeddedLoginForm = ({
                 setShowCreateAccount(true);
               }}
               onClose={() => setShowBanner(false)}
+              className="mb-4!"
+            />
+          )}
+          
+          {/* Banner for API error */}
+          {showBanner && emailCheckError && (
+            <Banner
+              type="error"
+              message="Unable to verify email. You can still proceed with login."
+              onClose={() => {
+                setShowBanner(false);
+                setEmailCheckError(false);
+              }}
               className="mb-4!"
             />
           )}
@@ -271,6 +298,7 @@ const EmbeddedLoginForm = ({
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!"
                     tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <svg
@@ -278,6 +306,7 @@ const EmbeddedLoginForm = ({
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
@@ -292,6 +321,7 @@ const EmbeddedLoginForm = ({
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
@@ -320,6 +350,7 @@ const EmbeddedLoginForm = ({
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
+                aria-label="Remember me"
               />
               <span
                 className="text-gray-600!"
@@ -400,6 +431,13 @@ const EmbeddedLoginForm = ({
           </Button>
         </form>
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setToastMessage("")}
+        />
+      )}
     </div>
   );
 };

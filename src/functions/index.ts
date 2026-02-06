@@ -8,12 +8,12 @@ import { setAuthCookie } from "../utils/cookieHelper";
 import { authLogin } from "../services";
 
 // Re-export cookie helper functions for convenience
-export { 
-  setAuthCookie, 
-  clearAuthCookie, 
-  getCookieDomain, 
-  getAuthorityFromUrl, 
-  getDefaultRedirectUrl 
+export {
+  setAuthCookie,
+  clearAuthCookie,
+  getCookieDomain,
+  getAuthorityFromUrl,
+  getDefaultRedirectUrl
 } from "../utils/cookieHelper";
 
 /**
@@ -160,7 +160,7 @@ export const isRefreshTokenValid = (): boolean => {
   try {
     const refreshToken = localStorage.getItem('refresh_token');
     const refreshTokenTime = localStorage.getItem('refresh_token_time');
-    
+
     if (!refreshToken || !refreshTokenTime) {
       return false;
     }
@@ -168,7 +168,7 @@ export const isRefreshTokenValid = (): boolean => {
     // Assuming refresh token is valid for 7 days (adjust as needed)
     const REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
     const tokenAge = Date.now() - parseInt(refreshTokenTime);
-    
+
     return tokenAge < REFRESH_TOKEN_VALIDITY;
   } catch (error) {
     console.error('[isRefreshTokenValid] Error:', error);
@@ -234,9 +234,14 @@ export const handleAuthentication = async (
     // === CROSS-DOMAIN STORAGE ===
     // Store in localStorage for cross-domain access (widget can read these)
     // This helps when cookies fail due to cross-origin restrictions
-    localStorage.setItem('user_state', 'authenticated');
     localStorage.setItem('access_token', tokens.access_token);
     localStorage.setItem('access_token_expires', (Date.now() + expiresIn * 1000).toString());
+
+    // Store refresh token in localStorage always (even if not remembering) for potential use in the same session
+    localStorage.setItem('refresh_token', tokens.refresh_token);
+    // Store in cookies (30 days expiration for refresh token)
+    const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
+    setAuthCookie('refresh_token', tokens.refresh_token, refreshTokenExpiry, true);
 
     // Store x_credential in localStorage
     if (xCred) {
@@ -252,14 +257,11 @@ export const handleAuthentication = async (
       }));
     }
 
-    // Only store refresh token if Remember Me is checked
+    // Store refresh token in both localStorage when Remember Me is checked
     if (rememberMe && tokens.refresh_token) {
-      localStorage.setItem('refresh_token', tokens.refresh_token);
-      // Store timestamp when refresh token was saved
       localStorage.setItem('refresh_token_time', Date.now().toString());
     } else {
-      // Clear refresh token if Remember Me is not checked
-      localStorage.removeItem('refresh_token');
+      // Clear refresh token from both localStorage if Remember Me is not checked
       localStorage.removeItem('refresh_token_time');
     }
   }

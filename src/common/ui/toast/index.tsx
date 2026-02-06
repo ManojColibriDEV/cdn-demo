@@ -6,7 +6,7 @@ interface ToastProps {
   type: ToastType;
   message: string;
   duration?: number; // in milliseconds
-  onClose: () => void;
+  onClose?: () => void;
   className?: string;
 }
 
@@ -36,7 +36,7 @@ const Toast: FC<ToastProps> = ({
     setIsExiting(true);
     setTimeout(() => {
       setIsVisible(false);
-      onClose();
+      onClose && onClose();
     }, 300); // Match animation duration
   };
 
@@ -102,15 +102,32 @@ const Toast: FC<ToastProps> = ({
 
   const styles = getTypeStyles();
 
+  // Map toast types to ARIA roles
+  const getAriaRole = () => {
+    switch (type) {
+      case 'error':
+        return 'alert';
+      case 'warning':
+      case 'info':
+      case 'success':
+        return 'status';
+      default:
+        return 'status';
+    }
+  };
+
   return (
     <div 
+      role={getAriaRole()}
+      aria-live={type === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
       className={`fixed! top-4! right-4! z-[9999]! transition-all! duration-300! ${
         isVisible && !isExiting ? 'translate-x-0! opacity-100!' : 'translate-x-full! opacity-0!'
       } ${className}`}
       style={{ maxWidth: '90vw', width: '400px' }}
     >
       <div className={`flex! items-center! p-4! rounded-lg! shadow-lg! ${styles.bg}`}>
-        <div className={`flex-shrink-0! ${styles.icon}`}>
+        <div className={`flex-shrink-0! ${styles.icon}`} aria-hidden="true">
           {getIcon()}
         </div>
         <div className={`ml-3! flex-1! ${styles.text}`}>
@@ -119,10 +136,11 @@ const Toast: FC<ToastProps> = ({
         <button
           type="button"
           onClick={handleClose}
+          aria-label="Close notification"
           className={`ml-4! flex-shrink-0! inline-flex! ${styles.text} hover:opacity-75! bg-transparent! border-none! cursor-pointer! p-0! transition-opacity!`}
         >
           <span className="sr-only">Close</span>
-          <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-5! h-5!" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </button>

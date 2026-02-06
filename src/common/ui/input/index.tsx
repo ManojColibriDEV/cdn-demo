@@ -23,14 +23,24 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
       optional,
       className,
       options,
+      id,
       ...rest
     } = props as InputFieldProps;
     const hasError = !!error || !!helperText;
     const isSelect = rest.type === "select" || !!options;
+    
+    // Generate unique ID if not provided
+    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const errorId = `${inputId}-error`;
+    const helperId = `${inputId}-helper`;
+    
     return (
       <div className={`flex! flex-col! ${className || ""}`}>
         {label && (
-          <label className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!">
+          <label 
+            htmlFor={inputId}
+            className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+          >
             {label}{" "}
             {optional && (
               <span className="text-gray-500 italic text-[13px]">
@@ -52,6 +62,11 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           {isSelect ? (
             <select
               ref={ref as any}
+              id={inputId}
+              aria-label={typeof label === 'string' ? label : rest['aria-label']}
+              aria-invalid={hasError}
+              aria-describedby={hasError ? errorId : undefined}
+              aria-required={rest.required}
               className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
               style={{ 
                 borderWidth: '1px', 
@@ -71,6 +86,11 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           ) : (
             <input
               ref={ref}
+              id={inputId}
+              aria-label={typeof label === 'string' ? label : rest['aria-label']}
+              aria-invalid={hasError}
+              aria-describedby={hasError ? errorId : undefined}
+              aria-required={rest.required}
               className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
               style={{ 
                 borderWidth: '1px', 
@@ -92,12 +112,22 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>(
           )}
         </div>
         {error && typeof error === "string" && (
-          <div className="text-[#d64545] text-[13px]! mt-1.5! text-left!">
+          <div 
+            id={errorId}
+            role="alert"
+            aria-live="polite"
+            className="text-[#d64545] text-[13px]! mt-1.5! text-left!"
+          >
             {error}
           </div>
         )}
         {!error && helperText && (
-          <div className="text-[#d64545] text-[13px]! mt-1.5! text-left!">
+          <div 
+            id={helperId}
+            role="status"
+            aria-live="polite"
+            className="text-[#d64545] text-[13px]! mt-1.5! text-left!"
+          >
             {helperText}
           </div>
         )}

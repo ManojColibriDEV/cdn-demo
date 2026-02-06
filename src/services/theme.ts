@@ -4,7 +4,27 @@
  * Based on @bloom-elements/core-theme functionality
  */
 
-import type { BrandConfig, ThemeStyle, ThemeConfig } from "../types";
+import type { BrandConfig, ThemeConfig } from "../types";
+
+
+export const getSubsidiaryId = {
+  mckissock: 1,
+  elite: 2,
+  cre: 3,
+  superior: 16,
+  allied: 20,
+  xcel: 21,
+  western: 22,
+  cex: 23,
+  fhea: 25,
+  hondros: 29,
+  compucram: 31,
+  rockwell: 35,
+  goldcoast: 36,
+  netce: 58,
+  stc: 137,
+  colibrigroup: 142
+}
 
 export class ThemeWidget {
     private cdnBaseUrl: string;
@@ -51,7 +71,6 @@ export class ThemeWidget {
             );
             
             if (brand) {
-                console.log(`[ThemeWidget] Auto-detected brand from domain: ${brand.name} (${brand.token})`);
                 localStorage.setItem("subsidiary", brand.token);
                 return brand.token;
             }
@@ -83,8 +102,15 @@ export class ThemeWidget {
                 );
                 return;
             }
+            console.log("functionfunctionfunction", brand)
 
              localStorage.setItem("subsidiary", brand.token);
+             localStorage.setItem("brand_data", JSON.stringify({
+                id: brand.folder,
+                domain: brand.domain,
+                name: brand.name,
+                subsidiaryId: getSubsidiaryId[brand.token as keyof typeof getSubsidiaryId] || 0
+             })); // Assuming token format like "dev-brand1"
 
             // Fetch theme configuration
             const themeUrl = `${this.cdnBaseUrl}/${brand.folder}/theme.json`;

@@ -3,6 +3,7 @@
  * Shared cookie operations for cross-subdomain support
  */
 
+
 /**
  * Get the cookie domain for cross-subdomain support
  * Extracts root domain (e.g., dev.elitelearning.com → .elitelearning.com)
