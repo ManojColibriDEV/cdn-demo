@@ -8,6 +8,22 @@ import { handleAuthentication } from "../functions";
 import { authRegister, checkEmail } from "../services";
 import type { CreateAccountFormProps } from "../types";
 import checkSuccessImg from "../icons/badge-check.svg";
+import {
+  MessageType,
+  TIMING,
+  EMAIL_REGEX,
+  PASSWORD_RULES,
+  PASSWORD_REGEX,
+  PASSWORD_SPECIAL_CHARS_ALT,
+  PASSWORD_ALLOWED_CHARS_ALT,
+  PASSWORD_STRENGTH,
+  PASSWORD_STRENGTH_COLORS,
+  PASSWORD_STRENGTH_WIDTHS,
+  LOG_PREFIX,
+  ERROR_MESSAGES,
+  ButtonType,
+  ButtonVariant,
+} from "../constants";
 
 const CreateAccountForm = ({
   onSuccess,
@@ -30,64 +46,105 @@ const CreateAccountForm = ({
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailCheckError, setEmailCheckError] = useState(false);
   const [rememberMe, setRememberMe] = useState(false); // Checked by default
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
-    "success" | "warning" | "error" | "info"
-  >("info");
+    MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
+  >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Individual password validation checks
+  const passwordChecks = {
+    length: password.length >= PASSWORD_RULES.MIN_LENGTH && password.length <= PASSWORD_RULES.MAX_LENGTH,
+    hasNumber: PASSWORD_REGEX.NUMBER.test(password),
+    hasUppercase: PASSWORD_REGEX.UPPERCASE.test(password),
+    hasLowercase: PASSWORD_REGEX.LOWERCASE.test(password),
+    hasSpecialChar: PASSWORD_SPECIAL_CHARS_ALT.test(password),
+    onlyAllowedChars: PASSWORD_ALLOWED_CHARS_ALT.test(password) || password === "",
+    differentFromUsername: email ? (password !== email && password !== email.split("@")[0]) : true,
+  };
+
+  // Password strength calculation - Strong only when ALL requirements are met
+  const getPasswordStrength = (pw: string): { strength: string; color: string; width: string } => {
+    if (!pw) return { strength: "", color: "", width: PASSWORD_STRENGTH_WIDTHS.EMPTY };
+    
+    // Check if ALL requirements are met
+    const allRequirementsMet = passwordChecks.length && 
+                                passwordChecks.hasNumber && 
+                                passwordChecks.hasUppercase && 
+                                passwordChecks.hasLowercase &&
+                                passwordChecks.hasSpecialChar && 
+                                passwordChecks.onlyAllowedChars && 
+                                passwordChecks.differentFromUsername;
+
+    if (allRequirementsMet) {
+      return { strength: PASSWORD_STRENGTH.STRONG, color: PASSWORD_STRENGTH_COLORS.STRONG, width: PASSWORD_STRENGTH_WIDTHS.STRONG };
+    }
+
+    // Count how many requirements are met for intermediate states
+    let score = 0;
+    if (passwordChecks.length) score++;
+    if (passwordChecks.hasNumber) score++;
+    if (passwordChecks.hasUppercase) score++;
+    if (passwordChecks.hasLowercase) score++;
+    if (passwordChecks.hasSpecialChar) score++;
+    if (passwordChecks.onlyAllowedChars) score++;
+    if (passwordChecks.differentFromUsername) score++;
+
+    if (score <= 2) return { strength: PASSWORD_STRENGTH.WEAK, color: PASSWORD_STRENGTH_COLORS.WEAK, width: PASSWORD_STRENGTH_WIDTHS.WEAK };
+    return { strength: PASSWORD_STRENGTH.GOOD, color: PASSWORD_STRENGTH_COLORS.GOOD, width: PASSWORD_STRENGTH_WIDTHS.GOOD };
+  };
+
+  const passwordStrength = getPasswordStrength(password);
 
   // Password validation function
   const validatePasswordRules = (
     pw: string,
   ): { isValid: boolean; error: string } => {
     if (!pw) {
-      return { isValid: false, error: "Password is required" };
+      return { isValid: false, error: ERROR_MESSAGES.PASSWORD_REQUIRED };
     }
 
-    if (pw.length < 9 || pw.length > 15) {
-      return { isValid: false, error: "Password must be 9-15 characters long" };
+    if (pw.length < PASSWORD_RULES.MIN_LENGTH || pw.length > PASSWORD_RULES.MAX_LENGTH) {
+      return { isValid: false, error: ERROR_MESSAGES.PASSWORD_LENGTH };
     }
 
-    if (!/[A-Z]/.test(pw)) {
+    if (!PASSWORD_REGEX.UPPERCASE.test(pw)) {
       return {
         isValid: false,
-        error: "Password must contain at least one uppercase letter",
+        error: ERROR_MESSAGES.PASSWORD_UPPERCASE,
       };
     }
 
-    if (!/[a-z]/.test(pw)) {
+    if (!PASSWORD_REGEX.LOWERCASE.test(pw)) {
       return {
         isValid: false,
-        error: "Password must contain at least one lowercase letter",
+        error: ERROR_MESSAGES.PASSWORD_LOWERCASE,
       };
     }
 
-    if (!/[0-9]/.test(pw)) {
+    if (!PASSWORD_REGEX.NUMBER.test(pw)) {
       return {
         isValid: false,
-        error: "Password must contain at least one number",
+        error: ERROR_MESSAGES.PASSWORD_NUMBER,
       };
     }
 
     // Check for allowed special characters only: ! @ # $ % ^ & * . - _
-    const allowedSpecialChars = /[!@#$%^&*._-]/;
-    if (!allowedSpecialChars.test(pw)) {
+    if (!PASSWORD_SPECIAL_CHARS_ALT.test(pw)) {
       return {
         isValid: false,
-        error:
-          "Password must contain at least one special character (!@#$%^&*._-)",
+        error: ERROR_MESSAGES.PASSWORD_SPECIAL_CHAR,
       };
     }
 
     // Check for disallowed special characters
-    const onlyAllowedChars = /^[A-Za-z0-9!@#$%^&*._-]+$/;
-    if (!onlyAllowedChars.test(pw)) {
+    if (!PASSWORD_ALLOWED_CHARS_ALT.test(pw)) {
       return {
         isValid: false,
-        error:
-          "Password contains invalid characters. Only !@#$%^&*._- are allowed",
+        error: ERROR_MESSAGES.PASSWORD_INVALID_CHARS,
       };
     }
 
@@ -105,12 +162,12 @@ const CreateAccountForm = ({
     if (!email) {
       setShowBanner(false);
       setEmailExists(false);
+      setEmailCheckError(false);
       return;
     }
 
     // Validate email format before making API call
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(email)) {
       setShowBanner(false);
       setEmailExists(false);
       return;
@@ -129,14 +186,15 @@ const CreateAccountForm = ({
           setShowBanner(false);
         }
       } catch (error) {
-        console.error("[CreateAccount] Email check failed:", error);
-        // On error, don't block the user
+        console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Email check failed:`, error);
+        // Show error banner for API failure (no toast for check-email)
+        setEmailCheckError(true);
+        setShowBanner(true);
         setEmailExists(false);
-        setShowBanner(false);
       } finally {
         setCheckingEmail(false);
       }
-    }, 500);
+    }, TIMING.EMAIL_CHECK_DEBOUNCE);
 
     // Cleanup timeout on unmount
     return () => {
@@ -147,8 +205,7 @@ const CreateAccountForm = ({
   }, [email]);
 
   // Check if email is valid
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isEmailValid = email && emailRegex.test(email);
+  const isEmailValid = email && EMAIL_REGEX.test(email);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -185,10 +242,9 @@ const CreateAccountForm = ({
     }
 
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError("Please enter a valid email address");
-      onError("Please enter a valid email address");
+    if (!EMAIL_REGEX.test(email)) {
+      setEmailError(ERROR_MESSAGES.EMAIL_INVALID);
+      onError(ERROR_MESSAGES.EMAIL_INVALID);
       return;
     }
 
@@ -210,7 +266,7 @@ const CreateAccountForm = ({
       });
 
       console.log(
-        "[CreateAccount] Registration successful:",
+        `${LOG_PREFIX.CREATE_ACCOUNT} Registration successful:`,
         registrationResult.message,
       );
 
@@ -223,7 +279,7 @@ const CreateAccountForm = ({
         onSuccess(tokens);
       } catch (loginError) {
         console.error(
-          "[CreateAccount] Auto-login failed after registration:",
+          `${LOG_PREFIX.CREATE_ACCOUNT} Auto-login failed after registration:`,
           loginError,
         );
         const loginErrorMsg =
@@ -233,13 +289,13 @@ const CreateAccountForm = ({
         onError(loginErrorMsg);
       }
     } catch (error) {
-      console.error("[CreateAccount] Registration failed:", error);
+      console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Registration failed:`, error);
       const errorMsg =
-        error instanceof Error ? error.message : "Registration failed";
+        error instanceof Error ? error.message : ERROR_MESSAGES.REGISTRATION_FAILED;
 
       // Show toast for errors
       setToastMessage(errorMsg);
-      setToastType("error");
+      setToastType(MessageType.ERROR);
       onError(errorMsg);
     } finally {
       setLoading(false);
@@ -253,7 +309,7 @@ const CreateAccountForm = ({
         <Toast
           type={toastType}
           message={toastMessage}
-          duration={5000}
+          duration={TIMING.TOAST_DEFAULT_DURATION}
           onClose={() => setToastMessage("")}
         />
       )}
@@ -262,19 +318,31 @@ const CreateAccountForm = ({
         className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
         ref={overlayRef}
         onMouseDown={onOverlayClick}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-account-dialog-title"
       >
-        <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
+        <div 
+          className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative! max-h-[90vh]! overflow-y-auto! [&::-webkit-scrollbar]:w-2! [&::-webkit-scrollbar-track]:bg-gray-100! [&::-webkit-scrollbar-thumb]:bg-gray-300! [&::-webkit-scrollbar-thumb]:rounded-full! [&::-webkit-scrollbar-thumb:hover]:bg-gray-400!" 
+          role="document"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#d1d5db #f3f4f6'
+          }}
+        >
           <Button
             onClick={handleClose}
-            variant="link"
-            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
-            type="button"
+            variant={ButtonVariant.LINK}
+            className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0! z-10!"
+            type={ButtonType.BUTTON}
+            ariaLabel="Close dialog"
           >
             <svg
               className="w-6! h-6!"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -286,13 +354,13 @@ const CreateAccountForm = ({
           </Button>
 
           <div className="mb-6! text-center!">
-            <h2 className="text-2xl! font-bold! text-gray-800! mb-1!">
+            <h2 id="create-account-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-1!">
               {title}
             </h2>
             <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4!">
+          <form onSubmit={handleSubmit} className="space-y-4!" aria-label="Create account form">
             {/* Email Address */}
             <div className="mt-0! ml-0! mb-4! mr-0!">
               <Input
@@ -315,12 +383,12 @@ const CreateAccountForm = ({
                   <>
                     {checkingEmail && <Loader />}
                     {!checkingEmail &&
-                      !emailExists &&
-                      email &&
+                      !emailExists && !emailCheckError && email &&
                       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
                         <img
                           src={checkSuccessImg}
-                          alt="available"
+                          alt="Email available"
+                          aria-label="Email is available"
                           style={{ width: 18, height: 18 }}
                         />
                       )}
@@ -329,10 +397,10 @@ const CreateAccountForm = ({
               />
             </div>
 
-            {/* Banner for existing user - appears after email field */}
-            {showBanner && emailExists && (
+            {/* Banner for existing user or API error - appears after email field */}
+            {showBanner && emailExists && !emailCheckError && (
               <Banner
-                type="info"
+                type={MessageType.INFO}
                 message="We found an existing account."
                 actionText="Want to sign in instead?"
                 onActionClick={() => {
@@ -340,6 +408,17 @@ const CreateAccountForm = ({
                   onSignIn(email);
                 }}
                 onClose={() => setShowBanner(false)}
+                className="mb-4!"
+              />
+            )}
+            {showBanner && emailCheckError && (
+              <Banner
+                type={MessageType.ERROR}
+                message="Unable to verify email. You can still proceed with registration."
+                onClose={() => {
+                  setShowBanner(false);
+                  setEmailCheckError(false);
+                }}
                 className="mb-4!"
               />
             )}
@@ -395,6 +474,7 @@ const CreateAccountForm = ({
                       onClick={() => setShowPassword(!showPassword)}
                       className="text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!"
                       tabIndex={-1}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? (
                         <svg
@@ -402,6 +482,7 @@ const CreateAccountForm = ({
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -416,6 +497,7 @@ const CreateAccountForm = ({
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -437,6 +519,120 @@ const CreateAccountForm = ({
               </div>
             </div>
 
+            {/* Password Strength Indicator */}
+            {password && (
+              <div className="mt-2! mb-4!">
+                <div className="flex! items-center! justify-between! mb-2!">
+                  <div className="w-full! bg-gray-200! rounded-full! h-2! mr-3!">
+                    <div
+                      className="h-2! rounded-full! transition-all! duration-300!"
+                      style={{
+                        width: passwordStrength.width,
+                        backgroundColor: passwordStrength.color,
+                      }}
+                    ></div>
+                  </div>
+                  <span
+                    className="text-sm! font-medium! whitespace-nowrap!"
+                    style={{ color: passwordStrength.color }}
+                  >
+                    {passwordStrength.strength}
+                  </span>
+                </div>
+
+                {/* Password Requirements Checklist */}
+                <div className="mt-3!">
+                  <p className="text-sm! font-medium! text-gray-700! mb-2!">Password must:</p>
+                  <ul className="space-y-1!">
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.length ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.length ? "text-green-600!" : "text-gray-500!"}>
+                        be 9-15 characters
+                      </span>
+                    </li>
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.hasNumber ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.hasNumber ? "text-green-600!" : "text-gray-500!"}>
+                        have at least one number
+                      </span>
+                    </li>
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.hasUppercase ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.hasUppercase ? "text-green-600!" : "text-gray-500!"}>
+                        have at least one uppercase letter
+                      </span>
+                    </li>
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.hasSpecialChar ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.hasSpecialChar ? "text-green-600!" : "text-gray-500!"}>
+                        have at least one special character
+                      </span>
+                    </li>
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.onlyAllowedChars ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.onlyAllowedChars ? "text-green-600!" : "text-gray-500!"}>
+                        use only the following special characters !@#$%^&*._-
+                      </span>
+                    </li>
+                    <li className="flex! items-center! text-sm!">
+                      {passwordChecks.differentFromUsername ? (
+                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      <span className={passwordChecks.differentFromUsername ? "text-green-600!" : "text-gray-500!"}>
+                        be different from username
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             {/* Remember me checkbox */}
             <div className="flex! items-center! mt-4! ml-0! mb-4! mr-0!">
               <label className="flex! items-center! m-0!">
@@ -445,6 +641,7 @@ const CreateAccountForm = ({
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
+                  aria-label="Remember me"
                 />
                 <span
                   className="text-gray-600! text-sm!"
@@ -460,7 +657,7 @@ const CreateAccountForm = ({
 
             {/* Create Account Button */}
             <Button
-              type="submit"
+              type={ButtonType.SUBMIT}
               disabled={loading || emailExists || !isEmailValid}
               className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
@@ -504,8 +701,8 @@ const CreateAccountForm = ({
 
             {/* Sign In Button */}
             <Button
-              type="button"
-              variant="outline"
+              type={ButtonType.BUTTON}
+              variant={ButtonVariant.OUTLINE}
               onClick={() => onSignIn(email)}
               disabled={loading}
               className="w-full! flex! items-center! justify-center! gap-3!"
@@ -515,6 +712,13 @@ const CreateAccountForm = ({
           </form>
         </div>
       </div>
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onClose={() => setToastMessage("")}
+        />
+      )}
     </>
   );
 };

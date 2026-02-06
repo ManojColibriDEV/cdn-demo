@@ -6,6 +6,14 @@ import { forgotPassword, checkEmail } from "../services";
 import type { ResetPasswordFormProps } from "../types";
 import ResetPasswordSuccess from "./reset-password-success";
 import checkSuccessImg from "../icons/badge-check.svg";
+import {
+  MessageType,
+  EMAIL_REGEX,
+  TIMING,
+  ERROR_MESSAGES,
+  ButtonType,
+  ButtonVariant,
+} from "../constants";
 
 const ResetPasswordForm = ({
   email: initialEmail,
@@ -19,6 +27,7 @@ const ResetPasswordForm = ({
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [emailCheckError, setEmailCheckError] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,12 +40,12 @@ const ResetPasswordForm = ({
 
   // Email validation effect
   useEffect(() => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const valid = emailRegex.test(email);
+    const valid = EMAIL_REGEX.test(email);
     setIsEmailValid(valid);
 
     if (!valid || !email) {
       setEmailExists(false);
+      setEmailCheckError(false);
       return;
     }
 
@@ -50,11 +59,13 @@ const ResetPasswordForm = ({
         console.log('[ResetPassword] Email exists:', response.exists);
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
+        // Show error banner for API failure
+        setEmailCheckError(true);
         setEmailExists(false);
       } finally {
         setCheckingEmail(false);
       }
-    }, 500);
+    }, TIMING.EMAIL_CHECK_DEBOUNCE);
 
     return () => clearTimeout(timer);
   }, [email]);
@@ -69,7 +80,7 @@ const ResetPasswordForm = ({
     e.preventDefault();
 
     if (!email) {
-      setErrorMessage("Email is required");
+      setErrorMessage(ERROR_MESSAGES.EMAIL_REQUIRED);
       return;
     }
 
@@ -85,7 +96,7 @@ const ResetPasswordForm = ({
       const errorMsg =
         error instanceof Error
           ? error.message
-          : "Failed to send reset link. Please try again.";
+          : ERROR_MESSAGES.RESET_LINK_FAILED;
       setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
@@ -105,7 +116,7 @@ const ResetPasswordForm = ({
       const errorMsg =
         error instanceof Error
           ? error.message
-          : "Failed to resend reset link. Please try again.";
+          : ERROR_MESSAGES.RESET_LINK_FAILED;
       setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
@@ -131,20 +142,25 @@ const ResetPasswordForm = ({
       className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-password-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
+      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         {/* Close Button */}
         <Button
           onClick={handleClose}
-          variant="link"
+          variant={ButtonVariant.LINK}
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
-          type="button"
+          type={ButtonType.BUTTON}
+          ariaLabel="Close dialog"
         >
           <svg
             className="w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -157,7 +173,7 @@ const ResetPasswordForm = ({
 
         {/* Header */}
         <div className="mb-6! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! mb-2!">
+          <h2 id="reset-password-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-2!">
             Reset your password
           </h2>
           <p className="text-sm! text-gray-600!">
@@ -165,7 +181,7 @@ const ResetPasswordForm = ({
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4!">
+        <form onSubmit={handleSubmit} className="space-y-4!" aria-label="Reset password form">
           {/* Email Address - Editable with validation */}
           <div className="mt-0! ml-0! mb-4! mr-0!">
             <Input
@@ -184,12 +200,17 @@ const ResetPasswordForm = ({
               endIcon={
                 <>
                   {checkingEmail && (
-                    <div className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"></div>
+                    <div 
+                      className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"
+                      role="status"
+                      aria-label="Checking email"
+                    ></div>
                   )}
-                  {!checkingEmail && emailExists && isEmailValid && (
+                  {!checkingEmail && emailExists && isEmailValid && !emailCheckError && (
                     <img
                       src={checkSuccessImg}
-                      alt="user found"
+                      alt="User found"
+                      aria-label="User found"
                       style={{ width: 18, height: 18 }}
                     />
                   )}
@@ -198,10 +219,20 @@ const ResetPasswordForm = ({
             />
           </div>
 
+          {/* Error Banner for check-email API failure */}
+          {emailCheckError && (
+            <Banner
+              type={MessageType.ERROR}
+              message="Unable to verify email. Please try again."
+              onClose={() => setEmailCheckError(false)}
+              className="mb-4!"
+            />
+          )}
+
           {/* Error Banner */}
           {errorMessage && (
             <Banner
-              type="error"
+              type={MessageType.ERROR}
               message={errorMessage}
               actionText="Want to sign in instead?"
               onActionClick={onBack}
@@ -212,7 +243,7 @@ const ResetPasswordForm = ({
 
           {/* Send Reset Link Button */}
           <Button
-            type="submit"
+            type={ButtonType.SUBMIT}
             disabled={loading || !email || !isEmailValid || !emailExists}
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
@@ -249,8 +280,8 @@ const ResetPasswordForm = ({
 
           {/* Back to Sign In Button */}
           <Button
-            type="button"
-            variant="outline"
+            type={ButtonType.BUTTON}
+            variant={ButtonVariant.OUTLINE}
             onClick={onBack}
             disabled={loading}
             className="w-full! flex! items-center! justify-center! gap-3! mt-4!"

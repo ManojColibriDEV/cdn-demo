@@ -31,20 +31,25 @@ const ResetPasswordSuccess = ({
       className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reset-success-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!">
+      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         {/* Close Button */}
         <Button
           onClick={onClose}
           variant="link"
           className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type="button"
+          ariaLabel="Close dialog"
         >
           <svg
             className="w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -60,13 +65,14 @@ const ResetPasswordSuccess = ({
           <img
             src={badgeCheckIcon}
             alt="Success"
+            aria-hidden="true"
             className="w-16! h-16!"
           />
         </div>
 
         {/* Header */}
         <div className="mb-6! text-center!">
-          <h2 className="text-2xl! font-bold! text-gray-800! mb-3!">
+          <h2 id="reset-success-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-3!">
             Check your email
           </h2>
           <p className="text-base! text-gray-700! mb-2!">
@@ -90,6 +96,7 @@ const ResetPasswordSuccess = ({
           type="button"
           onClick={onResendLink}
           disabled={loading}
+          ariaLabel="Resend password reset link"
           className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!"
         >
           {loading ? (
@@ -98,6 +105,7 @@ const ResetPasswordSuccess = ({
                 className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
                 fill="none"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25!"

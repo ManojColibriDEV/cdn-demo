@@ -4,7 +4,7 @@
  * Based on @bloom-elements/core-theme functionality
  */
 
-import type { BrandConfig, ThemeStyle, ThemeConfig } from "../types";
+import type { BrandConfig, ThemeConfig } from "../types";
 
 export class ThemeWidget {
     private cdnBaseUrl: string;
@@ -51,7 +51,6 @@ export class ThemeWidget {
             );
             
             if (brand) {
-                console.log(`[ThemeWidget] Auto-detected brand from domain: ${brand.name} (${brand.token})`);
                 localStorage.setItem("subsidiary", brand.token);
                 return brand.token;
             }
@@ -83,8 +82,14 @@ export class ThemeWidget {
                 );
                 return;
             }
+            console.log("functionfunctionfunction", brand)
 
              localStorage.setItem("subsidiary", brand.token);
+             localStorage.setItem("brand_data", JSON.stringify({
+                id: brand.folder,
+                domain: brand.domain,
+                name: brand.name,
+             })); // Assuming token format like "dev-brand1"
 
             // Fetch theme configuration
             const themeUrl = `${this.cdnBaseUrl}/${brand.folder}/theme.json`;
