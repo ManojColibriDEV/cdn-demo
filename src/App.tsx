@@ -62,30 +62,27 @@ const App = (props: AppProps) => {
                 return;
               }
 
-              const expiresIn =
-                (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
+              const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
               // Store new access token in cookies (with encoding)
-              setAuthCookie(
-                COOKIE_NAMES.ACCESS_TOKEN,
-                tokens.access_token,
-                expiresIn,
-                true,
-              );
+              setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
               // Store X-Credential without encoding to preserve exact format
               if (userSession.decoded.x_credentials) {
                 setAuthCookie(
                   COOKIE_NAMES.X_CREDENTIAL,
                   userSession.decoded.x_credentials,
                   expiresIn,
-                  false,
+                  false
                 );
               }
 
               // Store access token in localStorage (always)
               localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
-              
+              localStorage.setItem(
+                STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+                (Date.now() + expiresIn * 1000).toString()
+              );
+
               // NOTE: X-Credential is stored in cookies only, not localStorage
 
               // Update refresh token in localStorage (always store it)
@@ -95,10 +92,7 @@ const App = (props: AppProps) => {
                 // This preserves the original user choice
                 const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
                 if (hadRememberMe) {
-                  localStorage.setItem(
-                    STORAGE_KEYS.REFRESH_TOKEN_TIME,
-                    Date.now().toString(),
-                  );
+                  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
                 }
               }
               console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
@@ -109,7 +103,7 @@ const App = (props: AppProps) => {
               if (onRedirect) {
                 console.log(
                   `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
-                  userSession,
+                  userSession
                 );
                 onRedirect(targetUrl, userSession);
               }
@@ -119,7 +113,7 @@ const App = (props: AppProps) => {
               if (props.autoRedirection) {
                 window.location.href = buildRedirectUrl(
                   targetUrl,
-                  userSession.decoded.x_credentials,
+                  userSession.decoded.x_credentials
                 );
               }
             }
@@ -141,8 +135,8 @@ const App = (props: AppProps) => {
   }, [props.redirectUrl]);
 
   useEffect(() => {
-    authority && localStorage.setItem('authority', authority);
-    subsidiary && localStorage.setItem('subsidiary', subsidiary);
+    authority && localStorage.setItem("authority", authority);
+    subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
   const handleEmbeddedLoginSuccess = (userSession: any) => {
@@ -154,8 +148,7 @@ const App = (props: AppProps) => {
     setIsAuthenticated(true);
 
     // Get x_credentials from userSession for cross-domain auth
-    const xCredential =
-      userSession?.userInfo?.x_credentials || userSession?.x_credentials;
+    const xCredential = userSession?.userInfo?.x_credentials || userSession?.x_credentials;
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
       const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);

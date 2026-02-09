@@ -57,30 +57,36 @@ const CreateAccountForm = ({
 
   // Individual password validation checks
   const passwordChecks = {
-    length: password.length >= PASSWORD_RULES.MIN_LENGTH && password.length <= PASSWORD_RULES.MAX_LENGTH,
+    length:
+      password.length >= PASSWORD_RULES.MIN_LENGTH && password.length <= PASSWORD_RULES.MAX_LENGTH,
     hasNumber: PASSWORD_REGEX.NUMBER.test(password),
     hasUppercase: PASSWORD_REGEX.UPPERCASE.test(password),
     hasLowercase: PASSWORD_REGEX.LOWERCASE.test(password),
     hasSpecialChar: PASSWORD_SPECIAL_CHARS_ALT.test(password),
     onlyAllowedChars: PASSWORD_ALLOWED_CHARS_ALT.test(password) || password === "",
-    differentFromUsername: email ? (password !== email && password !== email.split("@")[0]) : true,
+    differentFromUsername: email ? password !== email && password !== email.split("@")[0] : true,
   };
 
   // Password strength calculation - Strong only when ALL requirements are met
   const getPasswordStrength = (pw: string): { strength: string; color: string; width: string } => {
     if (!pw) return { strength: "", color: "", width: PASSWORD_STRENGTH_WIDTHS.EMPTY };
-    
+
     // Check if ALL requirements are met
-    const allRequirementsMet = passwordChecks.length && 
-                                passwordChecks.hasNumber && 
-                                passwordChecks.hasUppercase && 
-                                passwordChecks.hasLowercase &&
-                                passwordChecks.hasSpecialChar && 
-                                passwordChecks.onlyAllowedChars && 
-                                passwordChecks.differentFromUsername;
+    const allRequirementsMet =
+      passwordChecks.length &&
+      passwordChecks.hasNumber &&
+      passwordChecks.hasUppercase &&
+      passwordChecks.hasLowercase &&
+      passwordChecks.hasSpecialChar &&
+      passwordChecks.onlyAllowedChars &&
+      passwordChecks.differentFromUsername;
 
     if (allRequirementsMet) {
-      return { strength: PASSWORD_STRENGTH.STRONG, color: PASSWORD_STRENGTH_COLORS.STRONG, width: PASSWORD_STRENGTH_WIDTHS.STRONG };
+      return {
+        strength: PASSWORD_STRENGTH.STRONG,
+        color: PASSWORD_STRENGTH_COLORS.STRONG,
+        width: PASSWORD_STRENGTH_WIDTHS.STRONG,
+      };
     }
 
     // Count how many requirements are met for intermediate states
@@ -93,16 +99,23 @@ const CreateAccountForm = ({
     if (passwordChecks.onlyAllowedChars) score++;
     if (passwordChecks.differentFromUsername) score++;
 
-    if (score <= 2) return { strength: PASSWORD_STRENGTH.WEAK, color: PASSWORD_STRENGTH_COLORS.WEAK, width: PASSWORD_STRENGTH_WIDTHS.WEAK };
-    return { strength: PASSWORD_STRENGTH.GOOD, color: PASSWORD_STRENGTH_COLORS.GOOD, width: PASSWORD_STRENGTH_WIDTHS.GOOD };
+    if (score <= 2)
+      return {
+        strength: PASSWORD_STRENGTH.WEAK,
+        color: PASSWORD_STRENGTH_COLORS.WEAK,
+        width: PASSWORD_STRENGTH_WIDTHS.WEAK,
+      };
+    return {
+      strength: PASSWORD_STRENGTH.GOOD,
+      color: PASSWORD_STRENGTH_COLORS.GOOD,
+      width: PASSWORD_STRENGTH_WIDTHS.GOOD,
+    };
   };
 
   const passwordStrength = getPasswordStrength(password);
 
   // Password validation function
-  const validatePasswordRules = (
-    pw: string,
-  ): { isValid: boolean; error: string } => {
+  const validatePasswordRules = (pw: string): { isValid: boolean; error: string } => {
     if (!pw) {
       return { isValid: false, error: ERROR_MESSAGES.PASSWORD_REQUIRED };
     }
@@ -267,7 +280,7 @@ const CreateAccountForm = ({
 
       console.log(
         `${LOG_PREFIX.CREATE_ACCOUNT} Registration successful:`,
-        registrationResult.message,
+        registrationResult.message
       );
 
       // After successful registration, automatically log in the user
@@ -280,18 +293,15 @@ const CreateAccountForm = ({
       } catch (loginError) {
         console.error(
           `${LOG_PREFIX.CREATE_ACCOUNT} Auto-login failed after registration:`,
-          loginError,
+          loginError
         );
         const loginErrorMsg =
-          loginError instanceof Error
-            ? loginError.message
-            : "Auto-login failed";
+          loginError instanceof Error ? loginError.message : "Auto-login failed";
         onError(loginErrorMsg);
       }
     } catch (error) {
       console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Registration failed:`, error);
-      const errorMsg =
-        error instanceof Error ? error.message : ERROR_MESSAGES.REGISTRATION_FAILED;
+      const errorMsg = error instanceof Error ? error.message : ERROR_MESSAGES.REGISTRATION_FAILED;
 
       // Show toast for errors
       setToastMessage(errorMsg);
@@ -322,12 +332,12 @@ const CreateAccountForm = ({
         aria-modal="true"
         aria-labelledby="create-account-dialog-title"
       >
-        <div 
-          className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative! max-h-[90vh]! overflow-y-auto! [&::-webkit-scrollbar]:w-2! [&::-webkit-scrollbar-track]:bg-gray-100! [&::-webkit-scrollbar-thumb]:bg-gray-300! [&::-webkit-scrollbar-thumb]:rounded-full! [&::-webkit-scrollbar-thumb:hover]:bg-gray-400!" 
+        <div
+          className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative! max-h-[90vh]! overflow-y-auto! [&::-webkit-scrollbar]:w-2! [&::-webkit-scrollbar-track]:bg-gray-100! [&::-webkit-scrollbar-thumb]:bg-gray-300! [&::-webkit-scrollbar-thumb]:rounded-full! [&::-webkit-scrollbar-thumb:hover]:bg-gray-400!"
           role="document"
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#d1d5db #f3f4f6'
+            scrollbarWidth: "thin",
+            scrollbarColor: "#d1d5db #f3f4f6",
           }}
         >
           <Button
@@ -354,7 +364,10 @@ const CreateAccountForm = ({
           </Button>
 
           <div className="mb-6! text-center!">
-            <h2 id="create-account-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-1!">
+            <h2
+              id="create-account-dialog-title"
+              className="text-2xl! font-bold! text-gray-800! mb-1!"
+            >
               {title}
             </h2>
             <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
@@ -376,14 +389,14 @@ const CreateAccountForm = ({
                 disabled={loading}
                 className="w-full!"
                 autoComplete="email"
-                error={
-                  touched && !email ? "Required" : emailError ? emailError : ""
-                }
+                error={touched && !email ? "Required" : emailError ? emailError : ""}
                 endIcon={
                   <>
                     {checkingEmail && <Loader />}
                     {!checkingEmail &&
-                      !emailExists && !emailCheckError && email &&
+                      !emailExists &&
+                      !emailCheckError &&
+                      email &&
                       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && (
                         <img
                           src={checkSuccessImg}
@@ -546,85 +559,203 @@ const CreateAccountForm = ({
                   <ul className="space-y-1!">
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.length ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.length ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={passwordChecks.length ? "text-green-600!" : "text-gray-500!"}
+                      >
                         be 9-15 characters
                       </span>
                     </li>
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.hasNumber ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.hasNumber ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={passwordChecks.hasNumber ? "text-green-600!" : "text-gray-500!"}
+                      >
                         have at least one number
                       </span>
                     </li>
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.hasUppercase ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.hasUppercase ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={
+                          passwordChecks.hasUppercase ? "text-green-600!" : "text-gray-500!"
+                        }
+                      >
                         have at least one uppercase letter
                       </span>
                     </li>
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.hasSpecialChar ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.hasSpecialChar ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={
+                          passwordChecks.hasSpecialChar ? "text-green-600!" : "text-gray-500!"
+                        }
+                      >
                         have at least one special character
                       </span>
                     </li>
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.onlyAllowedChars ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.onlyAllowedChars ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={
+                          passwordChecks.onlyAllowedChars ? "text-green-600!" : "text-gray-500!"
+                        }
+                      >
                         use only the following special characters !@#$%^&*._-
                       </span>
                     </li>
                     <li className="flex! items-center! text-sm!">
                       {passwordChecks.differentFromUsername ? (
-                        <svg className="w-4! h-4! mr-2! text-green-500!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-green-500!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       ) : (
-                        <svg className="w-4! h-4! mr-2! text-gray-400!" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z" clipRule="evenodd" />
+                        <svg
+                          className="w-4! h-4! mr-2! text-gray-400!"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
-                      <span className={passwordChecks.differentFromUsername ? "text-green-600!" : "text-gray-500!"}>
+                      <span
+                        className={
+                          passwordChecks.differentFromUsername
+                            ? "text-green-600!"
+                            : "text-gray-500!"
+                        }
+                      >
                         be different from username
                       </span>
                     </li>
@@ -713,11 +844,7 @@ const CreateAccountForm = ({
         </div>
       </div>
       {toastMessage && (
-        <Toast
-          message={toastMessage}
-          type={toastType}
-          onClose={() => setToastMessage("")}
-        />
+        <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
       )}
     </>
   );

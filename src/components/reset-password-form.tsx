@@ -54,9 +54,9 @@ const ResetPasswordForm = ({
       setCheckingEmail(true);
       try {
         const response = await checkEmail(email);
-        console.log('[ResetPassword] Email check response:', response);
+        console.log("[ResetPassword] Email check response:", response);
         setEmailExists(response.exists);
-        console.log('[ResetPassword] Email exists:', response.exists);
+        console.log("[ResetPassword] Email exists:", response.exists);
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
         // Show error banner for API failure
@@ -93,10 +93,7 @@ const ResetPasswordForm = ({
       setSuccessSent(true);
     } catch (error) {
       console.error("[ResetPassword] Failed to send reset link:", error);
-      const errorMsg =
-        error instanceof Error
-          ? error.message
-          : ERROR_MESSAGES.RESET_LINK_FAILED;
+      const errorMsg = error instanceof Error ? error.message : ERROR_MESSAGES.RESET_LINK_FAILED;
       setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
@@ -113,10 +110,7 @@ const ResetPasswordForm = ({
     } catch (error) {
       console.error("[ResetPassword] Failed to resend reset link:", error);
       setSuccessSent(false);
-      const errorMsg =
-        error instanceof Error
-          ? error.message
-          : ERROR_MESSAGES.RESET_LINK_FAILED;
+      const errorMsg = error instanceof Error ? error.message : ERROR_MESSAGES.RESET_LINK_FAILED;
       setErrorMessage(errorMsg);
     } finally {
       setLoading(false);
@@ -173,7 +167,10 @@ const ResetPasswordForm = ({
 
         {/* Header */}
         <div className="mb-6! text-center!">
-          <h2 id="reset-password-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-2!">
+          <h2
+            id="reset-password-dialog-title"
+            className="text-2xl! font-bold! text-gray-800! mb-2!"
+          >
             Reset your password
           </h2>
           <p className="text-sm! text-gray-600!">
@@ -200,7 +197,7 @@ const ResetPasswordForm = ({
               endIcon={
                 <>
                   {checkingEmail && (
-                    <div 
+                    <div
                       className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"
                       role="status"
                       aria-label="Checking email"
@@ -247,7 +244,12 @@ const ResetPasswordForm = ({
             disabled={loading || !email || !isEmailValid || !emailExists}
             className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
-              console.log('[ResetPassword] Button state:', { loading, email, isEmailValid, emailExists });
+              console.log("[ResetPassword] Button state:", {
+                loading,
+                email,
+                isEmailValid,
+                emailExists,
+              });
             }}
           >
             {loading ? (

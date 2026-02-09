@@ -1,9 +1,5 @@
 import axios from "axios";
-import type {
-  CheckEmailResponse,
-  RegisterRequest,
-  RegisterResponse
-} from "../types/index";
+import type { CheckEmailResponse, RegisterRequest, RegisterResponse } from "../types/index";
 import {
   API_ENDPOINTS,
   HTTP_STATUS,
@@ -36,16 +32,26 @@ function detectEnvironmentAuthority(): Authority {
   const hostname = window.location.hostname;
 
   // localhost defaults to dev
-  if (hostname === LOCALHOST.HOSTNAME || hostname === LOCALHOST.IP || LOCALHOST.IP_PATTERN.test(hostname)) {
+  if (
+    hostname === LOCALHOST.HOSTNAME ||
+    hostname === LOCALHOST.IP ||
+    LOCALHOST.IP_PATTERN.test(hostname)
+  ) {
     return Authority.DEV;
   }
 
   // Check for environment prefixes
   if (hostname.startsWith(`${ENV_PREFIXES.DEV}.`) || hostname.startsWith(`${ENV_PREFIXES.DEV}-`)) {
     return Authority.DEV;
-  } else if (hostname.startsWith(`${ENV_PREFIXES.TEST}.`) || hostname.startsWith(`${ENV_PREFIXES.TEST}-`)) {
+  } else if (
+    hostname.startsWith(`${ENV_PREFIXES.TEST}.`) ||
+    hostname.startsWith(`${ENV_PREFIXES.TEST}-`)
+  ) {
     return Authority.TEST;
-  } else if (hostname.startsWith(`${ENV_PREFIXES.STAGE}.`) || hostname.startsWith(`${ENV_PREFIXES.STAGE}-`)) {
+  } else if (
+    hostname.startsWith(`${ENV_PREFIXES.STAGE}.`) ||
+    hostname.startsWith(`${ENV_PREFIXES.STAGE}-`)
+  ) {
     return Authority.STAGE;
   } else {
     // Production (no prefix)
@@ -57,21 +63,21 @@ function detectEnvironmentAuthority(): Authority {
  * Get the appropriate base URL for a specific service based on endpoint path
  * In TEST mode: Returns empty string (uses Vite proxy)
  * In WEBCOMPONENT mode: Returns environment-specific base URL for the service
- * 
+ *
  * @param path - The API endpoint path (e.g., '/api/auth', '/global/subsidiaries')
  * @returns The base URL for the service
  */
 function getBaseUrlForService(path: string): string {
   // In TEST mode, always use empty string for Vite proxy
   if (RENDER_MODE === RenderMode.TEST) {
-    return '';
+    return "";
   }
 
   // Auto-detect environment
   const authority = detectEnvironmentAuthority();
 
   // Route to correct service based on path
-  if (path.startsWith('/global')) {
+  if (path.startsWith("/global")) {
     return GLOBAL_API_URLS[authority];
   } else {
     // Default to auth gateway for /api/* and other endpoints
@@ -83,7 +89,7 @@ function getBaseUrlForService(path: string): string {
 // TEST mode: returns relative URLs for Vite proxy (e.g., /api/auth, /global/subsidiaries)
 // WEBCOMPONENT mode: returns full URLs for direct API calls with correct service domain
 const apiUrl = (path: string): string => {
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
 
   // In TEST mode, always use relative paths for Vite's dev server proxy
   if (RENDER_MODE === RenderMode.TEST) {
@@ -101,13 +107,14 @@ const apiUrl = (path: string): string => {
 export const fetchSubsidiaries = async (domain: string): Promise<string | undefined> => {
   try {
     const response = await axios.get<Subsidiary[]>(apiUrl(API_ENDPOINTS.GLOBAL_SUBSIDIARIES));
-    const filterSubsidiaryId: any = response?.data?.find(sub => sub?.siteURL?.includes(domain))?.subsidiaryId;
+    const filterSubsidiaryId: any = response?.data?.find((sub) =>
+      sub?.siteURL?.includes(domain)
+    )?.subsidiaryId;
     return filterSubsidiaryId;
   } catch (error) {
     console.error("Error fetching subsidiaries:", error);
   }
 };
-
 
 export async function getBrandHeaders() {
   const brandData = localStorage.getItem(STORAGE_KEYS.BRAND_DATA);
@@ -126,19 +133,15 @@ export async function getBrandHeaders() {
   };
 }
 
-
 /**
  * Auth API - Login with username and password
  */
-export const authLogin = async (
-  username: string,
-  password: string
-): Promise<any> => {
+export const authLogin = async (username: string, password: string): Promise<any> => {
   const url = apiUrl(API_ENDPOINTS.AUTH);
   const payload = { username, password };
   try {
     const response = await axios.post(url, payload, {
-      headers: await getBrandHeaders()
+      headers: await getBrandHeaders(),
     });
     return response.data;
   } catch (error: any) {
@@ -162,13 +165,11 @@ export const authLogin = async (
 /**
  * Register API - Create new user account
  */
-export const authRegister = async (
-  data: RegisterRequest
-): Promise<RegisterResponse> => {
+export const authRegister = async (data: RegisterRequest): Promise<RegisterResponse> => {
   const url = apiUrl(API_ENDPOINTS.REGISTER);
   try {
     const response = await axios.post<RegisterResponse>(url, data, {
-      headers: await getBrandHeaders()
+      headers: await getBrandHeaders(),
     });
     return response.data;
   } catch (error: any) {
@@ -200,9 +201,13 @@ export const authRegister = async (
 export const checkEmail = async (email: string): Promise<CheckEmailResponse> => {
   const url = apiUrl(API_ENDPOINTS.CHECK_EMAIL);
   try {
-    const response = await axios.post<CheckEmailResponse>(url, { email }, {
-      headers: await getBrandHeaders()
-    });
+    const response = await axios.post<CheckEmailResponse>(
+      url,
+      { email },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
     return response.data;
   } catch (error: any) {
     console.error("Error checking email:", error);
@@ -234,7 +239,7 @@ export const forgotPassword = async (email: string): Promise<any> => {
   const payload = { email };
   try {
     const response = await axios.post(url, payload, {
-      headers: await getBrandHeaders()
+      headers: await getBrandHeaders(),
     });
     return response.data;
   } catch (error: any) {
@@ -263,7 +268,7 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
   const payload = { refresh_token: refreshToken };
   try {
     const response = await axios.post(url, payload, {
-      headers: await getBrandHeaders()
+      headers: await getBrandHeaders(),
     });
     return response.data;
   } catch (error) {
@@ -271,4 +276,3 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
     throw error;
   }
 };
-

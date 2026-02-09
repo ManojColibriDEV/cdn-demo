@@ -1,21 +1,21 @@
-import { Plugin } from 'vite';
+import { Plugin } from "vite";
 
 /**
  * Vite plugin to inline CSS into JavaScript bundle
  * Perfect for widget distribution - only need one .js file!
  * Supports both light DOM and shadow DOM injection
- * 
+ *
  * Follows bloom-elements standard pattern
  */
 export function cssInjectedByJsPlugin(): Plugin {
   return {
-    name: 'vite-plugin-css-injector',
-    apply: 'build',
-    enforce: 'post',
+    name: "vite-plugin-css-injector",
+    apply: "build",
+    enforce: "post",
     generateBundle(_, bundle) {
-      const cssFiles = Object.keys(bundle).filter((i) => i.endsWith('.css'));
+      const cssFiles = Object.keys(bundle).filter((i) => i.endsWith(".css"));
       const jsFiles = Object.keys(bundle).filter(
-        (i) => i.endsWith('.js') && !i.includes('polyfill')
+        (i) => i.endsWith(".js") && !i.includes("polyfill")
       );
 
       if (cssFiles.length === 0 || jsFiles.length === 0) {
@@ -23,7 +23,7 @@ export function cssInjectedByJsPlugin(): Plugin {
       }
 
       // Get CSS content
-      const cssCode = cssFiles.map((file) => bundle[file].source).join('\n');
+      const cssCode = cssFiles.map((file) => bundle[file].source).join("\n");
 
       // Find the main JS file
       const mainJsFile = jsFiles[0];
@@ -45,7 +45,7 @@ export function cssInjectedByJsPlugin(): Plugin {
   // Shadow DOM provides complete style isolation
 })();`;
 
-      if (jsBundle.type === 'chunk') {
+      if (jsBundle.type === "chunk") {
         jsBundle.code = cssInjectionCode + jsBundle.code;
       }
 

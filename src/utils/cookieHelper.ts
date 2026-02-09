@@ -5,7 +5,6 @@
 
 import { LOCALHOST, ENV_PREFIXES, DEFAULT_PATHS, Authority } from "../constants";
 
-
 /**
  * Get the cookie domain for cross-subdomain support
  * Extracts root domain (e.g., dev.elitelearning.com → .elitelearning.com)
@@ -15,23 +14,27 @@ export function getCookieDomain(): string {
   const hostname = window.location.hostname;
 
   // localhost or IP address - no domain restriction needed
-  if (hostname === LOCALHOST.HOSTNAME || hostname === LOCALHOST.IP || LOCALHOST.IP_PATTERN.test(hostname)) {
-    return '';
+  if (
+    hostname === LOCALHOST.HOSTNAME ||
+    hostname === LOCALHOST.IP ||
+    LOCALHOST.IP_PATTERN.test(hostname)
+  ) {
+    return "";
   }
 
   // Extract root domain: take last 2 parts (works for .com, .io, etc.)
-  const parts = hostname.split('.');
+  const parts = hostname.split(".");
   if (parts.length >= 2) {
-    return '.' + parts.slice(-2).join('.');
+    return "." + parts.slice(-2).join(".");
   }
 
-  return '';
+  return "";
 }
 
 /**
  * Auto-detect authority/environment from URL hostname
  * @returns The authority string: 'dev', 'test', 'stage', or 'prod'
- * 
+ *
  * Examples:
  * - dev.elitelearning.com → 'dev'
  * - test.elitelearning.com → 'test'
@@ -43,16 +46,26 @@ export function getAuthorityFromUrl(): string {
   const hostname = window.location.hostname;
 
   // localhost defaults to dev
-  if (hostname === LOCALHOST.HOSTNAME || hostname === LOCALHOST.IP || LOCALHOST.IP_PATTERN.test(hostname)) {
+  if (
+    hostname === LOCALHOST.HOSTNAME ||
+    hostname === LOCALHOST.IP ||
+    LOCALHOST.IP_PATTERN.test(hostname)
+  ) {
     return Authority.DEV;
   }
 
   // Check for environment prefixes
   if (hostname.startsWith(`${ENV_PREFIXES.DEV}.`) || hostname.startsWith(`${ENV_PREFIXES.DEV}-`)) {
     return Authority.DEV;
-  } else if (hostname.startsWith(`${ENV_PREFIXES.TEST}.`) || hostname.startsWith(`${ENV_PREFIXES.TEST}-`)) {
+  } else if (
+    hostname.startsWith(`${ENV_PREFIXES.TEST}.`) ||
+    hostname.startsWith(`${ENV_PREFIXES.TEST}-`)
+  ) {
     return Authority.TEST;
-  } else if (hostname.startsWith(`${ENV_PREFIXES.STAGE}.`) || hostname.startsWith(`${ENV_PREFIXES.STAGE}-`)) {
+  } else if (
+    hostname.startsWith(`${ENV_PREFIXES.STAGE}.`) ||
+    hostname.startsWith(`${ENV_PREFIXES.STAGE}-`)
+  ) {
     return Authority.STAGE;
   } else {
     // Production (no prefix)
@@ -63,7 +76,7 @@ export function getAuthorityFromUrl(): string {
 /**
  * Transform the current domain URL to the appropriate redirect URL based on environment
  * @returns The transformed redirect URL
- * 
+ *
  * Examples:
  * - https://dev.elitelearning.com/login-widget-test/ → https://dev-learn.elitelearning.com/courses
  * - https://test.elitelearning.com/login-widget-test/ → https://test-learn.elitelearning.com/courses
@@ -91,7 +104,7 @@ export function getDefaultRedirectUrl(): string {
   } else {
     // Production: elitelearning.com → learn.elitelearning.com
     // Check if it's already a subdomain or the root domain
-    const parts = hostname.split('.');
+    const parts = hostname.split(".");
     if (parts.length === 2) {
       // Root domain (e.g., elitelearning.com)
       const newHostname = `${ENV_PREFIXES.LEARN}.${hostname}`;
@@ -110,13 +123,18 @@ export function getDefaultRedirectUrl(): string {
  * @param expiresInSeconds - Expiration time in seconds
  * @param encode - Whether to URL encode the value (default: true, false for X-Credential)
  */
-export function setAuthCookie(name: string, value: string, expiresInSeconds: number, encode: boolean = true): void {
+export function setAuthCookie(
+  name: string,
+  value: string,
+  expiresInSeconds: number,
+  encode: boolean = true
+): void {
   const expires = new Date();
   expires.setSeconds(expires.getSeconds() + expiresInSeconds);
 
   const domain = getCookieDomain();
-  const domainAttr = domain ? `; domain=${domain}` : '';
-  const secureAttr = window.location.protocol === 'https:' ? '; secure' : '';
+  const domainAttr = domain ? `; domain=${domain}` : "";
+  const secureAttr = window.location.protocol === "https:" ? "; secure" : "";
 
   // Only encode if explicitly requested (access tokens should be encoded, X-Credential should not)
   const cookieValue = encode ? encodeURIComponent(value) : value;
@@ -129,6 +147,6 @@ export function setAuthCookie(name: string, value: string, expiresInSeconds: num
  */
 export function clearAuthCookie(name: string): void {
   const domain = getCookieDomain();
-  const domainAttr = domain ? `; domain=${domain}` : '';
+  const domainAttr = domain ? `; domain=${domain}` : "";
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/${domainAttr}`;
 }
