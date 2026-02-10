@@ -4,7 +4,6 @@ import EmbeddedLoginForm from "./components/embedded-login-form";
 import {
   checkTokenAndRedirect,
   isRefreshTokenValid,
-  buildRedirectUrl,
   setAuthCookie,
   getDefaultRedirectUrl,
   createUserSessionFromToken,
@@ -28,7 +27,7 @@ const App = (props: AppProps) => {
           // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
           const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
           if (props.autoRedirection) {
-            window.location.href = buildRedirectUrl(targetUrl);
+            window.location.href = targetUrl;
           } else {
             // If auto-redirect is disabled, trigger onRedirect callback only
             if (onRedirect && props.redirectUrl) {
@@ -114,13 +113,10 @@ const App = (props: AppProps) => {
                 onRedirect(targetUrl, userSession);
               }
 
-              // Redirect to target URL (with xcred for cross-domain auth)
+              // Redirect to target URL (credentials stored in cookies)
               // Only auto-redirect if autoRedirection prop is true
               if (props.autoRedirection) {
-                window.location.href = buildRedirectUrl(
-                  targetUrl,
-                  userSession.decoded.x_credentials,
-                );
+                window.location.href = targetUrl;
               }
             }
           }
@@ -169,8 +165,8 @@ const App = (props: AppProps) => {
 
     if (props.autoRedirection) {
       setTimeout(() => {
-        // Append xcred to redirect URL for cross-domain authentication
-        window.location.href = buildRedirectUrl(targetUrl, xCredential);
+        // Redirect without URL parameters - credentials stored in cookies only
+        window.location.href = targetUrl;
       }, 100);
     }
   };
