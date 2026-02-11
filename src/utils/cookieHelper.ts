@@ -121,7 +121,27 @@ export function setAuthCookie(name: string, value: string, expiresInSeconds: num
   // Only encode if explicitly requested (access tokens should be encoded, X-Credential should not)
   const cookieValue = encode ? encodeURIComponent(value) : value;
 
-  document.cookie = `${name}=${cookieValue}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Lax`;
+  document.cookie = `${name}=${cookieValue}; expires=${expires.toUTCString()}; path=/${domainAttr}${secureAttr}; SameSite=Strict`;
+}
+
+/**
+ * Get a cookie value by name
+ * @param name - Cookie name
+ * @param decode - Whether to URL decode the value (default: true)
+ * @returns Cookie value or null if not found
+ */
+export function getCookie(name: string, decode: boolean = true): string | null {
+  const cookies = document.cookie.split(';');
+  
+  for (const cookie of cookies) {
+    const trimmedCookie = cookie.trim();
+    if (trimmedCookie.startsWith(`${name}=`)) {
+      const value = trimmedCookie.substring(name.length + 1);
+      return decode ? decodeURIComponent(value) : value;
+    }
+  }
+  
+  return null;
 }
 
 /**

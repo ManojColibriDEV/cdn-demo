@@ -7,6 +7,7 @@ import {
   setAuthCookie,
   getDefaultRedirectUrl,
   createUserSessionFromToken,
+  getCookie
 } from "./functions";
 import { authRefresh } from "./services";
 import type { AppProps } from "./types";
@@ -47,7 +48,8 @@ const App = (props: AppProps) => {
 
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
-        if (hasValidRefreshToken) {
+        const getAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN);
+        if (hasValidRefreshToken && getAccessToken) {
           const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (refreshToken) {
             const response = await authRefresh(refreshToken);
@@ -141,7 +143,7 @@ const App = (props: AppProps) => {
     subsidiary && localStorage.setItem('subsidiary', subsidiary);
   }, [authority, subsidiary]);
 
-  const handleEmbeddedLoginSuccess = (userSession: any) => {
+  const handleEmbeddedLoginSuccess = () => {
     if (props.handleClose) {
       props.handleClose();
     }
@@ -149,9 +151,6 @@ const App = (props: AppProps) => {
     // Mark user as authenticated
     setIsAuthenticated(true);
 
-    // Get x_credentials from userSession for cross-domain auth
-    const xCredential =
-      userSession?.userInfo?.x_credentials || userSession?.x_credentials;
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
       const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);

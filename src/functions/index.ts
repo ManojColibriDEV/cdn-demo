@@ -19,6 +19,7 @@ import {
 export {
   setAuthCookie,
   clearAuthCookie,
+  getCookie,
   getCookieDomain,
   getAuthorityFromUrl,
   getDefaultRedirectUrl
