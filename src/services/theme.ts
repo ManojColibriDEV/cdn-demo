@@ -86,7 +86,7 @@ export class ThemeWidget {
       localStorage.setItem(
         "brand_data",
         JSON.stringify({
-          id: brand.folder,
+          id: brand.token,
           domain: brand.domain,
           name: brand.name,
         })
