@@ -28,6 +28,7 @@ const ResetPasswordForm = ({
   const [emailExists, setEmailExists] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
+  const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ const ResetPasswordForm = ({
     if (!valid || !email) {
       setEmailExists(false);
       setEmailCheckError(false);
+      setEmailCheckErrorMessage("");
       return;
     }
 
@@ -60,7 +62,9 @@ const ResetPasswordForm = ({
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
         // Show error banner for API failure
+        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. Please try again.";
         setEmailCheckError(true);
+        setEmailCheckErrorMessage(errorMsg);
         setEmailExists(false);
       } finally {
         setCheckingEmail(false);
@@ -220,8 +224,11 @@ const ResetPasswordForm = ({
           {emailCheckError && (
             <Banner
               type={MessageType.ERROR}
-              message="Unable to verify email. Please try again."
-              onClose={() => setEmailCheckError(false)}
+              message={emailCheckErrorMessage}
+              onClose={() => {
+                setEmailCheckError(false);
+                setEmailCheckErrorMessage("");
+              }}
               className="mb-4!"
             />
           )}

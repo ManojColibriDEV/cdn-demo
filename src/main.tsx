@@ -53,7 +53,6 @@ if (renderMode === "TEST") {
     <BrowserRouter>
       <StrictMode>
         <App
-          authority="dev"
           subsidiary="allied"
           showLogin={true}
           autoRedirection={true}

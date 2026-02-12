@@ -25,10 +25,48 @@ interface Subsidiary {
 const RENDER_MODE = (import.meta as any).env.VITE_RENDER_MODE || RenderMode.WEBCOMPONENT;
 
 /**
+ * Set authority override (e.g., "dev", "test", "stage", "prod")
+ * When set, this will be used instead of auto-detection from URL
+ */
+export function setAuthorityOverride(authority: string | null): void {
+  if (authority) {
+    localStorage.setItem(STORAGE_KEYS.AUTHORITY_OVERRIDE, authority);
+  } else {
+    localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+  }
+}
+
+/**
+ * Get current authority override if set
+ */
+export function getAuthorityOverride(): string | null {
+  return localStorage.getItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+}
+
+/**
+ * Clear authority override
+ */
+export function clearAuthorityOverride(): void {
+  localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+}
+
+/**
  * Auto-detect environment/authority from current URL hostname
+ * Checks for explicit authority override first, then falls back to URL-based detection
  * @returns The authority string: 'dev', 'test', 'stage', or 'prod'
  */
 function detectEnvironmentAuthority(): Authority {
+  // Check for explicit authority override first
+  const override = getAuthorityOverride();
+  if (override) {
+    // Validate that it's a valid authority
+    const validAuthorities = Object.values(Authority);
+    if (validAuthorities.includes(override as Authority)) {
+      return override as Authority;
+    }
+  }
+
+  // Fall back to URL-based detection
   const hostname = window.location.hostname;
 
   // localhost defaults to dev

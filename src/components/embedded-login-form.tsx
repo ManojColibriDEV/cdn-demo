@@ -33,6 +33,7 @@ const EmbeddedLoginForm = ({
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
+  const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
@@ -52,6 +53,7 @@ const EmbeddedLoginForm = ({
       setEmailExists(false);
       setShowBanner(false);
       setEmailCheckError(false);
+      setEmailCheckErrorMessage("");
       return;
     }
 
@@ -86,7 +88,9 @@ const EmbeddedLoginForm = ({
       } catch (error) {
         console.error("[EmbeddedLogin] Email check failed:", error);
         // Show error banner for API failure (no toast for check-email)
+        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. You can still proceed with login.";
         setEmailCheckError(true);
+        setEmailCheckErrorMessage(errorMsg);
         setShowBanner(true);
         setEmailExists(false);
       } finally {
@@ -270,10 +274,11 @@ const EmbeddedLoginForm = ({
           {showBanner && emailCheckError && (
             <Banner
               type={MessageType.ERROR}
-              message="Unable to verify email. You can still proceed with login."
+              message={emailCheckErrorMessage}
               onClose={() => {
                 setShowBanner(false);
                 setEmailCheckError(false);
+                setEmailCheckErrorMessage("");
               }}
               className="mb-4!"
             />

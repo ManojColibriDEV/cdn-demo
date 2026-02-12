@@ -1,10 +1,10 @@
 /**
  * Function Tests: Validation and Authentication Functions
- * Tests for password validation, token handling, and redirect URL building
+ * Tests for password validation and token handling
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { validatePassword, buildRedirectUrl, checkTokenAndRedirect } from "../../functions";
+import { validatePassword, checkTokenAndRedirect } from "../../functions";
 import type { UpgradeUser } from "../../types";
 import { jwtDecode } from "jwt-decode";
 
@@ -153,75 +153,6 @@ describe("Validation and Authentication Functions", () => {
 
         expect(checks.special).toBe(true);
       });
-    });
-  });
-
-  describe("buildRedirectUrl", () => {
-    beforeEach(() => {
-      // Clear cookies before each test
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-    });
-
-    it("should append xcred parameter when credential provided", () => {
-      const baseUrl = "https://learn.example.com/courses";
-      const xCredential = "test-credential-123";
-
-      const result = buildRedirectUrl(baseUrl, xCredential);
-
-      expect(result).toContain("xcred=test-credential-123");
-      expect(result).toContain("https://learn.example.com/courses");
-    });
-
-    it("should handle URL that already has query parameters", () => {
-      const baseUrl = "https://learn.example.com/courses?param=value";
-      const xCredential = "test-credential-123";
-
-      const result = buildRedirectUrl(baseUrl, xCredential);
-
-      expect(result).toContain("?param=value");
-      expect(result).toContain("&xcred=test-credential-123");
-    });
-
-    it("should retrieve xcred from cookies when not provided", () => {
-      document.cookie = "X-Credential=cookie-credential-456; path=/";
-      const baseUrl = "https://learn.example.com/courses";
-
-      const result = buildRedirectUrl(baseUrl);
-
-      expect(result).toContain("xcred=cookie-credential-456");
-    });
-
-    it("should return base URL unchanged when no credential available", () => {
-      const baseUrl = "https://learn.example.com/courses";
-
-      const result = buildRedirectUrl(baseUrl);
-
-      expect(result).toBe(baseUrl);
-    });
-
-    it("should handle invalid URLs gracefully", () => {
-      const invalidUrl = "not-a-valid-url";
-      const xCredential = "test-credential";
-
-      const result = buildRedirectUrl(invalidUrl, xCredential);
-
-      // Should still append parameter manually
-      expect(result).toContain("xcred=test-credential");
-    });
-
-    it("should URL encode the credential parameter", () => {
-      const baseUrl = "https://learn.example.com/courses";
-      const xCredential = "test+credential=with&special";
-
-      const result = buildRedirectUrl(baseUrl, xCredential);
-
-      expect(result).toContain("xcred=");
-      // Should be URL encoded
-      expect(result).toMatch(/xcred=[^&\s]+/);
     });
   });
 

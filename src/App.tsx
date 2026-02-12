@@ -9,13 +9,29 @@ import {
   createUserSessionFromToken,
   getCookie
 } from "./functions";
-import { authRefresh } from "./services";
+import { authRefresh, setAuthorityOverride, clearAuthorityOverride } from "./services";
 import type { AppProps } from "./types";
 import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect } = props;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Set authority override when provided via props
+  useEffect(() => {
+    if (authority) {
+      setAuthorityOverride(authority);
+      console.log(`${LOG_PREFIX.AUTH} Authority override set to: ${authority}`);
+    } else {
+      clearAuthorityOverride();
+      console.log(`${LOG_PREFIX.AUTH} Using automatic authority detection`);
+    }
+
+    // Cleanup: clear authority override when component unmounts
+    return () => {
+      clearAuthorityOverride();
+    };
+  }, [authority]);
 
   // Auto-login using refresh token if available
   useEffect(() => {

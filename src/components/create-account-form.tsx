@@ -47,6 +47,7 @@ const CreateAccountForm = ({
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
+  const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Checked by default
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
@@ -176,6 +177,7 @@ const CreateAccountForm = ({
       setShowBanner(false);
       setEmailExists(false);
       setEmailCheckError(false);
+      setEmailCheckErrorMessage("");
       return;
     }
 
@@ -201,7 +203,9 @@ const CreateAccountForm = ({
       } catch (error) {
         console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Email check failed:`, error);
         // Show error banner for API failure (no toast for check-email)
+        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. You can still proceed with registration.";
         setEmailCheckError(true);
+        setEmailCheckErrorMessage(errorMsg);
         setShowBanner(true);
         setEmailExists(false);
       } finally {
@@ -427,10 +431,11 @@ const CreateAccountForm = ({
             {showBanner && emailCheckError && (
               <Banner
                 type={MessageType.ERROR}
-                message="Unable to verify email. You can still proceed with registration."
+                message={emailCheckErrorMessage}
                 onClose={() => {
                   setShowBanner(false);
                   setEmailCheckError(false);
+                  setEmailCheckErrorMessage("");
                 }}
                 className="mb-4!"
               />
