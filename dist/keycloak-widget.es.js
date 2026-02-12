@@ -16361,10 +16361,11 @@ class rb {
         console.warn(`[ThemeWidget] Brand not found: ${r}. Using default theme.`);
         return;
       }
-      console.log("functionfunctionfunction", c), localStorage.setItem("subsidiary", c.token), localStorage.setItem(
+      localStorage.setItem("subsidiary", c.token), localStorage.setItem(
         "brand_data",
         JSON.stringify({
-          id: c.token,
+          id: c.folder,
+          // Use folder name (e.g., "elite") instead of token (e.g., "dev-elite")
           domain: c.domain,
           name: c.name
         })

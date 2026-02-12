@@ -85,11 +85,11 @@ export class ThemeWidget {
       localStorage.setItem(
         "brand_data",
         JSON.stringify({
-          id: brand.token,
+          id: brand.folder, // Use folder name (e.g., "elite") instead of token (e.g., "dev-elite")
           domain: brand.domain,
           name: brand.name,
         })
-      ); // Assuming token format like "dev-brand1"
+      );
 
       // Fetch theme configuration
       const themeUrl = `${this.cdnBaseUrl}/${brand.folder}/theme.json`;
