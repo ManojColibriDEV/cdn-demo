@@ -62,12 +62,7 @@ const ResetPasswordSuccess = ({
 
         {/* Success Icon */}
         <div className="flex! justify-center! mb-4!">
-          <img
-            src={badgeCheckIcon}
-            alt="Success"
-            aria-hidden="true"
-            className="w-16! h-16!"
-          />
+          <img src={badgeCheckIcon} alt="Success" aria-hidden="true" className="w-16! h-16!" />
         </div>
 
         {/* Header */}
@@ -75,19 +70,13 @@ const ResetPasswordSuccess = ({
           <h2 id="reset-success-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-3!">
             Check your email
           </h2>
-          <p className="text-base! text-gray-700! mb-2!">
-            We've sent a password reset link to
-          </p>
-          <p className="text-base! font-semibold! text-gray-900! mb-4!">
-            {email}
-          </p>
+          <p className="text-base! text-gray-700! mb-2!">We've sent a password reset link to</p>
+          <p className="text-base! font-semibold! text-gray-900! mb-4!">{email}</p>
           <p className="text-sm! text-gray-800! mb-2!">
-            Follow the instructions in the email to reset your password and
-            return to checkout.
+            Follow the instructions in the email to reset your password and return to checkout.
           </p>
           <p className="text-xs! text-gray-500!">
-            Didn't receive the email? Check your spam folder or try again in a
-            few minutes.
+            Didn't receive the email? Check your spam folder or try again in a few minutes.
           </p>
         </div>
 

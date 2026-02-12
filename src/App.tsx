@@ -9,13 +9,29 @@ import {
   createUserSessionFromToken,
   getCookie
 } from "./functions";
-import { authRefresh } from "./services";
+import { authRefresh, setAuthorityOverride, clearAuthorityOverride } from "./services";
 import type { AppProps } from "./types";
 import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect } = props;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Set authority override when provided via props
+  useEffect(() => {
+    if (authority) {
+      setAuthorityOverride(authority);
+      console.log(`${LOG_PREFIX.AUTH} Authority override set to: ${authority}`);
+    } else {
+      clearAuthorityOverride();
+      console.log(`${LOG_PREFIX.AUTH} Using automatic authority detection`);
+    }
+
+    // Cleanup: clear authority override when component unmounts
+    return () => {
+      clearAuthorityOverride();
+    };
+  }, [authority]);
 
   // Auto-login using refresh token if available
   useEffect(() => {
@@ -63,30 +79,27 @@ const App = (props: AppProps) => {
                 return;
               }
 
-              const expiresIn =
-                (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
+              const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
               // Store new access token in cookies (with encoding)
-              setAuthCookie(
-                COOKIE_NAMES.ACCESS_TOKEN,
-                tokens.access_token,
-                expiresIn,
-                true,
-              );
+              setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
               // Store X-Credential without encoding to preserve exact format
               if (userSession.decoded.x_credentials) {
                 setAuthCookie(
                   COOKIE_NAMES.X_CREDENTIAL,
                   userSession.decoded.x_credentials,
                   expiresIn,
-                  false,
+                  false
                 );
               }
 
               // Store access token in localStorage (always)
               localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
-              
+              localStorage.setItem(
+                STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+                (Date.now() + expiresIn * 1000).toString()
+              );
+
               // NOTE: X-Credential is stored in cookies only, not localStorage
 
               // Update refresh token in localStorage (always store it)
@@ -96,10 +109,7 @@ const App = (props: AppProps) => {
                 // This preserves the original user choice
                 const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
                 if (hadRememberMe) {
-                  localStorage.setItem(
-                    STORAGE_KEYS.REFRESH_TOKEN_TIME,
-                    Date.now().toString(),
-                  );
+                  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
                 }
               }
               console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
@@ -110,7 +120,7 @@ const App = (props: AppProps) => {
               if (onRedirect) {
                 console.log(
                   `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
-                  userSession,
+                  userSession
                 );
                 onRedirect(targetUrl, userSession);
               }
@@ -139,8 +149,8 @@ const App = (props: AppProps) => {
   }, [props.redirectUrl]);
 
   useEffect(() => {
-    authority && localStorage.setItem('authority', authority);
-    subsidiary && localStorage.setItem('subsidiary', subsidiary);
+    authority && localStorage.setItem("authority", authority);
+    subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
   const handleEmbeddedLoginSuccess = () => {

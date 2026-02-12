@@ -17,8 +17,7 @@ declare global {
   }
 }
 
-const widgetStyles =
-  typeof window !== "undefined" ? window.__widgetStyles?.["widget"] || "" : "";
+const widgetStyles = typeof window !== "undefined" ? window.__widgetStyles?.["widget"] || "" : "";
 
 if (renderMode === "TEST") {
   // Apply custom primary color if provided
@@ -54,13 +53,12 @@ if (renderMode === "TEST") {
     <BrowserRouter>
       <StrictMode>
         <App
-          authority="dev"
           subsidiary="allied"
           showLogin={true}
           autoRedirection={true}
         />
       </StrictMode>
-    </BrowserRouter>,
+    </BrowserRouter>
   );
 } else {
   // Web Component mode for production deployment
@@ -123,8 +121,7 @@ if (renderMode === "TEST") {
     private applyCustomPrimaryColor(shadowRoot: ShadowRoot) {
       // Support both kebab-case (HTML) and camelCase (React/JSX)
       const customColor =
-        this.getAttribute("custom-primary-color") ||
-        this.getAttribute("customPrimaryColor");
+        this.getAttribute("custom-primary-color") || this.getAttribute("customPrimaryColor");
       if (customColor && customColor.trim() !== "") {
         // Create a style element for custom color overrides
         const styleElement = document.createElement("style");
@@ -166,9 +163,7 @@ if (renderMode === "TEST") {
 
     private async loadThemeFromDomain(shadowRoot: ShadowRoot) {
       try {
-        console.log(
-          "[Widget] No subsidiary provided, attempting auto-detection from domain",
-        );
+        console.log("[Widget] No subsidiary provided, attempting auto-detection from domain");
         await createThemeWidget({
           shadowRoot: shadowRoot,
           autoDetect: true,
@@ -252,8 +247,7 @@ if (renderMode === "TEST") {
 
       // Support both kebab-case (HTML) and camelCase (React/JSX) for autoRedirection
       const autoRedirectionAttr =
-        this.getAttribute("auto-redirection") ||
-        this.getAttribute("autoRedirection");
+        this.getAttribute("auto-redirection") || this.getAttribute("autoRedirection");
       // Default to true if attribute is not set, false only if explicitly set to "false"
       const autoRedirection = autoRedirectionAttr !== "false";
 
@@ -282,7 +276,7 @@ if (renderMode === "TEST") {
 
     public logout() {
       console.log("[Widget] logout() called");
-      
+
       // Clear all authentication state using comprehensive function
       clearAuthTokens();
 
@@ -313,7 +307,7 @@ if (renderMode === "TEST") {
           <StrictMode>
             <App {...props} />
           </StrictMode>
-        </BrowserRouter>,
+        </BrowserRouter>
       );
     }
   }

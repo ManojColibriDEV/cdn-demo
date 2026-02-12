@@ -10,13 +10,7 @@ import type { EmbeddedLoginFormProps } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
-import {
-  MessageType,
-  EMAIL_REGEX,
-  ButtonType,
-  ButtonVariant,
-  INFO_MESSAGES,
-} from "../constants";
+import { MessageType, EMAIL_REGEX, ButtonType, ButtonVariant, INFO_MESSAGES } from "../constants";
 
 const EmbeddedLoginForm = ({
   onSuccess,
@@ -39,8 +33,11 @@ const EmbeddedLoginForm = ({
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
+  const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO>(MessageType.INFO);
+  const [toastType, setToastType] = useState<
+    MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
+  >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -56,6 +53,7 @@ const EmbeddedLoginForm = ({
       setEmailExists(false);
       setShowBanner(false);
       setEmailCheckError(false);
+      setEmailCheckErrorMessage("");
       return;
     }
 
@@ -90,7 +88,9 @@ const EmbeddedLoginForm = ({
       } catch (error) {
         console.error("[EmbeddedLogin] Email check failed:", error);
         // Show error banner for API failure (no toast for check-email)
+        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. You can still proceed with login.";
         setEmailCheckError(true);
+        setEmailCheckErrorMessage(errorMsg);
         setShowBanner(true);
         setEmailExists(false);
       } finally {
@@ -144,8 +144,7 @@ const EmbeddedLoginForm = ({
       onSuccess(tokens);
     } catch (error) {
       console.error("[EmbeddedLogin] Login failed:", error);
-      const errorMsg =
-        error instanceof Error ? error.message : "Authentication failed";
+      const errorMsg = error instanceof Error ? error.message : "Authentication failed";
       setErrorMessage(errorMsg);
       setToastMessage(errorMsg);
       setToastType(MessageType.ERROR);
@@ -222,7 +221,9 @@ const EmbeddedLoginForm = ({
         </Button>
 
         <div className="mb-3! text-center!">
-          <h2 id="login-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-0!">{title}</h2>
+          <h2 id="login-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-0!">
+            {title}
+          </h2>
           <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
@@ -268,15 +269,16 @@ const EmbeddedLoginForm = ({
               className="mb-4!"
             />
           )}
-          
+
           {/* Banner for API error */}
           {showBanner && emailCheckError && (
             <Banner
               type={MessageType.ERROR}
-              message="Unable to verify email. You can still proceed with login."
+              message={emailCheckErrorMessage}
               onClose={() => {
                 setShowBanner(false);
                 setEmailCheckError(false);
+                setEmailCheckErrorMessage("");
               }}
               className="mb-4!"
             />
@@ -438,11 +440,7 @@ const EmbeddedLoginForm = ({
         </form>
       </div>
       {toastMessage && (
-        <Toast
-          message={toastMessage}
-          type={toastType}
-          onClose={() => setToastMessage("")}
-        />
+        <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
       )}
     </div>
   );
