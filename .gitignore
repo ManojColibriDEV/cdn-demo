@@ -25,3 +25,9 @@ dist-ssr
 
 # NPM package artifacts
 *.tgz
+
+# Test coverage
+coverage/
+coverage-summary.json
+*.lcov
+.nyc_output/
