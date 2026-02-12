@@ -80,7 +80,6 @@ export class ThemeWidget {
         console.warn(`[ThemeWidget] Brand not found: ${brandFolderOrToken}. Using default theme.`);
         return;
       }
-      console.log("functionfunctionfunction", brand);
 
       localStorage.setItem("subsidiary", brand.token);
       localStorage.setItem(

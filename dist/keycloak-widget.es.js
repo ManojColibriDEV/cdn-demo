@@ -16364,7 +16364,7 @@ class rb {
       console.log("functionfunctionfunction", c), localStorage.setItem("subsidiary", c.token), localStorage.setItem(
         "brand_data",
         JSON.stringify({
-          id: c.folder,
+          id: c.token,
           domain: c.domain,
           name: c.name
         })

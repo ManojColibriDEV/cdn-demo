@@ -136,7 +136,7 @@ describe("ThemeWidget Service", () => {
       expect(localStorage.getItem("brand_data")).toBeTruthy();
 
       const brandData = JSON.parse(localStorage.getItem("brand_data") || "{}");
-      expect(brandData.id).toBe("elite");
+      expect(brandData.id).toBe("dev-elite");
       expect(brandData.domain).toBe("elitelearning.com");
     });
 
@@ -157,7 +157,7 @@ describe("ThemeWidget Service", () => {
       expect(localStorage.getItem("subsidiary")).toBe("dev-cebroker");
 
       const brandData = JSON.parse(localStorage.getItem("brand_data") || "{}");
-      expect(brandData.id).toBe("cebroker");
+      expect(brandData.id).toBe("dev-cebroker");
     });
 
     it("should handle non-existent brand gracefully", async () => {
