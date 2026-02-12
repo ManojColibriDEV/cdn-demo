@@ -4,10 +4,10 @@ import EmbeddedLoginForm from "./components/embedded-login-form";
 import {
   checkTokenAndRedirect,
   isRefreshTokenValid,
-  buildRedirectUrl,
   setAuthCookie,
   getDefaultRedirectUrl,
   createUserSessionFromToken,
+  getCookie
 } from "./functions";
 import { authRefresh } from "./services";
 import type { AppProps } from "./types";
@@ -28,7 +28,7 @@ const App = (props: AppProps) => {
           // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
           const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
           if (props.autoRedirection) {
-            window.location.href = buildRedirectUrl(targetUrl);
+            window.location.href = targetUrl;
           } else {
             // If auto-redirect is disabled, trigger onRedirect callback only
             if (onRedirect && props.redirectUrl) {
@@ -48,7 +48,8 @@ const App = (props: AppProps) => {
 
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
-        if (hasValidRefreshToken) {
+        const getAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN);
+        if (hasValidRefreshToken && getAccessToken) {
           const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (refreshToken) {
             const response = await authRefresh(refreshToken);
@@ -108,13 +109,10 @@ const App = (props: AppProps) => {
                 onRedirect(targetUrl, userSession);
               }
 
-              // Redirect to target URL (with xcred for cross-domain auth)
+              // Redirect to target URL (credentials stored in cookies)
               // Only auto-redirect if autoRedirection prop is true
               if (props.autoRedirection) {
-                window.location.href = buildRedirectUrl(
-                  targetUrl,
-                  userSession.decoded.x_credentials
-                );
+                window.location.href = targetUrl;
               }
             }
           }
@@ -139,7 +137,7 @@ const App = (props: AppProps) => {
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
-  const handleEmbeddedLoginSuccess = (userSession: any) => {
+  const handleEmbeddedLoginSuccess = () => {
     if (props.handleClose) {
       props.handleClose();
     }
@@ -147,8 +145,6 @@ const App = (props: AppProps) => {
     // Mark user as authenticated
     setIsAuthenticated(true);
 
-    // Get x_credentials from userSession for cross-domain auth
-    const xCredential = userSession?.userInfo?.x_credentials || userSession?.x_credentials;
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
       const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -162,8 +158,8 @@ const App = (props: AppProps) => {
 
     if (props.autoRedirection) {
       setTimeout(() => {
-        // Append xcred to redirect URL for cross-domain authentication
-        window.location.href = buildRedirectUrl(targetUrl, xCredential);
+        // Redirect without URL parameters - credentials stored in cookies only
+        window.location.href = targetUrl;
       }, 100);
     }
   };

@@ -56,8 +56,7 @@ if (renderMode === "TEST") {
           authority="dev"
           subsidiary="allied"
           showLogin={true}
-          autoRedirection={false}
-          onRedirect={() => {}}
+          autoRedirection={true}
         />
       </StrictMode>
     </BrowserRouter>

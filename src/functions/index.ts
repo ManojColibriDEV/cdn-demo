@@ -8,50 +8,18 @@ import {
   TOKEN_EXPIRY,
   PASSWORD_RULES,
   PASSWORD_REGEX,
-  LOG_PREFIX,
-  URL_PARAMS,
+  LOG_PREFIX
 } from "../constants";
 
 // Re-export cookie helper functions for convenience
 export {
   setAuthCookie,
   clearAuthCookie,
+  getCookie,
   getCookieDomain,
   getAuthorityFromUrl,
   getDefaultRedirectUrl,
 } from "../utils/cookieHelper";
-
-/**
- * Build redirect URL with xcred parameter for cross-domain authentication
- * @param baseUrl - Base URL to redirect to
- * @param xCredential - Optional x-credential token
- * @returns URL with xcred parameter appended
- */
-export const buildRedirectUrl = (baseUrl: string, xCredential?: string | null): string => {
-  if (!xCredential) {
-    // Try to get from cookies only (X-Credential)
-    const xCredCookie = document.cookie
-      .split(";")
-      .find((row) => row.trim().startsWith(`${COOKIE_NAMES.X_CREDENTIAL}=`));
-    if (xCredCookie) {
-      xCredential = xCredCookie.split("=")[1] || null;
-    }
-  }
-
-  if (!xCredential) {
-    return baseUrl;
-  }
-
-  try {
-    const url = new URL(baseUrl);
-    url.searchParams.set(URL_PARAMS.XCRED, xCredential);
-    return url.toString();
-  } catch (e) {
-    // If URL parsing fails, append manually
-    const separator = baseUrl.includes("?") ? "&" : "?";
-    return `${baseUrl}${separator}${URL_PARAMS.XCRED}=${encodeURIComponent(xCredential)}`;
-  }
-};
 
 /**
  * Validate new password against security rules
