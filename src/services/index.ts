@@ -181,7 +181,21 @@ export const authLogin = async (username: string, password: string): Promise<any
     const response = await axios.post(url, payload, {
       headers: await getBrandHeaders(),
     });
-    return response.data;
+    
+    // Check if x-credential is in response headers
+    const xCredentialFromHeader = response.headers['x-credential'] || response.headers['X-Credential'];
+    
+    // Debug logging
+    console.log('🔍 Auth Response Headers:', response.headers);
+    console.log('🔍 x-credential from header:', xCredentialFromHeader);
+    console.log('🔍 x-credential from body:', response.data.x_credential);
+    console.log('🔍 Full response data:', response.data);
+    
+    // Return data with x_credential from header if available
+    return {
+      ...response.data,
+      x_credential: xCredentialFromHeader || response.data.x_credential
+    };
   } catch (error: any) {
     console.error("Error during auth login:", error);
 

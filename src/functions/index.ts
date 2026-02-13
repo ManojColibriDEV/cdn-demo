@@ -267,16 +267,32 @@ export const handleAuthentication = async (
   const authResponse = await authLogin(username, password);
   const { tokens, x_credential } = authResponse;
 
+  console.log('🔑 handleAuthentication - authResponse:', authResponse);
+  console.log('🔑 handleAuthentication - x_credential:', x_credential);
+
   // Store tokens if provided
   if (tokens.access_token) {
     const decoded: any = jwtDecode(tokens.access_token);
     const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+    console.log('🔑 Decoded JWT:', decoded);
+    console.log('🔑 x_credentials in JWT:', decoded.x_credentials);
 
     // Set cookies for access token (with encoding)
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // Get x_credential from response or decoded token
     const xCred = x_credential || decoded.x_credentials;
+
+    console.log('🔑 Final xCred to be stored:', xCred);
+
+    // Set X-Credential cookie without encoding to preserve the exact format
+    if (xCred) {
+      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
+      console.log('✅ X-Credential cookie set successfully');
+    } else {
+      console.warn('⚠️ No x_credential found in response or JWT');
+    }
 
     // Set X-Credential cookie without encoding to preserve the exact format
     if (xCred) {
