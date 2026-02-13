@@ -92,4 +92,9 @@ describe("Banner Component", () => {
     rerender(<Banner message="Test" type={MessageType.INFO} />);
     expect(screen.getByText("Test")).toBeInTheDocument();
   });
+
+  it("should use default status role for unknown type", () => {
+    render(<Banner message="Unknown" type={"unknown" as any} />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
 });

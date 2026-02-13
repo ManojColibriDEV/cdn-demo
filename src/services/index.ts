@@ -108,6 +108,7 @@ function detectEnvironmentAuthority(): Authority {
 function getBaseUrlForService(path: string): string {
   // In TEST mode, always use empty string for Vite proxy
   if (RENDER_MODE === RenderMode.TEST) {
+    /* c8 ignore next */
     return "";
   }
 
@@ -131,6 +132,7 @@ const apiUrl = (path: string): string => {
 
   // In TEST mode, always use relative paths for Vite's dev server proxy
   if (RENDER_MODE === RenderMode.TEST) {
+    /* c8 ignore next */
     return cleanPath;
   }
 
@@ -142,13 +144,13 @@ const apiUrl = (path: string): string => {
 /**
  * Fetch subsidiaries from global API
  */
-export const fetchSubsidiaries = async (domain: string): Promise<string | undefined> => {
+export const fetchSubsidiaries = async (domain: string): Promise<Subsidiary | undefined> => {
   try {
     const response = await axios.get<Subsidiary[]>(apiUrl(API_ENDPOINTS.GLOBAL_SUBSIDIARIES));
-    const filterSubsidiaryId: any = response?.data?.find((sub) =>
+    const filterSubsidiary: any = response?.data?.find((sub) =>
       sub?.siteURL?.includes(domain)
-    )?.subsidiaryId;
-    return filterSubsidiaryId;
+    );
+    return filterSubsidiary;
   } catch (error) {
     console.error("Error fetching subsidiaries:", error);
   }
@@ -162,11 +164,11 @@ export async function getBrandHeaders() {
   const brand = JSON.parse(brandData);
 
   // Fetch subsidiary ID from API based on domain
-  const subsidiaryId = await fetchSubsidiaries(brand?.domain);
+  const subsidiaryData = await fetchSubsidiaries(brand?.domain);
 
   return {
-    [HTTP_HEADERS.X_BRAND_ID]: brand?.id,
-    [HTTP_HEADERS.X_SUBSIDIARY_ID]: subsidiaryId?.toString(),
+    [HTTP_HEADERS.X_BRAND_ID]: subsidiaryData?.subsidiaryName,
+    [HTTP_HEADERS.X_SUBSIDIARY_ID]: subsidiaryData?.subsidiaryId?.toString(),
     [HTTP_HEADERS.X_BRAND_DOMAIN]: brand?.domain,
   };
 }

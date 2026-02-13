@@ -92,4 +92,9 @@ describe("Toast Component", () => {
     // Should not call onClose after unmount
     expect(handleClose).not.toHaveBeenCalled();
   });
+
+  it("should use default status role for unknown type", () => {
+    render(<Toast message="Unknown" type={"unknown" as any} />);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+  });
 });

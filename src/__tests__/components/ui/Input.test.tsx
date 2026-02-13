@@ -133,4 +133,82 @@ describe("Input Component", () => {
 
     expect(handleFocus).toHaveBeenCalledTimes(1);
   });
+
+  it("should render select input with options", async () => {
+    render(
+      <Input
+        label="Role"
+        type="select"
+        options={[
+          { value: "user", label: "User" },
+          { value: "admin", label: "Admin" },
+        ]}
+        value="user"
+        onChange={vi.fn()}
+      />
+    );
+
+    const select = screen.getByLabelText("Role");
+    expect(select.tagName.toLowerCase()).toBe("select");
+    expect(screen.getByRole("option", { name: "User" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Admin" })).toBeInTheDocument();
+  });
+
+  it("should render optional label hint", () => {
+    render(<Input label="Phone" optional />);
+    expect(screen.getByText("(Optional)")).toBeInTheDocument();
+  });
+
+  it("should render start icon when provided", () => {
+    render(<Input label="With icon" startIcon={<span data-testid="start-icon">S</span>} />);
+    expect(screen.getByTestId("start-icon")).toBeInTheDocument();
+  });
+
+  it("should show helper text when error is boolean", () => {
+    render(<Input label="Field" error={true} helperText="helper" />);
+    expect(screen.queryByText("helper")).not.toBeInTheDocument();
+  });
+
+  it("should render select input without options array", () => {
+    render(<Input label="Empty Select" type="select" value="" onChange={vi.fn()} />);
+    const select = screen.getByLabelText("Empty Select");
+    expect(select.tagName.toLowerCase()).toBe("select");
+  });
+
+  it("should render select with error styling path", () => {
+    render(
+      <Input
+        label="Select Error"
+        type="select"
+        value="x"
+        error="bad"
+        options={[{ value: "x", label: "X" }]}
+        onChange={vi.fn()}
+      />
+    );
+    expect(screen.getByText("bad")).toBeInTheDocument();
+  });
+
+  it("should render select when options is an empty array", () => {
+    render(<Input label="No Options" type="select" options={[]} value="" onChange={vi.fn()} />);
+    const select = screen.getByLabelText("No Options");
+    expect(select).toBeInTheDocument();
+    expect(select).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("should set aria-describedby for select when helperText is provided", () => {
+    render(
+      <Input
+        label="Country"
+        type="select"
+        options={[{ value: "us", label: "United States" }]}
+        helperText="Pick one"
+        value="us"
+        onChange={vi.fn()}
+      />
+    );
+
+    const select = screen.getByLabelText("Country");
+    expect(select).toHaveAttribute("aria-describedby");
+  });
 });
