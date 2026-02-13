@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
+// Only Tailwind CSS for responsive layout
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
@@ -442,7 +443,7 @@ const CreateAccountForm = ({
             )}
 
             {/* First Name and Last Name */}
-            <div className="grid! grid-cols-2! gap-4! mt-0! ml-0! mb-4! mr-0!">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-0 ml-0 mb-4 mr-0">
               <Input
                 label="First Name"
                 id="firstName"
