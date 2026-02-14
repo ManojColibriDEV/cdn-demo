@@ -4,23 +4,33 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter } from "react-router-dom";
 import EmbeddedLoginForm from "../../components/embedded-login-form";
+import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
+import { STORAGE_KEYS, COOKIE_NAMES } from "../../constants";
 
 // Mock services
 vi.mock("../../services", () => ({
   checkEmail: vi.fn(),
+  authRegister: vi.fn(),
+  authRefresh: vi.fn(),
+  setAuthorityOverride: vi.fn(),
+  clearAuthorityOverride: vi.fn(),
 }));
 
 // Mock functions
 vi.mock("../../functions", () => ({
   handleAuthentication: vi.fn(),
+  checkTokenAndRedirect: vi.fn(),
+  isRefreshTokenValid: vi.fn(),
+  createUserSessionFromToken: vi.fn(),
   setAuthCookie: vi.fn(),
   clearAuthCookie: vi.fn(),
+  getCookie: vi.fn(),
   getCookieDomain: vi.fn(() => ""),
   getAuthorityFromUrl: vi.fn(() => "dev"),
   getDefaultRedirectUrl: vi.fn(() => "https://dev-learn.example.com/courses"),
@@ -109,17 +119,53 @@ describe("EmbeddedLoginForm Component", () => {
     const passwordInput = screen.getByPlaceholderText(/password/i);
     expect(passwordInput).toHaveAttribute("type", "password");
 
-    // Find and click the show/hide password button
-    const toggleButtons = screen.getAllByRole("button");
-    const toggleButton = toggleButtons.find(
-      (btn) =>
-        btn.textContent?.includes("Show") || btn.getAttribute("aria-label")?.includes("password")
-    );
+    const toggleButton = document.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    expect(toggleButton).toBeTruthy();
+    await user.click(toggleButton);
+    expect(passwordInput).toHaveAttribute("type", "text");
+  });
 
-    if (toggleButton) {
-      await user.click(toggleButton);
-      expect(passwordInput).toHaveAttribute("type", "text");
-    }
+  it("should open create account when clicking Create an Account button", async () => {
+    renderLoginForm();
+
+    fireEvent.click(screen.getByRole("button", { name: /Create an Account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("form", { name: /Create account form/i })).toBeInTheDocument();
+    });
+  });
+
+  it("should call embedded onSuccess from create-account success callback", async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+    vi.mocked(services.authRegister as any).mockResolvedValue({ message: "ok" });
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "new-access",
+      refresh_token: "new-refresh",
+      expires_in: 3600,
+      token_type: "Bearer",
+      scope: "openid",
+    } as any);
+
+    renderLoginForm({ onSuccess });
+    fireEvent.click(screen.getByRole("button", { name: /Create an Account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("form", { name: /Create account form/i })).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText(/email/i), "newperson@example.com");
+    await user.type(screen.getByPlaceholderText(/first name/i), "Jane");
+    await user.type(screen.getByPlaceholderText(/last name/i), "Doe");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPass9!");
+    await user.click(screen.getByRole("checkbox", { name: /remember me/i }));
+    fireEvent.submit(screen.getByRole("form", { name: /create account form/i }));
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalled();
+    });
   });
 
   it("should check email availability on blur", async () => {
@@ -203,6 +249,22 @@ describe("EmbeddedLoginForm Component", () => {
     });
   });
 
+  it("should return from reset password to login when back button is clicked", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByText(/forgot password/i));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Back to sign in/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /Back to sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Continue to login/i })).toBeInTheDocument();
+    });
+  });
+
   it("should validate email format before submission", async () => {
     const user = userEvent.setup();
     renderLoginForm();
@@ -210,11 +272,39 @@ describe("EmbeddedLoginForm Component", () => {
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "invalid-email");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = screen.getAllByRole("button", { name: /login|sign in|continue/i })[0];
     await user.click(submitButton);
 
     // Form validates email internally
     expect(emailInput).toHaveValue("invalid-email");
+  });
+
+  it("should skip API check for invalid email format containing @", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "bad@format");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should close email-not-found banner", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "nouser@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(screen.getByText(/No account found with this email address/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
+    await waitFor(() => {
+      expect(screen.queryByText(/No account found with this email address/i)).not.toBeInTheDocument();
+    });
   });
 
   it("should handle successful login", async () => {
@@ -297,4 +387,441 @@ describe("EmbeddedLoginForm Component", () => {
 
     expect(submitButton).toBeDisabled();
   });
+
+  it("should close on Escape key and overlay click", () => {
+    const handleClose = vi.fn();
+    renderLoginForm({ handleClose });
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(handleClose).toHaveBeenCalledTimes(1);
+
+    const dialog = screen.getByRole("dialog");
+    fireEvent.mouseDown(dialog, { target: dialog });
+    expect(handleClose).toHaveBeenCalledTimes(2);
+  });
+
+  it("should treat username input (without @) as existing and skip email API", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "plainusername");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should show and close email check error banner", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockRejectedValue(new Error("Email check failed"));
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "user@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(screen.getByText("Email check failed")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Email check failed")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should use fallback message when email check throws non-Error", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockRejectedValue({} as any);
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "fallback@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Unable to verify email. You can still proceed with login./i)).toBeInTheDocument();
+    });
+  });
+
+  it("should open create account flow from info banner action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "new@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Let's create one to continue\?/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /Let's create one to continue\?/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should return to login with returned email from create-account onSignIn", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "returnme@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await user.click(screen.getByRole("button", { name: /Let's create one to continue\?/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /^Sign In$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/email or username/i)).toHaveValue("returnme@example.com");
+    });
+  });
+
+  it("should close login toast notification", async () => {
+    const user = userEvent.setup();
+    vi.mocked(functions.handleAuthentication).mockRejectedValue(new Error("toast-close-login"));
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "toastloginuser");
+    await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /close notification/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /close notification/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /close notification/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it("should show login error message on authentication failure", async () => {
+    const user = userEvent.setup();
+    vi.mocked(functions.handleAuthentication).mockRejectedValue(new Error("Toast auth error"));
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "baduser");
+    await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.queryAllByText("Toast auth error").length).toBeGreaterThan(0);
+    });
+  });
+
+});
+
+
+describe("App Component", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+  });
+
+  const renderApp = (props: any = {}) =>
+    render(
+      <MemoryRouter>
+        <App showLogin={true} autoRedirection={false} {...props} />
+      </MemoryRouter>
+    );
+
+  it("sets authority override when authority prop exists and clears on unmount", () => {
+    const { unmount } = renderApp({ authority: "dev" });
+    expect(services.setAuthorityOverride).toHaveBeenCalledWith("dev");
+
+    unmount();
+    expect(services.clearAuthorityOverride).toHaveBeenCalled();
+  });
+
+  it("clears authority override when authority prop is missing", () => {
+    renderApp({ authority: undefined });
+    expect(services.clearAuthorityOverride).toHaveBeenCalled();
+  });
+
+  it("auto redirects when valid access token exists and autoRedirection is true", async () => {
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(true);
+
+    render(
+      <MemoryRouter>
+        <App showLogin={true} autoRedirection={true} redirectUrl="https://example.com/target" />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(window.location.href).toBe("https://example.com/target");
+    });
+  });
+
+  it("calls onRedirect when valid access token exists and autoRedirection is false", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-value");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "token-value",
+      userInfo: { email: "user@example.com" },
+      decoded: { exp: 9999999999 },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <App
+          showLogin={true}
+          autoRedirection={false}
+          redirectUrl="https://example.com/callback"
+          onRedirect={onRedirect}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(onRedirect).toHaveBeenCalled();
+    });
+  });
+
+  it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.getCookie).mockReturnValue("has-access");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+    vi.mocked(services.authRefresh).mockResolvedValue({
+      tokens: {
+        access_token: "new-access",
+        refresh_token: "new-refresh",
+      },
+    });
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "new-access",
+      userInfo: { email: "user@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600, x_credentials: "x-cred" },
+    } as any);
+
+    render(
+      <MemoryRouter>
+        <App
+          showLogin={true}
+          autoRedirection={false}
+          redirectUrl="https://example.com/after-refresh"
+          onRedirect={onRedirect}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(services.authRefresh).toHaveBeenCalledWith("refresh-token");
+      expect(functions.setAuthCookie).toHaveBeenCalledWith(
+        COOKIE_NAMES.ACCESS_TOKEN,
+        "new-access",
+        expect.any(Number),
+        true
+      );
+      expect(onRedirect).toHaveBeenCalled();
+    });
+  });
+
+  it("stops refresh flow when session creation fails", async () => {
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.getCookie).mockReturnValue("has-access");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
+    vi.mocked(services.authRefresh).mockResolvedValue({
+      tokens: { access_token: "new-access", refresh_token: "new-refresh" },
+    });
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
+
+    renderApp({ onRedirect: vi.fn() });
+
+    await waitFor(() => {
+      expect(services.authRefresh).toHaveBeenCalled();
+      expect(functions.setAuthCookie).not.toHaveBeenCalled();
+    });
+  });
+
+  it("clears refresh tokens when refresh is valid but access cookie is missing", async () => {
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.getCookie).mockReturnValue(null);
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r2");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t2");
+
+    renderApp();
+
+    await waitFor(() => {
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    });
+  });
+
+  it("logs embedded login errors via app handler", async () => {
+    const user = userEvent.setup();
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockRejectedValue(new Error("embedded-app-error"));
+
+    renderApp();
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it("calls app handleClose callback when child close button is clicked", async () => {
+    const user = userEvent.setup();
+    const handleClose = vi.fn();
+
+    renderApp({ handleClose });
+    await user.click(screen.getByRole("button", { name: /close dialog/i }));
+
+    expect(handleClose).toHaveBeenCalled();
+  });
+
+  it("redirects after embedded login success when autoRedirection is enabled", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "login-access-2",
+      refresh_token: "login-refresh-2",
+    } as any);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "login-access-2");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "login-access-2",
+      userInfo: { email: "user2@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
+    } as any);
+
+    renderApp({ autoRedirection: true, redirectUrl: "https://example.com/embedded-success" });
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "embeddeduser");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(
+      () => {
+        expect(window.location.href).toBe("https://example.com/embedded-success");
+      },
+      { timeout: 2000 }
+    );
+  });
+
+  it("auto redirects after refresh flow when autoRedirection is true", async () => {
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.getCookie).mockReturnValue("cookie-token");
+
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+
+    vi.mocked(services.authRefresh).mockResolvedValue({
+      tokens: { access_token: "refreshed-token", refresh_token: "new-refresh-token" },
+    });
+
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600, x_credentials: "xc-redir" },
+      access_token: "refreshed-token",
+      userInfo: {},
+    } as any);
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { href: "http://localhost/" },
+    });
+
+    render(
+      <MemoryRouter>
+        <App showLogin={true} autoRedirection={true} redirectUrl="https://example.com/refresh-redirect" />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect((window.location as any).href).toBe("https://example.com/refresh-redirect");
+    });
+
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: originalLocation,
+    });
+  });
+
+  it("handles embedded login success through app callback and onRedirect", async () => {
+    const user = userEvent.setup();
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "login-access",
+      refresh_token: "login-refresh",
+    } as any);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "login-access");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "login-access",
+      userInfo: { email: "user@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
+    } as any);
+
+    renderApp({ onRedirect, redirectUrl: "https://example.com/after-login", handleClose: vi.fn() });
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "appuser");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://example.com/after-login",
+        expect.objectContaining({ access_token: "login-access" })
+      );
+    });
+  });
+
+  it("clears tokens when refresh throws error", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.getCookie).mockReturnValue("has-access");
+    vi.mocked(services.authRefresh).mockRejectedValue(new Error("refresh failed"));
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r1");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t1");
+
+    renderApp();
+
+    await waitFor(() => {
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+      expect(errorSpy).toHaveBeenCalled();
+    });
+
+    errorSpy.mockRestore();
+  });
+
+  it("clears refresh data when refresh token is invalid", async () => {
+    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "stale-refresh");
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "stale-time");
+
+    renderApp();
+
+    await waitFor(() => {
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    });
+  });
+
 });

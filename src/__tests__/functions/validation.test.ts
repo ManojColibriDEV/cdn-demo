@@ -4,9 +4,18 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { validatePassword, checkTokenAndRedirect } from "../../functions";
+import {
+  validatePassword,
+  checkTokenAndRedirect,
+  isRefreshTokenValid,
+  clearAuthTokens,
+  handleAuthentication,
+  createUserSessionFromToken,
+} from "../../functions";
+import * as serviceModule from "../../services";
 import type { UpgradeUser } from "../../types";
 import { jwtDecode } from "jwt-decode";
+import { STORAGE_KEYS, TOKEN_EXPIRY, COOKIE_NAMES } from "../../constants";
 
 // Mock jwt-decode
 vi.mock("jwt-decode");
@@ -143,6 +152,14 @@ describe("Validation and Authentication Functions", () => {
       expect(checks.noNameParts).toBe(true);
     });
 
+    it("should handle empty email local-part when checking email tokens", () => {
+      const checks = validatePassword("SecureP@ss123!", {
+        displayName: "User Name",
+        email: "",
+      });
+      expect(checks.noEmailParts).toBe(true);
+    });
+
     it("should handle special characters correctly", () => {
       // Allowed special chars: @ . $ % ^ _ -
       const validSpecialChars = ["@", ".", "$", "%", "^", "_", "-"];
@@ -245,6 +262,221 @@ describe("Validation and Authentication Functions", () => {
       const result = checkTokenAndRedirect();
 
       expect(result).toBe(false);
+    });
+
+    it("should redirect when redirectUrl is provided", () => {
+      const futureTime = Math.floor(Date.now() / 1000) + 3600;
+
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=${mockValidToken}; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=${mockXCredential}; path=/`;
+
+      vi.mocked(jwtDecode).mockReturnValue({ exp: futureTime });
+
+      const result = checkTokenAndRedirect("https://example.com/home");
+
+      expect(result).toBe(true);
+      expect(window.location.href).toBe("https://example.com/home");
+    });
+
+    it("should return false when jwt decode throws", () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=${mockValidToken}; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=${mockXCredential}; path=/`;
+
+      vi.mocked(jwtDecode).mockImplementation(() => {
+        throw new Error("decode failed");
+      });
+
+      expect(checkTokenAndRedirect()).toBe(false);
+    });
+
+    it("should return false when decoded token has no exp", () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=${mockValidToken}; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=${mockXCredential}; path=/`;
+
+      vi.mocked(jwtDecode).mockReturnValue({});
+
+      expect(checkTokenAndRedirect()).toBe(false);
+    });
+
+    it("should validate using cookie token path without localStorage fallback", () => {
+      const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 100000).toString());
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=cookie.jwt.token; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=xc; path=/`;
+
+      vi.mocked(jwtDecode).mockReturnValue({ exp: futureTime });
+      expect(checkTokenAndRedirect()).toBe(true);
+    });
+
+    it("should return false on unexpected top-level errors", () => {
+      const spy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("storage-crash");
+      });
+
+      expect(checkTokenAndRedirect()).toBe(false);
+      spy.mockRestore();
+    });
+  });
+
+  describe("remaining auth helpers", () => {
+    it("isRefreshTokenValid should return false when timestamp missing", () => {
+      expect(isRefreshTokenValid()).toBe(false);
+    });
+
+    it("isRefreshTokenValid should return true for recent timestamp", () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      expect(isRefreshTokenValid()).toBe(true);
+    });
+
+    it("isRefreshTokenValid should return false for expired timestamp", () => {
+      localStorage.setItem(
+        STORAGE_KEYS.REFRESH_TOKEN_TIME,
+        (Date.now() - TOKEN_EXPIRY.REFRESH_TOKEN_MAX_AGE_MS - 1000).toString()
+      );
+      expect(isRefreshTokenValid()).toBe(false);
+    });
+
+    it("isRefreshTokenValid should return false on storage errors", () => {
+      const storageSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("storage broken");
+      });
+      expect(isRefreshTokenValid()).toBe(false);
+      storageSpy.mockRestore();
+    });
+
+    it("clearAuthTokens should clear auth localStorage keys", () => {
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "a");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "1");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, "2");
+      localStorage.setItem("user_info", "{}");
+      localStorage.setItem("authority", "dev");
+      localStorage.setItem("subsidiary", "elite");
+
+      clearAuthTokens();
+
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeNull();
+      expect(localStorage.getItem("user_info")).toBeNull();
+      expect(localStorage.getItem("authority")).toBeNull();
+      expect(localStorage.getItem("subsidiary")).toBeNull();
+    });
+
+    it("handleAuthentication stores tokens and rememberMe timestamp", async () => {
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          access_token: "access-token",
+          refresh_token: "refresh-token",
+        },
+        x_credential: "x-credential-header",
+      });
+
+      vi.mocked(jwtDecode).mockReturnValue({
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        x_credentials: "x-credential-jwt",
+      });
+
+      const tokens = await handleAuthentication("user@example.com", "Password123$", true);
+
+      expect(tokens.access_token).toBe("access-token");
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe("access-token");
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe("refresh-token");
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeTruthy();
+    });
+
+    it("handleAuthentication removes rememberMe timestamp when rememberMe false", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "existing");
+
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          access_token: "access-token-2",
+          refresh_token: "refresh-token-2",
+        },
+      });
+
+      vi.mocked(jwtDecode).mockReturnValue({
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        x_credentials: "x-credential-jwt",
+      });
+
+      await handleAuthentication("user@example.com", "Password123$", false);
+
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    });
+
+    it("handleAuthentication should continue when x_credential is missing", async () => {
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          access_token: "access-token-3",
+          refresh_token: "refresh-token-3",
+        },
+      });
+
+      vi.mocked(jwtDecode).mockReturnValue({
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+
+      await expect(
+        handleAuthentication("user@example.com", "Password123$", false)
+      ).resolves.toBeDefined();
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe("access-token-3");
+    });
+
+    it("handleAuthentication should hit no-x_credential warning branch", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          access_token: "access-token-4",
+          refresh_token: "refresh-token-4",
+        },
+      });
+
+      vi.mocked(jwtDecode).mockReturnValue({ exp: Math.floor(Date.now() / 1000) + 3600 });
+
+      await handleAuthentication("user@example.com", "Password123$", false);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("createUserSessionFromToken returns null when decode fails", () => {
+      vi.mocked(jwtDecode).mockImplementation(() => {
+        throw new Error("bad token");
+      });
+
+      expect(createUserSessionFromToken("bad")).toBeNull();
+    });
+
+    it("createUserSessionFromToken returns mapped user session", () => {
+      vi.mocked(jwtDecode).mockReturnValue({
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        studentId: "s1",
+        sub: "sub1",
+        email_verified: true,
+        x_credentials: "x1",
+        name: "Test User",
+        preferred_username: "testuser",
+        given_name: "Test",
+        family_name: "User",
+        email: "test@example.com",
+      });
+
+      const session = createUserSessionFromToken("token-value");
+
+      expect(session).not.toBeNull();
+      expect(session?.access_token).toBe("token-value");
+      expect(session?.decoded.x_credentials).toBe("x1");
+      expect(session?.userInfo.email).toBe("test@example.com");
     });
   });
 });

@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { ThemeWidget } from "../../services/theme";
+import { ThemeWidget, createThemeWidget } from "../../services/theme";
+import { cssInjectedByJsPlugin } from "../../tools/vite-plugin-css-injector";
 import { mockBrandsResponse, mockThemeConfig } from "../mocks/mockThemeResponses";
 
 describe("ThemeWidget Service", () => {
@@ -149,7 +150,9 @@ describe("ThemeWidget Service", () => {
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => mockThemeConfig,
+          json: async () => ({
+            styles: [{ name: "token-rgb", value: "255 0 0" }],
+          }),
         });
 
       await themeWidget.loadTheme("dev-cebroker");
@@ -229,6 +232,142 @@ describe("ThemeWidget Service", () => {
       const widgetDefault = new ThemeWidget();
 
       expect(widgetDefault).toBeInstanceOf(ThemeWidget);
+    });
+  });
+
+  describe("private method coverage", () => {
+    it("should format style values for hex, rgb and passthrough", () => {
+      const anyWidget = themeWidget as any;
+
+      expect(anyWidget.formatStyleValue("ff00aa")).toBe("#ff00aa");
+      expect(anyWidget.formatStyleValue("#00ffaa")).toBe("#00ffaa");
+      expect(anyWidget.formatStyleValue("255 87 51")).toBe("rgba(255, 87, 51, 1)");
+      expect(anyWidget.formatStyleValue("1rem")).toBe("1rem");
+    });
+
+    it("should apply and remove theme style element", () => {
+      const anyWidget = themeWidget as any;
+      anyWidget.applyTheme({
+        styles: [
+          { name: "color-primary", value: "ff0000" },
+          { name: "color-secondary", value: "255 0 0" },
+        ],
+      });
+
+      const styleElement = document.querySelector("style[data-theme-widget='true']");
+      expect(styleElement).toBeTruthy();
+
+      themeWidget.removeTheme();
+      expect(document.querySelector("style[data-theme-widget='true']")).toBeNull();
+      expect(themeWidget.getCurrentBrand()).toBeNull();
+    });
+
+    it("should append style element into shadow root when available", () => {
+      const host = document.createElement("div");
+      const shadowRoot = host.attachShadow({ mode: "open" });
+      const widgetWithShadow = new ThemeWidget(mockCdnUrl, shadowRoot) as any;
+
+      widgetWithShadow.applyTheme({
+        styles: [{ name: "primary", value: "ffffff" }],
+      });
+
+      expect(shadowRoot.querySelector("style[data-theme-widget='true']")).toBeTruthy();
+    });
+  });
+
+  describe("createThemeWidget factory", () => {
+    it("should auto-detect and load detected brand", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "dev.elitelearning.com" },
+        writable: true,
+      });
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockThemeConfig });
+
+      const widget = await createThemeWidget({ autoDetect: true, cdnBaseUrl: mockCdnUrl });
+      expect(widget).toBeInstanceOf(ThemeWidget);
+      expect(localStorage.getItem("subsidiary")).toBe("dev-elite");
+    });
+
+    it("should load provided brand identifier", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse })
+        .mockResolvedValueOnce({ ok: true, json: async () => mockThemeConfig });
+
+      const widget = await createThemeWidget({ brandToken: "dev-elite", cdnBaseUrl: mockCdnUrl });
+      expect(widget).toBeInstanceOf(ThemeWidget);
+      expect(localStorage.getItem("subsidiary")).toBe("dev-elite");
+    });
+
+    it("should skip load when autoDetect is true but no brand is detected", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "unknown.domain.local" },
+        writable: true,
+      });
+
+      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse });
+
+      const widget = await createThemeWidget({ autoDetect: true, cdnBaseUrl: mockCdnUrl });
+      expect(widget).toBeInstanceOf(ThemeWidget);
+      expect(localStorage.getItem("subsidiary")).toBeNull();
+    });
+
+    it("should return widget immediately when no options are provided", async () => {
+      const widget = await createThemeWidget({});
+      expect(widget).toBeInstanceOf(ThemeWidget);
+    });
+  });
+
+  describe("cssInjectedByJsPlugin", () => {
+    it("should return plugin metadata", () => {
+      const plugin = cssInjectedByJsPlugin();
+      expect(plugin.name).toBe("vite-plugin-css-injector");
+      expect(plugin.apply).toBe("build");
+      expect(plugin.enforce).toBe("post");
+      expect(typeof plugin.generateBundle).toBe("function");
+    });
+
+    it("should inject css into js chunk and remove css files", () => {
+      const plugin = cssInjectedByJsPlugin();
+      const bundle: any = {
+        "style.css": { type: "asset", source: ".x{color:red}" },
+        "main.js": { type: "chunk", code: "console.log('hello')" },
+      };
+
+      plugin.generateBundle?.({}, bundle);
+
+      expect(bundle["style.css"]).toBeUndefined();
+      expect(bundle["main.js"].code).toContain("window.__widgetStyles");
+      expect(bundle["main.js"].code).toContain("console.log('hello')");
+    });
+
+    it("should no-op when css or js files are missing", () => {
+      const plugin = cssInjectedByJsPlugin();
+      const bundleWithoutCss: any = { "main.js": { type: "chunk", code: "x" } };
+      plugin.generateBundle?.({}, bundleWithoutCss);
+      expect(bundleWithoutCss["main.js"].code).toBe("x");
+
+      const bundleWithoutJs: any = { "style.css": { type: "asset", source: "y" } };
+      plugin.generateBundle?.({}, bundleWithoutJs);
+      expect(bundleWithoutJs["style.css"]).toBeDefined();
+    });
+
+    it("should keep non-chunk js code unchanged while still removing css assets", () => {
+      const plugin = cssInjectedByJsPlugin();
+      const bundle: any = {
+        "style.css": { type: "asset", source: ".a{color:blue}" },
+        "main.js": { type: "asset", code: "plain-asset" },
+      };
+
+      plugin.generateBundle?.({}, bundle);
+
+      expect(bundle["style.css"]).toBeUndefined();
+      expect(bundle["main.js"].code).toBe("plain-asset");
     });
   });
 });

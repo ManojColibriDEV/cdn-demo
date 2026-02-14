@@ -9,6 +9,7 @@ import {
   getAuthorityFromUrl,
   getDefaultRedirectUrl,
   setAuthCookie,
+  getCookie,
   clearAuthCookie,
 } from "../../utils/cookieHelper";
 
@@ -75,6 +76,15 @@ describe("Cookie Helper Utilities", () => {
       });
 
       expect(getCookieDomain()).toBe(".example.io");
+    });
+
+    it("should return empty string for single-part hostnames", () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "internal" },
+        writable: true,
+      });
+
+      expect(getCookieDomain()).toBe("");
     });
   });
 
@@ -254,6 +264,15 @@ describe("Cookie Helper Utilities", () => {
       const cookies = document.cookie;
       expect(cookies).toContain("path_cookie=value");
     });
+
+    it("should set secure cookies on https protocol", () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "dev.elitelearning.com", protocol: "https:" },
+        writable: true,
+      });
+
+      expect(() => setAuthCookie("secure_cookie", "secure_value", 3600)).not.toThrow();
+    });
   });
 
   describe("clearAuthCookie", () => {
@@ -285,6 +304,33 @@ describe("Cookie Helper Utilities", () => {
       const cookies = document.cookie;
       expect(cookies).not.toContain("cookie1=value1");
       expect(cookies).toContain("cookie2=value2");
+    });
+
+    it("should clear cookie when domain is present", () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "dev.elitelearning.com", protocol: "https:" },
+        writable: true,
+      });
+
+      setAuthCookie("domain_cookie", "domain_value", 3600);
+      clearAuthCookie("domain_cookie");
+      expect(document.cookie).not.toContain("domain_cookie=domain_value");
+    });
+  });
+
+  describe("getCookie", () => {
+    it("should return decoded cookie value by default", () => {
+      setAuthCookie("encoded_test", "value+with=special&chars", 3600);
+      expect(getCookie("encoded_test")).toBe("value+with=special&chars");
+    });
+
+    it("should return raw cookie value when decode is false", () => {
+      setAuthCookie("raw_test", "plain_value_123", 3600, false);
+      expect(getCookie("raw_test", false)).toBe("plain_value_123");
+    });
+
+    it("should return null when cookie is missing", () => {
+      expect(getCookie("missing_cookie")).toBeNull();
     });
   });
 });

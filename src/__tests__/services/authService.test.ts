@@ -3,7 +3,7 @@
  * Tests for authLogin, authRegister, checkEmail, forgotPassword, authRefresh
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import {
@@ -14,6 +14,9 @@ import {
   authRefresh,
   fetchSubsidiaries,
   getBrandHeaders,
+  setAuthorityOverride,
+  getAuthorityOverride,
+  clearAuthorityOverride,
 } from "../../services";
 import {
   mockAuthLoginSuccessResponse,
@@ -96,6 +99,45 @@ describe("Authentication Service", () => {
 
       await expect(authLogin("test@example.com", "password")).rejects.toThrow();
     });
+
+    it("should prefer x-credential from response headers", async () => {
+      mockAxios
+        .onPost(/\/api\/auth$/)
+        .reply(
+          200,
+          {
+            ...mockAuthLoginSuccessResponse,
+            x_credential: "body-value",
+          },
+          { "x-credential": "header-value" }
+        );
+
+      const response = await authLogin("john.doe@example.com", "SecureP@ss123!");
+      expect(response.x_credential).toBe("header-value");
+    });
+
+    it("should fall back to response message field on error", async () => {
+      mockAxios.onPost(/\/api\/auth$/).reply(400, { message: "Login error message" });
+      await expect(authLogin("test@example.com", "password")).rejects.toThrow(
+        "Login error message"
+      );
+    });
+
+    it("should fall back to generic auth failed message", async () => {
+      mockAxios.onPost(/\/api\/auth$/).reply(500, {});
+      await expect(authLogin("test@example.com", "password")).rejects.toThrow();
+    });
+
+    it("should throw INVALID_CREDENTIALS when status is 401 without error payload", async () => {
+      mockAxios.onPost(/\/api\/auth$/).reply(401, {});
+      await expect(authLogin("test@example.com", "password")).rejects.toThrow();
+    });
+
+    it("should hit final auth failed fallback when thrown error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authLogin("test@example.com", "password")).rejects.toThrow();
+      spy.mockRestore();
+    });
   });
 
   describe("authRegister", () => {
@@ -132,6 +174,39 @@ describe("Authentication Service", () => {
       });
 
       await expect(authRegister(mockRegisterRequestData)).rejects.toThrow();
+    });
+
+    it("should handle details as a plain string", async () => {
+      mockAxios.onPost(/\/api\/register$/).reply(400, {
+        details: "String details error",
+      });
+
+      await expect(authRegister(mockRegisterRequestData)).rejects.toThrow("String details error");
+    });
+
+    it("should handle message field error", async () => {
+      mockAxios.onPost(/\/api\/register$/).reply(400, {
+        message: "Message field error",
+      });
+
+      await expect(authRegister(mockRegisterRequestData)).rejects.toThrow("Message field error");
+    });
+
+    it("should throw retry message on 500 without payload details", async () => {
+      mockAxios.onPost(/\/api\/register$/).reply(500);
+      await expect(authRegister(mockRegisterRequestData)).rejects.toThrow();
+    });
+
+    it("should hit final registration failed fallback when thrown error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authRegister(mockRegisterRequestData)).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should throw plain error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("plain-register-error"));
+      await expect(authRegister(mockRegisterRequestData)).rejects.toThrow("plain-register-error");
+      spy.mockRestore();
     });
   });
 
@@ -177,6 +252,31 @@ describe("Authentication Service", () => {
         "Email verification service encountered an error"
       );
     });
+
+    it("should handle response error field", async () => {
+      mockAxios.onPost(/\/api\/check-email$/).reply(400, { error: "email error" });
+      await expect(checkEmail("test@example.com")).rejects.toThrow("email error");
+    });
+
+    it("should handle response message field", async () => {
+      mockAxios.onPost(/\/api\/check-email$/).reply(400, { message: "email message" });
+      await expect(checkEmail("test@example.com")).rejects.toThrow("email message");
+    });
+
+    it("should handle generic fallback message", async () => {
+      mockAxios.onPost(/\/api\/check-email$/).reply(400, {});
+      await expect(checkEmail("test@example.com")).rejects.toThrow(
+        "Email verification failed"
+      );
+    });
+
+    it("should hit unable-to-verify fallback when error has no response and no message", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(checkEmail("test@example.com")).rejects.toThrow(
+        "Unable to verify email. Please try again."
+      );
+      spy.mockRestore();
+    });
   });
 
   describe("forgotPassword", () => {
@@ -202,6 +302,35 @@ describe("Authentication Service", () => {
       });
 
       await expect(forgotPassword("test@example.com")).rejects.toThrow();
+    });
+
+    it("should return not-found specific message when 404 has no error body", async () => {
+      mockAxios.onPost(/\/api\/forgot-password$/).reply(404, {});
+      await expect(forgotPassword("missing@example.com")).rejects.toThrow(
+        "We couldn't find an account with that email."
+      );
+    });
+
+    it("should handle response message field", async () => {
+      mockAxios.onPost(/\/api\/forgot-password$/).reply(400, { message: "forgot message" });
+      await expect(forgotPassword("test@example.com")).rejects.toThrow("forgot message");
+    });
+
+    it("should handle generic fallback error", async () => {
+      mockAxios.onPost(/\/api\/forgot-password$/).reply(500, {});
+      await expect(forgotPassword("test@example.com")).rejects.toThrow();
+    });
+
+    it("should hit reset-link fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(forgotPassword("test@example.com")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should use thrown error message when available", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("direct-forgot-error"));
+      await expect(forgotPassword("test@example.com")).rejects.toThrow("direct-forgot-error");
+      spy.mockRestore();
     });
   });
 
@@ -234,9 +363,9 @@ describe("Authentication Service", () => {
     it("should fetch and filter subsidiaries by domain", async () => {
       mockAxios.onGet(/\/global\/subsidiaries$/).reply(200, mockSubsidiariesResponse);
 
-      const subsidiaryId = await fetchSubsidiaries("elitelearning.com");
+      const subsidiary = await fetchSubsidiaries("elitelearning.com");
 
-      expect(subsidiaryId).toBe(1);
+      expect(subsidiary).toEqual(mockSubsidiariesResponse[0]);
     });
 
     it("should return undefined for non-matching domain", async () => {
@@ -263,9 +392,12 @@ describe("Authentication Service", () => {
 
       const headers = await getBrandHeaders();
 
-      expect(headers).toHaveProperty("X-Brand-Id", mockBrandData.id);
+      expect(headers).toHaveProperty("X-Brand-Id", mockSubsidiariesResponse[0].subsidiaryName);
       expect(headers).toHaveProperty("X-Brand-Domain", mockBrandData.domain);
-      expect(headers).toHaveProperty("X-Subsidiary-Id");
+      expect(headers).toHaveProperty(
+        "X-Subsidiary-Id",
+        mockSubsidiariesResponse[0].subsidiaryId.toString()
+      );
     });
 
     it("should return empty object when no brand data", async () => {
@@ -274,6 +406,154 @@ describe("Authentication Service", () => {
       const headers = await getBrandHeaders();
 
       expect(headers).toEqual({});
+    });
+  });
+
+  describe("authority override helpers", () => {
+    it("should set and get authority override", () => {
+      setAuthorityOverride("dev");
+      expect(getAuthorityOverride()).toBe("dev");
+    });
+
+    it("should clear authority override when null is passed", () => {
+      setAuthorityOverride("test");
+      setAuthorityOverride(null);
+      expect(getAuthorityOverride()).toBeNull();
+    });
+
+    it("should clear authority override explicitly", () => {
+      setAuthorityOverride("stage");
+      clearAuthorityOverride();
+      expect(getAuthorityOverride()).toBeNull();
+    });
+
+    it("should ignore invalid override and fallback to hostname detection", async () => {
+      setAuthorityOverride("invalid-env");
+      mockAxios.onPost(/\/api\/check-email$/).reply(200, { exists: true });
+      const result = await checkEmail("fallback@example.com");
+      expect(result.exists).toBe(true);
+      clearAuthorityOverride();
+    });
+  });
+
+  describe("webcomponent url authority detection", () => {
+    const originalLocation = window.location;
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      Object.defineProperty(window, "location", {
+        value: originalLocation,
+        writable: true,
+      });
+    });
+
+    it("builds full URLs in WEBCOMPONENT mode for dev/test/stage/prod", async () => {
+      const hostnames = [
+        "dev.elitelearning.com",
+        "dev-elitelearning.com",
+        "test.elitelearning.com",
+        "test-elitelearning.com",
+        "stage.elitelearning.com",
+        "stage-elitelearning.com",
+        "elitelearning.com",
+        "localhost",
+        "127.0.0.1",
+        "192.168.1.50",
+      ];
+
+      for (const hostname of hostnames) {
+        vi.resetModules();
+        vi.stubEnv("VITE_RENDER_MODE", "WEBCOMPONENT");
+
+        Object.defineProperty(window, "location", {
+          value: { ...originalLocation, hostname },
+          writable: true,
+        });
+
+        const axiosModule = await import("axios");
+        const localMock = new MockAdapter(axiosModule.default);
+        const svc = await import("../../services");
+
+        localMock.onPost().reply((config) => {
+          expect(config.url).toMatch(/^https?:\/\//);
+          return [200, { exists: true }];
+        });
+
+        await svc.checkEmail("user@example.com");
+        localMock.restore();
+      }
+    });
+
+    it("handles invalid authority override by falling back to hostname", async () => {
+      vi.resetModules();
+      vi.stubEnv("VITE_RENDER_MODE", "WEBCOMPONENT");
+      Object.defineProperty(window, "location", {
+        value: { ...originalLocation, hostname: "dev.elitelearning.com" },
+        writable: true,
+      });
+
+      localStorage.setItem("authority_override", "not-valid");
+
+      const axiosModule = await import("axios");
+      const localMock = new MockAdapter(axiosModule.default);
+      const svc = await import("../../services");
+
+      localMock.onPost().reply((config) => {
+        expect(config.url).toMatch(/^https?:\/\//);
+        return [200, { exists: true }];
+      });
+
+      const response = await svc.checkEmail("fallback2@example.com");
+      expect(response.exists).toBe(true);
+      localMock.restore();
+      localStorage.removeItem("authority_override");
+    });
+
+    it("uses valid authority override directly", async () => {
+      vi.resetModules();
+      vi.stubEnv("VITE_RENDER_MODE", "WEBCOMPONENT");
+      Object.defineProperty(window, "location", {
+        value: { ...originalLocation, hostname: "elitelearning.com" },
+        writable: true,
+      });
+
+      localStorage.setItem("authority_override", "dev");
+
+      const axiosModule = await import("axios");
+      const localMock = new MockAdapter(axiosModule.default);
+      const svc = await import("../../services");
+
+      localMock.onPost().reply((config) => {
+        expect(config.url).toContain("dev");
+        return [200, { exists: true }];
+      });
+
+      const response = await svc.checkEmail("override@example.com");
+      expect(response.exists).toBe(true);
+      localMock.restore();
+      localStorage.removeItem("authority_override");
+    });
+
+    it("uses global API URL branch for /global paths", async () => {
+      vi.resetModules();
+      vi.stubEnv("VITE_RENDER_MODE", "WEBCOMPONENT");
+      Object.defineProperty(window, "location", {
+        value: { ...originalLocation, hostname: "dev.elitelearning.com" },
+        writable: true,
+      });
+
+      const axiosModule = await import("axios");
+      const localMock = new MockAdapter(axiosModule.default);
+      const svc = await import("../../services");
+
+      localMock.onGet().reply((config) => {
+        expect(config.url).toContain("/global/subsidiaries");
+        expect(config.url).toMatch(/^https?:\/\//);
+        return [200, []];
+      });
+
+      await svc.fetchSubsidiaries("none.example.com");
+      localMock.restore();
     });
   });
 });

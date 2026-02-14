@@ -51,6 +51,7 @@ export default defineConfig({
         'src/vite-env.d.ts',
         'src/custom.d.ts',
         'src/main.tsx', // Entry point, hard to test
+        'src/types/index.ts', // Type-only module, no runtime code
       ],
       
       // Coverage thresholds - fail build if not met
