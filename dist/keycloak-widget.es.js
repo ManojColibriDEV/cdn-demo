@@ -12825,7 +12825,7 @@ function dn(n, r, s, o = !0) {
   const c = /* @__PURE__ */ new Date();
   c.setSeconds(c.getSeconds() + s);
   const d = xm(), h = d ? `; domain=${d}` : "", g = window.location.protocol === "https:" ? "; secure" : "", p = o ? encodeURIComponent(r) : r;
-  document.cookie = `${n}=${p}; expires=${c.toUTCString()}; path=/${h}${g}; SameSite=Strict`;
+  document.cookie = `${n}=${p}; expires=${c.toUTCString()}; path=/${h}${g}; SameSite=Lax`;
 }
 function yv(n, r = !0) {
   const s = document.cookie.split(";");
