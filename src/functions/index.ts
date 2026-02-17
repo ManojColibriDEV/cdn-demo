@@ -38,71 +38,112 @@ export const isRefreshTokenExpiredFromCookie = (): boolean => {
   }
 };
 
+const getStoredRefreshToken = (): string | null => {
+  return (
+    getCookie(COOKIE_NAMES.REFRESH_TOKEN, false) ||
+    localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+  );
+};
+
+const isJwtExpired = (token: string): boolean => {
+  try {
+    const decoded: any = jwtDecode(token);
+    const currentTime = Math.floor(Date.now() / 1000);
+    return !decoded.exp || currentTime >= decoded.exp;
+  } catch {
+    return true;
+  }
+};
+
+const isRefreshTokenUsable = (refreshToken: string): boolean => {
+  return !isJwtExpired(refreshToken);
+};
+
+export const refreshAuthenticationState = async (
+  refreshTokenOverride?: string
+): Promise<boolean> => {
+  try {
+    const refreshToken = refreshTokenOverride || getStoredRefreshToken();
+    if (!refreshToken) {
+      return false;
+    }
+
+    const response = await authRefresh(refreshToken);
+    if (!response?.tokens?.access_token) {
+      return false;
+    }
+
+    const tokens = response.tokens;
+    const userSession = createUserSessionFromToken(tokens.access_token);
+    if (!userSession) {
+      return false;
+    }
+
+    const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
+    if (expiresIn <= 0) {
+      return false;
+    }
+
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
+
+    const xCred = response.x_credential || userSession.decoded.x_credentials;
+    if (xCred) {
+      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+    localStorage.setItem(
+      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+      (Date.now() + expiresIn * 1000).toString()
+    );
+
+    if (tokens.refresh_token) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+      const refreshTokenExpiry = 30 * 24 * 60 * 60;
+      setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
+
+      const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      if (hadRememberMe) {
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error(`${LOG_PREFIX.TOKEN} refreshAuthenticationState Error:`, error);
+    return false;
+  }
+};
+
 // Function to handle silent token refresh in the background
 export const silentTokenRefresh = async () => {
-  const refreshToken = getCookie(COOKIE_NAMES.REFRESH_TOKEN, false);
-  if (!refreshToken) {
+  const refreshToken = getStoredRefreshToken();
+  if (!refreshToken || !isRefreshTokenUsable(refreshToken)) {
     return true;
   }
 
-  const decoded: any = jwtDecode(refreshToken);
-  const expiryTime = decoded.exp; // seconds
-  const currentTime = Math.floor(Date.now() / 1000);
-
-  const remainingTime = (expiryTime - currentTime) * 1000; // convert to ms
-
-  if (remainingTime <= 0) {
-    console.log("Already expired");
-    return;
-  }
-
+  const intervalMs = 60 * 1000;
   const timer = setInterval(async () => {
-    if (refreshToken) {
-      const response = await authRefresh(refreshToken);
-
-      if (response && response.tokens && response.tokens.access_token) {
-        const tokens = response.tokens;
-
-        // Create user session from token (includes decoded metadata)
-        const userSession = createUserSessionFromToken(tokens.access_token);
-        if (!userSession) {
-          return;
-        }
-
-        const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
-
-        // Store new access token in cookies (with encoding)
-        setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
-        // Store X-Credential without encoding to preserve exact format
-        if (userSession.decoded.x_credentials) {
-          setAuthCookie(
-            COOKIE_NAMES.X_CREDENTIAL,
-            userSession.decoded.x_credentials,
-            expiresIn,
-            false
-          );
-        }
-
-        // Store access token in localStorage (always)
-        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-        localStorage.setItem(
-          STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-          (Date.now() + expiresIn * 1000).toString()
-        );
-
-        // NOTE: X-Credential is stored in cookies only, not localStorage
-
-        // Update refresh token in localStorage (always store it)
-        if (tokens.refresh_token) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
-          const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-          if (hadRememberMe) {
-            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-          }
-        }
-      }
+    const currentRefreshToken = getStoredRefreshToken();
+    if (!currentRefreshToken || !isRefreshTokenUsable(currentRefreshToken)) {
+      clearInterval(timer);
+      return;
     }
-  }, remainingTime);
+
+    const xCredCookie =
+      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
+      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
+    const accessToken =
+      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+    const shouldRecoverSession =
+      !xCredCookie || isJwtExpired(xCredCookie) || !accessToken || isJwtExpired(accessToken);
+
+    if (shouldRecoverSession) {
+      await refreshAuthenticationState(currentRefreshToken);
+    }
+  }, intervalMs);
 
   return () => clearInterval(timer);
 };
@@ -243,6 +284,54 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
     }
   } catch (error) {
     console.error(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Error:`, error);
+    return false;
+  }
+};
+
+export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Promise<boolean> => {
+  const hasValidToken = checkTokenAndRedirect(redirectUrl);
+  if (hasValidToken) {
+    return true;
+  }
+
+  try {
+    const rememberMeEnabled = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+    if (!rememberMeEnabled) {
+      return false;
+    }
+
+    const refreshToken = getStoredRefreshToken();
+    if (!refreshToken) {
+      return false;
+    }
+
+    if (!isRefreshTokenUsable(refreshToken)) {
+      return false;
+    }
+
+    const xCredCookie =
+      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
+      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
+
+    const accessToken =
+      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+    const isXCredExpired = !xCredCookie || isJwtExpired(xCredCookie);
+    const isAccessExpired = !accessToken || isJwtExpired(accessToken);
+
+    if (!isXCredExpired && !isAccessExpired) {
+      return false;
+    }
+
+    const refreshed = await refreshAuthenticationState(refreshToken);
+    if (!refreshed) {
+      return false;
+    }
+
+    return checkTokenAndRedirect(redirectUrl);
+  } catch (error) {
+    console.error(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} checkTokenAndRedirectWithRefresh Error:`, error);
     return false;
   }
 };
