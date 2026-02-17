@@ -4,17 +4,18 @@ import EmbeddedLoginForm from "./components/embedded-login-form";
 import {
   checkTokenAndRedirect,
   isRefreshTokenValid,
+  isRefreshTokenExpiredFromCookie,
   setAuthCookie,
   getDefaultRedirectUrl,
   createUserSessionFromToken,
-  getCookie
+  silentTokenRefresh,
 } from "./functions";
 import { authRefresh, setAuthorityOverride, clearAuthorityOverride } from "./services";
 import type { AppProps } from "./types";
-import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
+import { STORAGE_KEYS, LOG_PREFIX, COOKIE_NAMES } from "./constants";
 
 const App = (props: AppProps) => {
-  const { authority, subsidiary, onRedirect } = props;
+  const { authority, subsidiary, onRedirect, onTokenValidityCheck } = props;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Set authority override when provided via props
@@ -32,11 +33,20 @@ const App = (props: AppProps) => {
       clearAuthorityOverride();
     };
   }, [authority]);
+  
+  useEffect(() => {
+    silentTokenRefresh();
+  }, []);
 
   // Auto-login using refresh token if available
   useEffect(() => {
     const attemptAutoLogin = async () => {
       try {
+        const isTokenValid = !isRefreshTokenExpiredFromCookie();
+        if (onTokenValidityCheck) {
+          onTokenValidityCheck(isTokenValid);
+        }
+
         // First check if access token is already valid
         const hasValidAccessToken = checkTokenAndRedirect();
         if (hasValidAccessToken) {
@@ -64,8 +74,7 @@ const App = (props: AppProps) => {
 
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
-        const getAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN);
-        if (hasValidRefreshToken && getAccessToken) {
+        if (hasValidRefreshToken) {
           const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
           if (refreshToken) {
             const response = await authRefresh(refreshToken);
@@ -115,6 +124,10 @@ const App = (props: AppProps) => {
               console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
               setIsAuthenticated(true);
 
+              if (onTokenValidityCheck) {
+                onTokenValidityCheck(true);
+              }
+
               // Trigger onRedirect callback with userSession from decoded token
               const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               if (onRedirect) {
@@ -146,7 +159,7 @@ const App = (props: AppProps) => {
     };
 
     attemptAutoLogin();
-  }, [props.redirectUrl]);
+  }, [props.redirectUrl, onTokenValidityCheck]);
 
   useEffect(() => {
     authority && localStorage.setItem("authority", authority);
