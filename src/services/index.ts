@@ -317,7 +317,13 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
     const response = await axios.post(url, payload, {
       headers: await getBrandHeaders(),
     });
-    return response.data;
+
+    const xCredentialFromHeader = response.headers["x-credential"] || response.headers["X-Credential"];
+
+    return {
+      ...response.data,
+      x_credential: xCredentialFromHeader || response.data.x_credential,
+    };
   } catch (error) {
     console.error("Error during token refresh:", error);
     throw error;

@@ -26,8 +26,10 @@ vi.mock("../../services", () => ({
 vi.mock("../../functions", () => ({
   handleAuthentication: vi.fn(),
   checkTokenAndRedirect: vi.fn(),
+  checkTokenAndRedirectWithRefresh: vi.fn(),
   isRefreshTokenValid: vi.fn(),
   isRefreshTokenExpiredFromCookie: vi.fn(),
+  refreshAuthenticationState: vi.fn(),
   silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
   setAuthCookie: vi.fn(),
@@ -523,6 +525,10 @@ describe("App Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
   });
 
   const renderApp = (props: any = {}) =>
@@ -546,7 +552,7 @@ describe("App Component", () => {
   });
 
   it("auto redirects when valid access token exists and autoRedirection is true", async () => {
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(true);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
 
     render(
       <MemoryRouter>
@@ -561,7 +567,7 @@ describe("App Component", () => {
 
   it("calls onRedirect when valid access token exists and autoRedirection is false", async () => {
     const onRedirect = vi.fn();
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(true);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-value");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "token-value",
@@ -587,17 +593,12 @@ describe("App Component", () => {
 
   it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
     const onRedirect = vi.fn();
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
-    vi.mocked(functions.getCookie).mockReturnValue("has-access");
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    vi.mocked(services.authRefresh).mockResolvedValue({
-      tokens: {
-        access_token: "new-access",
-        refresh_token: "new-refresh",
-      },
-    });
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "new-access",
       userInfo: { email: "user@example.com" },
@@ -616,39 +617,32 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(services.authRefresh).toHaveBeenCalledWith("refresh-token");
-      expect(functions.setAuthCookie).toHaveBeenCalledWith(
-        COOKIE_NAMES.ACCESS_TOKEN,
-        "new-access",
-        expect.any(Number),
-        true
-      );
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
       expect(onRedirect).toHaveBeenCalled();
     });
   });
 
   it("stops refresh flow when session creation fails", async () => {
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
-    vi.mocked(functions.getCookie).mockReturnValue("has-access");
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
-    vi.mocked(services.authRefresh).mockResolvedValue({
-      tokens: { access_token: "new-access", refresh_token: "new-refresh" },
-    });
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
 
-    renderApp({ onRedirect: vi.fn() });
+    renderApp({ onRedirect });
 
     await waitFor(() => {
-      expect(services.authRefresh).toHaveBeenCalled();
-      expect(functions.setAuthCookie).not.toHaveBeenCalled();
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
+      expect(onRedirect).not.toHaveBeenCalled();
     });
   });
 
   it("keeps refresh tokens when refresh is valid even if access cookie is missing", async () => {
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
-    vi.mocked(functions.getCookie).mockReturnValue(null);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r2");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t2");
 
@@ -664,7 +658,7 @@ describe("App Component", () => {
     const user = userEvent.setup();
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.handleAuthentication).mockRejectedValue(new Error("embedded-app-error"));
 
@@ -691,7 +685,7 @@ describe("App Component", () => {
   it("redirects after embedded login success when autoRedirection is enabled", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.handleAuthentication).mockResolvedValue({
       access_token: "login-access-2",
@@ -720,16 +714,13 @@ describe("App Component", () => {
   });
 
   it("auto redirects after refresh flow when autoRedirection is true", async () => {
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
-    vi.mocked(functions.getCookie).mockReturnValue("cookie-token");
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
 
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "refreshed-token");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-
-    vi.mocked(services.authRefresh).mockResolvedValue({
-      tokens: { access_token: "refreshed-token", refresh_token: "new-refresh-token" },
-    });
 
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600, x_credentials: "xc-redir" },
@@ -763,7 +754,7 @@ describe("App Component", () => {
     const user = userEvent.setup();
     const onRedirect = vi.fn();
 
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.handleAuthentication).mockResolvedValue({
       access_token: "login-access",
@@ -793,10 +784,9 @@ describe("App Component", () => {
 
   it("clears tokens when refresh throws error", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
-    vi.mocked(functions.getCookie).mockReturnValue("has-access");
-    vi.mocked(services.authRefresh).mockRejectedValue(new Error("refresh failed"));
+    vi.mocked(functions.refreshAuthenticationState).mockRejectedValue(new Error("refresh failed"));
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r1");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t1");
 
@@ -812,7 +802,7 @@ describe("App Component", () => {
   });
 
   it("clears refresh data when refresh token is invalid", async () => {
-    vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
 
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "stale-refresh");

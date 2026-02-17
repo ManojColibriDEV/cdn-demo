@@ -2,17 +2,17 @@ import { useEffect, Fragment, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import EmbeddedLoginForm from "./components/embedded-login-form";
 import {
-  checkTokenAndRedirect,
+  checkTokenAndRedirectWithRefresh,
   isRefreshTokenValid,
   isRefreshTokenExpiredFromCookie,
-  setAuthCookie,
+  refreshAuthenticationState,
   getDefaultRedirectUrl,
   createUserSessionFromToken,
   silentTokenRefresh,
 } from "./functions";
-import { authRefresh, setAuthorityOverride, clearAuthorityOverride } from "./services";
+import { setAuthorityOverride, clearAuthorityOverride } from "./services";
 import type { AppProps } from "./types";
-import { STORAGE_KEYS, LOG_PREFIX, COOKIE_NAMES } from "./constants";
+import { STORAGE_KEYS, LOG_PREFIX } from "./constants";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect, onTokenValidityCheck } = props;
@@ -48,7 +48,7 @@ const App = (props: AppProps) => {
         }
 
         // First check if access token is already valid
-        const hasValidAccessToken = checkTokenAndRedirect();
+        const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
           // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
@@ -75,74 +75,39 @@ const App = (props: AppProps) => {
         // If no valid access token, try to use refresh token (only if Remember Me was checked)
         const hasValidRefreshToken = isRefreshTokenValid();
         if (hasValidRefreshToken) {
-          const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-          if (refreshToken) {
-            const response = await authRefresh(refreshToken);
+          const refreshed = await refreshAuthenticationState();
+          if (refreshed) {
+            const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+            if (!accessToken) {
+              return;
+            }
 
-            if (response && response.tokens && response.tokens.access_token) {
-              const tokens = response.tokens;
+            const userSession = createUserSessionFromToken(accessToken);
+            if (!userSession) {
+              return;
+            }
 
-              // Create user session from token (includes decoded metadata)
-              const userSession = createUserSessionFromToken(tokens.access_token);
-              if (!userSession) {
-                return;
-              }
+            console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
+            setIsAuthenticated(true);
 
-              const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
+            if (onTokenValidityCheck) {
+              onTokenValidityCheck(true);
+            }
 
-              // Store new access token in cookies (with encoding)
-              setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
-              // Store X-Credential without encoding to preserve exact format
-              if (userSession.decoded.x_credentials) {
-                setAuthCookie(
-                  COOKIE_NAMES.X_CREDENTIAL,
-                  userSession.decoded.x_credentials,
-                  expiresIn,
-                  false
-                );
-              }
-
-              // Store access token in localStorage (always)
-              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-              localStorage.setItem(
-                STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-                (Date.now() + expiresIn * 1000).toString()
+            // Trigger onRedirect callback with userSession from decoded token
+            const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+            if (onRedirect) {
+              console.log(
+                `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
+                userSession
               );
+              onRedirect(targetUrl, userSession);
+            }
 
-              // NOTE: X-Credential is stored in cookies only, not localStorage
-
-              // Update refresh token in localStorage (always store it)
-              if (tokens.refresh_token) {
-                localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
-                // Only update timestamp if remember me was originally checked
-                // This preserves the original user choice
-                const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-                if (hadRememberMe) {
-                  localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-                }
-              }
-              console.log(`${LOG_PREFIX.AUTH} Auto-login successful`);
-              setIsAuthenticated(true);
-
-              if (onTokenValidityCheck) {
-                onTokenValidityCheck(true);
-              }
-
-              // Trigger onRedirect callback with userSession from decoded token
-              const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-              if (onRedirect) {
-                console.log(
-                  `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
-                  userSession
-                );
-                onRedirect(targetUrl, userSession);
-              }
-
-              // Redirect to target URL (credentials stored in cookies)
-              // Only auto-redirect if autoRedirection prop is true
-              if (props.autoRedirection) {
-                window.location.href = targetUrl;
-              }
+            // Redirect to target URL (credentials stored in cookies)
+            // Only auto-redirect if autoRedirection prop is true
+            if (props.autoRedirection) {
+              window.location.href = targetUrl;
             }
           }
         } else {
