@@ -1,14 +1,14 @@
 import type { UpgradeUser, PasswordChecks, AuthenticationTokens } from "../types/index";
 import { jwtDecode } from "jwt-decode";
-import { setAuthCookie, clearAuthCookie } from "../utils/cookieHelper";
-import { authLogin } from "../services";
+import { setAuthCookie, clearAuthCookie, getCookie } from "../utils/cookieHelper";
+import { authLogin, authRefresh } from "../services";
 import {
   STORAGE_KEYS,
   COOKIE_NAMES,
   TOKEN_EXPIRY,
   PASSWORD_RULES,
   PASSWORD_REGEX,
-  LOG_PREFIX
+  LOG_PREFIX,
 } from "../constants";
 
 // Re-export cookie helper functions for convenience
@@ -20,6 +20,92 @@ export {
   getAuthorityFromUrl,
   getDefaultRedirectUrl,
 } from "../utils/cookieHelper";
+
+export const isRefreshTokenExpiredFromCookie = (): boolean => {
+  try {
+    const refreshToken = getCookie(COOKIE_NAMES.REFRESH_TOKEN, false);
+    if (!refreshToken) {
+      return true;
+    }
+
+    const decoded: any = jwtDecode(refreshToken);
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    return !decoded.exp || currentTime >= decoded.exp;
+  } catch (error) {
+    console.error(`${LOG_PREFIX.TOKEN} isRefreshTokenExpiredFromCookie Error:`, error);
+    return true;
+  }
+};
+
+// Function to handle silent token refresh in the background
+export const silentTokenRefresh = async () => {
+  const refreshToken = getCookie(COOKIE_NAMES.REFRESH_TOKEN, false);
+  if (!refreshToken) {
+    return true;
+  }
+
+  const decoded: any = jwtDecode(refreshToken);
+  const expiryTime = decoded.exp; // seconds
+  const currentTime = Math.floor(Date.now() / 1000);
+
+  const remainingTime = (expiryTime - currentTime) * 1000; // convert to ms
+
+  if (remainingTime <= 0) {
+    console.log("Already expired");
+    return;
+  }
+
+  const timer = setInterval(async () => {
+    if (refreshToken) {
+      const response = await authRefresh(refreshToken);
+
+      if (response && response.tokens && response.tokens.access_token) {
+        const tokens = response.tokens;
+
+        // Create user session from token (includes decoded metadata)
+        const userSession = createUserSessionFromToken(tokens.access_token);
+        if (!userSession) {
+          return;
+        }
+
+        const expiresIn = (userSession.decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+        // Store new access token in cookies (with encoding)
+        setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
+        // Store X-Credential without encoding to preserve exact format
+        if (userSession.decoded.x_credentials) {
+          setAuthCookie(
+            COOKIE_NAMES.X_CREDENTIAL,
+            userSession.decoded.x_credentials,
+            expiresIn,
+            false
+          );
+        }
+
+        // Store access token in localStorage (always)
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+        localStorage.setItem(
+          STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+          (Date.now() + expiresIn * 1000).toString()
+        );
+
+        // NOTE: X-Credential is stored in cookies only, not localStorage
+
+        // Update refresh token in localStorage (always store it)
+        if (tokens.refresh_token) {
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+          const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+          if (hadRememberMe) {
+            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+          }
+        }
+      }
+    }
+  }, remainingTime);
+
+  return () => clearInterval(timer);
+};
 
 /**
  * Validate new password against security rules
@@ -103,19 +189,17 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
     console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me enabled - validating tokens`);
 
     // First try cookies
-    const xCredCookie = document.cookie
-      .split(";")
-      .find((row) => row.trim().startsWith(`${COOKIE_NAMES.X_CREDENTIAL}=`));
-    const accessTokenCookie = document.cookie
-      .split(";")
-      .find((row) => row.trim().startsWith(`${COOKIE_NAMES.ACCESS_TOKEN}=`));
+    const xCredCookie =
+      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
+      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
+    const accessTokenCookie = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
     let token: string | null = null;
     let hasXCred = false;
 
     // Try to get token from cookie first
     if (accessTokenCookie) {
-      token = accessTokenCookie.split("=")[1] || null;
+      token = accessTokenCookie;
     }
     if (xCredCookie) {
       hasXCred = true;
@@ -267,31 +351,22 @@ export const handleAuthentication = async (
   const authResponse = await authLogin(username, password);
   const { tokens, x_credential } = authResponse;
 
-  console.log('🔑 handleAuthentication - authResponse:', authResponse);
-  console.log('🔑 handleAuthentication - x_credential:', x_credential);
-
   // Store tokens if provided
   if (tokens.access_token) {
     const decoded: any = jwtDecode(tokens.access_token);
     const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
-
-    console.log('🔑 Decoded JWT:', decoded);
-    console.log('🔑 x_credentials in JWT:', decoded.x_credentials);
-
     // Set cookies for access token (with encoding)
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // Get x_credential from response or decoded token
     const xCred = x_credential || decoded.x_credentials;
 
-    console.log('🔑 Final xCred to be stored:', xCred);
-
     // Set X-Credential cookie without encoding to preserve the exact format
     if (xCred) {
       setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
-      console.log('✅ X-Credential cookie set successfully');
+      console.log("✅ X-Credential cookie set successfully");
     } else {
-      console.warn('⚠️ No x_credential found in response or JWT');
+      console.warn("⚠️ No x_credential found in response or JWT");
     }
 
     // Set X-Credential cookie without encoding to preserve the exact format

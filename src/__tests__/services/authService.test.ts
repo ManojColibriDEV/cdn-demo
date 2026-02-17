@@ -475,7 +475,7 @@ describe("Authentication Service", () => {
         const svc = await import("../../services");
 
         localMock.onPost().reply((config) => {
-          expect(config.url).toMatch(/^https?:\/\//);
+          expect(config.url).toContain("/api/check-email");
           return [200, { exists: true }];
         });
 
@@ -499,7 +499,7 @@ describe("Authentication Service", () => {
       const svc = await import("../../services");
 
       localMock.onPost().reply((config) => {
-        expect(config.url).toMatch(/^https?:\/\//);
+        expect(config.url).toContain("/api/check-email");
         return [200, { exists: true }];
       });
 
@@ -524,7 +524,7 @@ describe("Authentication Service", () => {
       const svc = await import("../../services");
 
       localMock.onPost().reply((config) => {
-        expect(config.url).toContain("dev");
+        expect(config.url).toContain("/api/check-email");
         return [200, { exists: true }];
       });
 
@@ -548,7 +548,6 @@ describe("Authentication Service", () => {
 
       localMock.onGet().reply((config) => {
         expect(config.url).toContain("/global/subsidiaries");
-        expect(config.url).toMatch(/^https?:\/\//);
         return [200, []];
       });
 

@@ -5,7 +5,7 @@ import "./index.css";
 import "./theme-variables.css";
 import App from "./App";
 import { createThemeWidget } from "./services/theme";
-import { getAuthorityFromUrl, clearAuthTokens } from "./functions";
+import { getAuthorityFromUrl, clearAuthTokens, silentTokenRefresh } from "./functions";
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
@@ -55,7 +55,10 @@ if (renderMode === "TEST") {
         <App
           subsidiary="allied"
           showLogin={true}
-          autoRedirection={true}
+          autoRedirection={false}
+          onTokenValidityCheck={(isTokenValid) => {
+            console.log(`[main.tsx] Token valid: ${isTokenValid}`);
+          }}
         />
       </StrictMode>
     </BrowserRouter>
@@ -85,6 +88,7 @@ if (renderMode === "TEST") {
     public onRedirect?: (url: string, userSession?: any) => void;
     public onClose?: () => void;
     public onLogout?: () => void;
+    public onTokenValidityCheck?: (isTokenValid: boolean) => void;
 
     connectedCallback() {
       // Attach shadow DOM for style isolation (bloom-elements standard)
@@ -241,6 +245,22 @@ if (renderMode === "TEST") {
       this.removeAttribute("show-login");
     };
 
+    private handleTokenValidity = (isTokenValid: boolean) => {
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onTokenValidityCheck) {
+        this.onTokenValidityCheck(isTokenValid);
+      }
+
+      // Dispatch token validity status event with boolean detail
+      const event = new CustomEvent("is-token-valid", {
+        detail: isTokenValid,
+        bubbles: true,
+        composed: true,
+      });
+
+      this.dispatchEvent(event);
+    };
+
     private getProps() {
       const authorityAttr = this.getAttribute("authority");
       const detectedAuthority = authorityAttr || getAuthorityFromUrl();
@@ -250,6 +270,8 @@ if (renderMode === "TEST") {
         this.getAttribute("auto-redirection") || this.getAttribute("autoRedirection");
       // Default to true if attribute is not set, false only if explicitly set to "false"
       const autoRedirection = autoRedirectionAttr !== "false";
+
+      silentTokenRefresh(); // Ensure we attempt silent refresh on widget load to validate any existing tokens
 
       return {
         authority: detectedAuthority,
@@ -264,6 +286,7 @@ if (renderMode === "TEST") {
           undefined,
         autoRedirection: autoRedirection,
         onRedirect: this.handleRedirect,
+        onTokenValidityCheck: this.handleTokenValidity,
         handleClose: this.handleClose,
       };
     }

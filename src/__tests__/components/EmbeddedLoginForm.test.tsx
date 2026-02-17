@@ -27,6 +27,8 @@ vi.mock("../../functions", () => ({
   handleAuthentication: vi.fn(),
   checkTokenAndRedirect: vi.fn(),
   isRefreshTokenValid: vi.fn(),
+  isRefreshTokenExpiredFromCookie: vi.fn(),
+  silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
   setAuthCookie: vi.fn(),
   clearAuthCookie: vi.fn(),
@@ -643,7 +645,7 @@ describe("App Component", () => {
     });
   });
 
-  it("clears refresh tokens when refresh is valid but access cookie is missing", async () => {
+  it("keeps refresh tokens when refresh is valid even if access cookie is missing", async () => {
     vi.mocked(functions.checkTokenAndRedirect).mockReturnValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.getCookie).mockReturnValue(null);
@@ -653,8 +655,8 @@ describe("App Component", () => {
     renderApp();
 
     await waitFor(() => {
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe("r2");
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBe("t2");
     });
   });
 

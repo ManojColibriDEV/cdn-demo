@@ -42,6 +42,7 @@ export interface AppProps {
   subsidiary?: string;
   redirectUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
+  onTokenValidityCheck?: (isTokenValid: boolean) => void;
   loginTitle?: string;
   loginSubtitle?: string;
   showLogin?: boolean;
