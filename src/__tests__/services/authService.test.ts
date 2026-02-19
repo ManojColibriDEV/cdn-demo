@@ -12,6 +12,7 @@ import {
   checkEmail,
   forgotPassword,
   authRefresh,
+  authLogout,
   fetchSubsidiaries,
   getBrandHeaders,
   setAuthorityOverride,
@@ -356,6 +357,50 @@ describe("Authentication Service", () => {
       mockAxios.onPost(/\/api\/refresh$/).networkError();
 
       await expect(authRefresh("some-token")).rejects.toThrow();
+    });
+  });
+
+  describe("authLogout", () => {
+    it("should call logout endpoint with refresh token", async () => {
+      const refreshToken = "valid-refresh-token";
+
+      mockAxios.onPost(/\/api\/logout$/).reply((config) => {
+        const payload = JSON.parse(config.data as string);
+        expect(payload.refresh_token).toBe(refreshToken);
+        return [200, { success: true }];
+      });
+
+      const response = await authLogout(refreshToken);
+      expect(response).toEqual({ success: true });
+    });
+
+    it("should throw meaningful message for unauthorized logout", async () => {
+      mockAxios.onPost(/\/api\/logout$/).reply(401, {});
+      await expect(authLogout("expired-refresh-token")).rejects.toThrow(
+        "Logout failed: session is already expired"
+      );
+    });
+
+    it("should throw error payload from logout response", async () => {
+      mockAxios.onPost(/\/api\/logout$/).reply(400, { error: "logout error payload" });
+      await expect(authLogout("refresh-token")).rejects.toThrow("logout error payload");
+    });
+
+    it("should throw message payload from logout response", async () => {
+      mockAxios.onPost(/\/api\/logout$/).reply(400, { message: "logout message payload" });
+      await expect(authLogout("refresh-token")).rejects.toThrow("logout message payload");
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("direct-logout-error"));
+      await expect(authLogout("refresh-token")).rejects.toThrow("direct-logout-error");
+      spy.mockRestore();
+    });
+
+    it("should throw generic logout failed fallback when error object is empty", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authLogout("refresh-token")).rejects.toThrow("Logout failed");
+      spy.mockRestore();
     });
   });
 

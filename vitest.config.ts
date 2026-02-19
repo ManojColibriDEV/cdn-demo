@@ -56,10 +56,10 @@ export default defineConfig({
       
       // Coverage thresholds - fail build if not met
       thresholds: {
-        lines: 64,
-        functions: 63,
-        branches: 60,
-        statements: 64,
+        lines: 95,
+        functions: 95,
+        branches: 95,
+        statements: 95,
         autoUpdate: false,
       },
       

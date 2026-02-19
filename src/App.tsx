@@ -35,8 +35,23 @@ const App = (props: AppProps) => {
   }, [authority]);
   
   useEffect(() => {
-    silentTokenRefresh();
-  }, []);
+    let cleanup: (() => void) | undefined;
+
+    const startSilentRefresh = async () => {
+      const stop = await silentTokenRefresh();
+      if (typeof stop === "function") {
+        cleanup = stop;
+      }
+    };
+
+    void startSilentRefresh();
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [isAuthenticated]);
 
   // Auto-login using refresh token if available
   useEffect(() => {

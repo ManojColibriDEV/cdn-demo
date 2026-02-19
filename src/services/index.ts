@@ -329,3 +329,33 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * Auth API - Logout user session
+ */
+export const authLogout = async (refreshToken: string): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.LOGOUT);
+  const payload = { refresh_token: refreshToken };
+
+  try {
+    const response = await axios.post(url, payload, {
+      headers: await getBrandHeaders(),
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error during logout:", error);
+
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new Error("Logout failed: session is already expired");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("Logout failed");
+  }
+};

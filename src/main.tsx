@@ -5,7 +5,9 @@ import "./index.css";
 import "./theme-variables.css";
 import App from "./App";
 import { createThemeWidget } from "./services/theme";
-import { getAuthorityFromUrl, clearAuthTokens, silentTokenRefresh } from "./functions";
+import { authLogout } from "./services";
+import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
+import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 
@@ -68,6 +70,7 @@ if (renderMode === "TEST") {
   // Following bloom-elements standard pattern with Shadow DOM
   class KeycloakWidget extends HTMLElement {
     private root: Root | null = null;
+    private isLogoutInProgress = false;
 
     static get observedAttributes() {
       return [
@@ -120,6 +123,9 @@ if (renderMode === "TEST") {
       // Create React root and render
       this.root = createRoot(mountPoint);
       this.render();
+
+      // Allow host applications to trigger logout by dispatching a "logout" event on the element
+      this.addEventListener("logout", this.handleExternalLogoutEvent as EventListener);
     }
 
     private applyCustomPrimaryColor(shadowRoot: ShadowRoot) {
@@ -193,9 +199,71 @@ if (renderMode === "TEST") {
     }
 
     disconnectedCallback() {
+      this.removeEventListener("logout", this.handleExternalLogoutEvent as EventListener);
+
       if (this.root) {
         this.root.unmount();
         this.root = null;
+      }
+    }
+
+    private handleExternalLogoutEvent = async (event: Event) => {
+      const customEvent = event as CustomEvent<{ initiatedByWidget?: boolean }>;
+
+      // Ignore events emitted by this widget instance itself to avoid recursion
+      if (customEvent.detail?.initiatedByWidget) {
+        return;
+      }
+
+      await this.executeLogout("event");
+    };
+
+    private async executeLogout(trigger: "method" | "event") {
+      if (this.isLogoutInProgress) {
+        return;
+      }
+
+      this.isLogoutInProgress = true;
+
+      try {
+        const refreshToken =
+          getCookie(COOKIE_NAMES.REFRESH_TOKEN, true) ||
+          localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+        if (refreshToken) {
+          await authLogout(refreshToken);
+          console.log("[Widget] Logout API call completed");
+        } else {
+          console.warn("[Widget] No refresh token found, skipping logout API call");
+        }
+      } catch (error) {
+        console.error("[Widget] Logout API call failed:", error);
+      } finally {
+        // Always clear local auth state, regardless of API response
+        clearAuthTokens();
+        localStorage.clear();
+        sessionStorage.clear();
+
+        // Close login form if open
+        this.removeAttribute("show-login");
+
+        // Call function prop if provided (for React/NPM usage)
+        if (this.onLogout) {
+          console.log("[Widget] Calling onLogout function prop");
+          this.onLogout();
+        }
+
+        // Dispatch logout completion event for host pages
+        // Works for both external event-triggered and method-triggered logout
+        // External listeners can filter using detail.initiatedByWidget
+        const event = new CustomEvent("logout", {
+          detail: { initiatedByWidget: true, trigger },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(event);
+
+        this.isLogoutInProgress = false;
       }
     }
 
@@ -271,8 +339,6 @@ if (renderMode === "TEST") {
       // Default to true if attribute is not set, false only if explicitly set to "false"
       const autoRedirection = autoRedirectionAttr !== "false";
 
-      silentTokenRefresh(); // Ensure we attempt silent refresh on widget load to validate any existing tokens
-
       return {
         authority: detectedAuthority,
         subsidiary: this.getAttribute("subsidiary") || undefined,
@@ -299,25 +365,7 @@ if (renderMode === "TEST") {
 
     public logout() {
       console.log("[Widget] logout() called");
-
-      // Clear all authentication state using comprehensive function
-      clearAuthTokens();
-
-      // Close login form if open
-      this.removeAttribute("show-login");
-
-      // Call function prop if provided (for React/NPM usage)
-      if (this.onLogout) {
-        console.log("[Widget] Calling onLogout function prop");
-        this.onLogout();
-      }
-
-      // Dispatch logout event
-      const event = new CustomEvent("logout", {
-        bubbles: true,
-        composed: true,
-      });
-      this.dispatchEvent(event);
+      void this.executeLogout("method");
     }
 
     private render() {

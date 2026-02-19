@@ -551,6 +551,20 @@ describe("App Component", () => {
     expect(services.clearAuthorityOverride).toHaveBeenCalled();
   });
 
+  it("starts silent refresh and executes cleanup on unmount when cleanup is returned", async () => {
+    const stopRefresh = vi.fn();
+    vi.mocked(functions.silentTokenRefresh).mockResolvedValue(stopRefresh as any);
+
+    const { unmount } = renderApp();
+
+    await waitFor(() => {
+      expect(functions.silentTokenRefresh).toHaveBeenCalled();
+    });
+
+    unmount();
+    expect(stopRefresh).toHaveBeenCalled();
+  });
+
   it("auto redirects when valid access token exists and autoRedirection is true", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
 
@@ -589,6 +603,46 @@ describe("App Component", () => {
     await waitFor(() => {
       expect(onRedirect).toHaveBeenCalled();
     });
+  });
+
+  it("does not call onRedirect callback-only path when redirectUrl is missing", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-value");
+
+    render(
+      <MemoryRouter>
+        <App showLogin={true} autoRedirection={false} onRedirect={onRedirect} />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
+    });
+
+    expect(onRedirect).not.toHaveBeenCalled();
+  });
+
+  it("does not call onRedirect when redirectUrl exists but access token is missing", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
+
+    render(
+      <MemoryRouter>
+        <App
+          showLogin={true}
+          autoRedirection={false}
+          redirectUrl="https://example.com/callback"
+          onRedirect={onRedirect}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
+    });
+
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
