@@ -16611,7 +16611,8 @@ const om = typeof window < "u" && window.__widgetStyles?.widget || "";
       this.removeEventListener("logout", this.handleExternalLogoutEvent), this.root && (this.root.unmount(), this.root = null);
     }
     handleExternalLogoutEvent = async (s) => {
-      s.detail?.initiatedByWidget || await this.executeLogout("event");
+      const o = s;
+      s.target === this && (o.detail?.initiatedByWidget || await this.executeLogout("event"));
     };
     async executeLogout(s) {
       if (!this.isLogoutInProgress) {

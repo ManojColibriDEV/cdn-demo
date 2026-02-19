@@ -210,6 +210,12 @@ if (renderMode === "TEST") {
     private handleExternalLogoutEvent = async (event: Event) => {
       const customEvent = event as CustomEvent<{ initiatedByWidget?: boolean }>;
 
+      // Only handle logout events dispatched directly on this widget instance.
+      // Ignore bubbled descendant events to prevent unintended auto-logout.
+      if (event.target !== this) {
+        return;
+      }
+
       // Ignore events emitted by this widget instance itself to avoid recursion
       if (customEvent.detail?.initiatedByWidget) {
         return;
