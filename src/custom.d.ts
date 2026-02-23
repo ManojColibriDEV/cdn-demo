@@ -35,6 +35,16 @@ interface ImportMeta {
 }
 declare module "*.css";
 
+declare module "react" {
+  interface HTMLAttributes<T> {
+    part?: string;
+  }
+
+  interface SVGProps<T> {
+    part?: string;
+  }
+}
+
 // Web Component type definitions for React usage
 declare global {
   namespace JSX {

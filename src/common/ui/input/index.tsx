@@ -34,18 +34,20 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
   const helperId = `${inputId}-helper`;
 
   return (
-    <div className={`identity-widget-input-wrapper flex! flex-col! ${className || ""}`}>
+    <div part="identity-widget-input-wrapper" className={`identity-widget-input-wrapper flex! flex-col! ${className || ""}`}>
       {label && (
         <label
           htmlFor={inputId}
+          part="identity-widget-input-label"
           className="identity-widget-input-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
         >
-          {label} {optional && <span className="identity-widget-input-optional text-gray-500 italic text-[13px]">(Optional)</span>}
+          {label} {optional && <span part="identity-widget-input-optional" className="identity-widget-input-optional text-gray-500 italic text-[13px]">(Optional)</span>}
         </label>
       )}
-      <div className="identity-widget-input-container flex! items-center! relative!">
+      <div part="identity-widget-input-container" className="identity-widget-input-container flex! items-center! relative!">
         {startIcon && (
           <span
+            part="identity-widget-input-start-icon"
             className="identity-widget-input-start-icon flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!"
             style={{ top: "50%", transform: "translateY(-50%)" }}
             aria-hidden
@@ -57,6 +59,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           <select
             ref={ref as any}
             id={inputId}
+            part="identity-widget-input-select"
             aria-label={typeof label === "string" ? label : rest["aria-label"]}
             aria-invalid={hasError}
             aria-describedby={hasError ? errorId : undefined}
@@ -72,7 +75,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           >
             {options &&
               options.map((o) => (
-                <option className="identity-widget-input-option" key={o.value} value={o.value}>
+                <option part="identity-widget-input-option" className="identity-widget-input-option" key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
@@ -81,6 +84,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           <input
             ref={ref}
             id={inputId}
+            part="identity-widget-input-field"
             aria-label={typeof label === "string" ? label : rest["aria-label"]}
             aria-invalid={hasError}
             aria-describedby={hasError ? errorId : undefined}
@@ -97,6 +101,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
         )}
         {endIcon && (
           <span
+            part="identity-widget-input-end-icon"
             className="identity-widget-input-end-icon flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!"
             style={{ top: "50%", transform: "translateY(-50%)" }}
             aria-hidden
@@ -110,6 +115,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           id={errorId}
           role="alert"
           aria-live="polite"
+          part="identity-widget-input-error"
           className="identity-widget-input-error text-[#d64545] text-[13px]! mt-1.5! text-left!"
         >
           {error}
@@ -120,6 +126,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           id={helperId}
           role="status"
           aria-live="polite"
+          part="identity-widget-input-helper"
           className="identity-widget-input-helper text-[#d64545] text-[13px]! mt-1.5! text-left!"
         >
           {helperText}

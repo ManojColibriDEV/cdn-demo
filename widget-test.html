@@ -103,6 +103,19 @@
       const logoutBtn = document.getElementById("logoutBtn");
       const statusEl = document.getElementById("status");
 
+      function applyPartStyleFallback() {
+        if (!widget || !widget.shadowRoot) return;
+
+        const createAccountButton = widget.shadowRoot.querySelector(
+          '[part~="identity-widget-submit-button"]'
+        );
+
+        if (createAccountButton) {
+          createAccountButton.style.setProperty("background-color", "red", "important");
+          createAccountButton.style.setProperty("color", "black", "important");
+        }
+      }
+
       // Function to open the login form using login() method
       function openLoginForm() {
         if (widget) {
@@ -111,6 +124,10 @@
           } else {
             widget.setAttribute("show-login", "true");
           }
+
+          setTimeout(applyPartStyleFallback, 0);
+          setTimeout(applyPartStyleFallback, 150);
+
           loginBtn.textContent = "Login Form Open...";
         } else {
           console.error("Widget element not found");
@@ -138,6 +155,9 @@
       // Add click event to the button
       loginBtn.addEventListener("click", openLoginForm);
       logoutBtn.addEventListener("click", triggerLogout);
+
+      const observer = new MutationObserver(() => applyPartStyleFallback());
+      observer.observe(widget, { attributes: true, attributeFilter: ["show-login"] });
 
       // Listen for close event
       widget.addEventListener("close", function (e) {
