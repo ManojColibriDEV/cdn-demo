@@ -7,6 +7,7 @@ interface ButtonProps {
   disabled?: boolean;
   type?: ButtonType;
   variant?: ButtonVariant;
+  part?: string;
   className?: string;
   children?: ReactNode;
   ariaLabel?: string;
@@ -23,6 +24,7 @@ const Button: FC<ButtonProps> = ({
   disabled,
   type = ButtonType.BUTTON,
   variant = ButtonVariant.PRIMARY,
+  part,
   className,
   children,
   ariaLabel,
@@ -47,12 +49,29 @@ const Button: FC<ButtonProps> = ({
     ? `identity-widget-button ${baseClasses} ${variantClasses[variant]} ${className}`
     : `identity-widget-button ${baseClasses} ${variantClasses[variant]}`;
 
+  const derivedParts = Array.from(
+    new Set(
+      [
+        "identity-widget-button",
+        ...(className
+          ? className
+              .split(/\s+/)
+              .map((value) => value.trim())
+              .filter((value) => value.startsWith("identity-widget-"))
+          : []),
+      ].filter(Boolean)
+    )
+  ).join(" ");
+
+  const finalPart = part || derivedParts;
+
   return (
     <button
       className={finalClasses}
       onClick={onClick}
       disabled={disabled}
       type={type}
+      part={finalPart}
       aria-label={ariaLabel || (typeof label === "string" ? label : undefined)}
       aria-disabled={disabled}
       style={{ ...mainButtonStyle, borderStyle: "solid !important" }}
