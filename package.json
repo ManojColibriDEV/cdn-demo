@@ -1,7 +1,7 @@
 {
   "name": "@colibri/identity-widget",
   "private": false,
-  "version": "2.9.0",
+  "version": "3.0.0",
   "description": "Embedded authentication widget for Colibri Identity platform",
   "type": "module",
   "main": "./dist/keycloak-widget.umd.js",
@@ -59,6 +59,7 @@
     "prepublishOnly": "npm run test:run && npm run build"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.4",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
     "jwt-decode": "^4.0.0",

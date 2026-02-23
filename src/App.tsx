@@ -200,6 +200,7 @@ const App = (props: AppProps) => {
                   authority={authority}
                   title={props.loginTitle}
                   subtitle={props.loginSubtitle}
+                  enableGoogleLogin={Boolean(props.googleClientId)}
                 />
               )}
             </Fragment>

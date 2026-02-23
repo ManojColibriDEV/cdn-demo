@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useGoogleLogin } from "@react-oauth/google";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
@@ -10,6 +11,7 @@ import type { EmbeddedLoginFormProps } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
+import googleIcon from "../icons/google-icon.svg";
 import { MessageType, EMAIL_REGEX, ButtonType, ButtonVariant, INFO_MESSAGES } from "../constants";
 
 const EmbeddedLoginForm = ({
@@ -20,6 +22,7 @@ const EmbeddedLoginForm = ({
   title = "Continue to login",
   subtitle = "Continue by signing in.",
   initialEmail = "",
+  enableGoogleLogin = false,
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -40,6 +43,31 @@ const EmbeddedLoginForm = ({
   >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleGoogleLogin = useGoogleLogin({
+    flow: "auth-code",
+    onSuccess: (codeResponse) => {
+      console.log("[EmbeddedLogin] Google auth-code response received", codeResponse);
+      setToastMessage(
+        "Google sign-in completed. Connect this credential to your backend login flow."
+      );
+      setToastType(MessageType.INFO);
+      setErrorMessage("");
+    },
+    onError: (errorResponse) => {
+      const googleError =
+        errorResponse.error_description || errorResponse.error || "Google sign-in failed.";
+      setToastMessage(googleError);
+      setToastType(MessageType.ERROR);
+      onError(googleError);
+    },
+    onNonOAuthError: (error) => {
+      const googleError = `Google sign-in failed: ${error.type}`;
+      setToastMessage(googleError);
+      setToastType(MessageType.ERROR);
+      onError(googleError);
+    },
+  });
 
   // Check email existence when user types
   useEffect(() => {
@@ -88,7 +116,10 @@ const EmbeddedLoginForm = ({
       } catch (error) {
         console.error("[EmbeddedLogin] Email check failed:", error);
         // Show error banner for API failure (no toast for check-email)
-        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. You can still proceed with login.";
+        const errorMsg =
+          error instanceof Error
+            ? error.message
+            : "Unable to verify email. You can still proceed with login.";
         setEmailCheckError(true);
         setEmailCheckErrorMessage(errorMsg);
         setShowBanner(true);
@@ -189,23 +220,23 @@ const EmbeddedLoginForm = ({
 
   return (
     <div
-      className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
+      className="identity-widget-login-overlay fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="login-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
+      <div className="identity-widget-login-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         <Button
           onClick={handleClose}
           variant={ButtonVariant.LINK}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
+          className="identity-widget-login-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type={ButtonType.BUTTON}
           ariaLabel="Close dialog"
         >
           <svg
-            className="w-6! h-6!"
+            className="identity-widget-login-close-icon w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -220,15 +251,41 @@ const EmbeddedLoginForm = ({
           </svg>
         </Button>
 
-        <div className="mb-3! text-center!">
-          <h2 id="login-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-0!">
+        <div className="identity-widget-login-header mb-3! text-center!">
+          <h2 id="login-dialog-title" className="identity-widget-login-title text-2xl! font-bold! text-gray-800! mb-0!">
             {title}
           </h2>
-          <p className="text-sm! text-gray-600! mt-1!">{subtitle}</p>
+          <p className="identity-widget-login-subtitle text-sm! text-gray-600! mt-1!">{subtitle}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-2!" aria-label="Login form">
-          <div className="mt-0! ml-0! mb-4! mr-0!">
+        <form onSubmit={handleSubmit} className="identity-widget-login-form space-y-2!" aria-label="Login form">
+          {enableGoogleLogin && (
+            <>
+              <div className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!">
+                <Button
+                  type={ButtonType.BUTTON}
+                  variant={ButtonVariant.OUTLINE}
+                  onClick={() => handleGoogleLogin()}
+                  disabled={loading}
+                  className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
+                >
+                  <img src={googleIcon} alt="Google" className="identity-widget-google-icon w-[18px]! h-[18px]!" />
+                  <span className="identity-widget-google-text">Sign in with Google</span>
+                </Button>
+              </div>
+
+              <div className="identity-widget-login-divider relative! mt-2! mb-4! hidden!">
+                <div className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!">
+                  <div className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"></div>
+                </div>
+                <div className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!">
+                  <span className="identity-widget-login-divider-text px-2! bg-white text-gray-500">OR</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="identity-widget-login-email-field mt-0! ml-0! mb-4! mr-0!">
             <Input
               label="Email or Username"
               id="email"
@@ -244,6 +301,7 @@ const EmbeddedLoginForm = ({
                   {checkingEmail && <Loader />}
                   {!checkingEmail && emailExists && isEmailValid && !emailCheckError && (
                     <img
+                      className="identity-widget-login-email-verified-icon"
                       src={checkSuccessImg}
                       alt="User verified"
                       aria-label="User found"
@@ -284,8 +342,8 @@ const EmbeddedLoginForm = ({
             />
           )}
 
-          <div className="mt-0! ml-0! mb-0! mr-0!">
-            <div className="relative! w-full!">
+          <div className="identity-widget-login-password-field mt-0! ml-0! mb-0! mr-0!">
+            <div className="identity-widget-login-password-input-wrap relative! w-full!">
               <Input
                 label="Password"
                 id="password"
@@ -304,13 +362,13 @@ const EmbeddedLoginForm = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!"
+                    className="identity-widget-login-password-toggle text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!"
                     tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <svg
-                        className="w-5! h-5!"
+                        className="identity-widget-login-password-hide-icon w-5! h-5!"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -325,7 +383,7 @@ const EmbeddedLoginForm = ({
                       </svg>
                     ) : (
                       <svg
-                        className="w-5! h-5!"
+                        className="identity-widget-login-password-show-icon w-5! h-5!"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -351,17 +409,17 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div className="flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!">
-            <label className="flex! items-center! m-0!">
+          <div className="identity-widget-login-meta-row flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!">
+            <label className="identity-widget-login-remember-label flex! items-center! m-0!">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
+                className="identity-widget-login-remember-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
                 aria-label="Remember me"
               />
               <span
-                className="text-gray-600!"
+                className="identity-widget-login-remember-text text-gray-600!"
                 style={{
                   fontWeight: "500",
                   color: "#5F5B7D",
@@ -372,7 +430,7 @@ const EmbeddedLoginForm = ({
             </label>
             <a
               href="#"
-              className="no-underline!"
+              className="identity-widget-login-forgot-link no-underline!"
               style={{
                 fontWeight: "500",
                 color: "#5F5B7D",
@@ -389,12 +447,12 @@ const EmbeddedLoginForm = ({
           <Button
             type={ButtonType.SUBMIT}
             disabled={loading || !email}
-            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
-              <span className="flex! items-center! justify-center!">
+              <span className="identity-widget-login-submit-loading flex! items-center! justify-center!">
                 <svg
-                  className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
+                  className="identity-widget-login-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
@@ -418,13 +476,13 @@ const EmbeddedLoginForm = ({
               "Sign In"
             )}
           </Button>
-
-          <div className="relative! mt-4! mb-4!">
-            <div className="absolute! inset-0! flex! items-center!">
-              <div className="w-full! border-t! border-solid! border-gray-300!"></div>
+          {/* Divider */}
+          <div className="identity-widget-login-bottom-divider relative! mt-4! mb-4!">
+            <div className="identity-widget-login-bottom-divider-line-wrap absolute! inset-0! flex! items-center!">
+              <div className="identity-widget-login-bottom-divider-line w-full! border-t! border-solid! border-gray-300!"></div>
             </div>
-            <div className="relative! flex! justify-center! text-sm!">
-              <span className="px-2! bg-white text-gray-500">OR</span>
+            <div className="identity-widget-login-bottom-divider-text-wrap relative! flex! justify-center! text-sm!">
+              <span className="identity-widget-login-bottom-divider-text px-2! bg-white text-gray-500">OR</span>
             </div>
           </div>
 
@@ -433,9 +491,9 @@ const EmbeddedLoginForm = ({
             variant={ButtonVariant.OUTLINE}
             onClick={() => setShowCreateAccount(true)}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! m-0!"
+            className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
-            <span>Create an Account</span>
+            <span className="identity-widget-login-create-account-text">Create an Account</span>
           </Button>
         </form>
       </div>

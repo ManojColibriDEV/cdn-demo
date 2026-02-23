@@ -4,9 +4,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter, MemoryRouter } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import EmbeddedLoginForm from "../../components/embedded-login-form";
 import App from "../../App";
 import * as services from "../../services";
@@ -537,6 +538,111 @@ describe("App Component", () => {
         <App showLogin={true} autoRedirection={false} {...props} />
       </MemoryRouter>
     );
+
+
+  it("should render Google sign-in button when enabled and invoke google login trigger", async () => {
+    const user = userEvent.setup();
+    const googleTrigger = vi.fn();
+    let googleConfig: any;
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return googleTrigger;
+    });
+
+    renderLoginForm({ enableGoogleLogin: true });
+
+    const googleButton = screen.getByRole("button", { name: /sign in with google/i });
+    expect(googleButton).toBeInTheDocument();
+
+    await user.click(googleButton);
+    expect(googleTrigger).toHaveBeenCalledTimes(1);
+    expect(googleConfig).toBeTruthy();
+  });
+
+  it("should show toast and call onError when Google OAuth returns an error", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    act(() => {
+      googleConfig.onError({ error_description: "Google popup blocked" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google popup blocked");
+      expect(screen.getByText(/Google popup blocked/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should handle non-oauth Google errors with fallback message", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    act(() => {
+      googleConfig.onNonOAuthError({ type: "popup_failed_to_open" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google sign-in failed: popup_failed_to_open");
+      expect(screen.getByText(/Google sign-in failed: popup_failed_to_open/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should use Google error field when error_description is missing", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    act(() => {
+      googleConfig.onError({ error: "popup_closed_by_user" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("popup_closed_by_user");
+      expect(screen.getByText(/popup_closed_by_user/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should use default Google error message when no oauth fields are present", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    act(() => {
+      googleConfig.onError({});
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google sign-in failed.");
+      expect(screen.getByText(/Google sign-in failed\./i)).toBeInTheDocument();
+    });
+  });
 
   it("sets authority override when authority prop exists and clears on unmount", () => {
     const { unmount } = renderApp({ authority: "dev" });

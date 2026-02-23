@@ -34,19 +34,19 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
   const helperId = `${inputId}-helper`;
 
   return (
-    <div className={`flex! flex-col! ${className || ""}`}>
+    <div className={`identity-widget-input-wrapper flex! flex-col! ${className || ""}`}>
       {label && (
         <label
           htmlFor={inputId}
-          className="block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+          className="identity-widget-input-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
         >
-          {label} {optional && <span className="text-gray-500 italic text-[13px]">(Optional)</span>}
+          {label} {optional && <span className="identity-widget-input-optional text-gray-500 italic text-[13px]">(Optional)</span>}
         </label>
       )}
-      <div className="flex! items-center! relative!">
+      <div className="identity-widget-input-container flex! items-center! relative!">
         {startIcon && (
           <span
-            className="flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!"
+            className="identity-widget-input-start-icon flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!"
             style={{ top: "50%", transform: "translateY(-50%)" }}
             aria-hidden
           >
@@ -61,7 +61,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
             aria-invalid={hasError}
             aria-describedby={hasError ? errorId : undefined}
             aria-required={rest.required}
-            className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
+            className={`identity-widget-input-select flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
             style={{
               borderWidth: "1px",
               borderStyle: "solid",
@@ -72,7 +72,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           >
             {options &&
               options.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option className="identity-widget-input-option" key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}
@@ -85,7 +85,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
             aria-invalid={hasError}
             aria-describedby={hasError ? errorId : undefined}
             aria-required={rest.required}
-            className={`flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
+            className={`identity-widget-input-field flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!`}
             style={{
               borderWidth: "1px",
               borderStyle: "solid",
@@ -97,7 +97,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
         )}
         {endIcon && (
           <span
-            className="flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!"
+            className="identity-widget-input-end-icon flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!"
             style={{ top: "50%", transform: "translateY(-50%)" }}
             aria-hidden
           >
@@ -110,7 +110,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           id={errorId}
           role="alert"
           aria-live="polite"
-          className="text-[#d64545] text-[13px]! mt-1.5! text-left!"
+          className="identity-widget-input-error text-[#d64545] text-[13px]! mt-1.5! text-left!"
         >
           {error}
         </div>
@@ -120,7 +120,7 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           id={helperId}
           role="status"
           aria-live="polite"
-          className="text-[#d64545] text-[13px]! mt-1.5! text-left!"
+          className="identity-widget-input-helper text-[#d64545] text-[13px]! mt-1.5! text-left!"
         >
           {helperText}
         </div>

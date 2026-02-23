@@ -137,24 +137,24 @@ const ResetPasswordForm = ({
   // Initial Form - Send reset link
   return (
     <div
-      className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
+      className="identity-widget-reset-password-overlay fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="reset-password-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
+      <div className="identity-widget-reset-password-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         {/* Close Button */}
         <Button
           onClick={handleClose}
           variant={ButtonVariant.LINK}
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
+          className="identity-widget-reset-password-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type={ButtonType.BUTTON}
           ariaLabel="Close dialog"
         >
           <svg
-            className="w-6! h-6!"
+            className="identity-widget-reset-password-close-icon w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -170,21 +170,21 @@ const ResetPasswordForm = ({
         </Button>
 
         {/* Header */}
-        <div className="mb-6! text-center!">
+        <div className="identity-widget-reset-password-header mb-6! text-center!">
           <h2
             id="reset-password-dialog-title"
-            className="text-2xl! font-bold! text-gray-800! mb-2!"
+            className="identity-widget-reset-password-title text-2xl! font-bold! text-gray-800! mb-2!"
           >
             Reset your password
           </h2>
-          <p className="text-sm! text-gray-600!">
+          <p className="identity-widget-reset-password-subtitle text-sm! text-gray-600!">
             Enter your email and we'll send you a link to reset your password.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4!" aria-label="Reset password form">
+        <form onSubmit={handleSubmit} className="identity-widget-reset-password-form space-y-4!" aria-label="Reset password form">
           {/* Email Address - Editable with validation */}
-          <div className="mt-0! ml-0! mb-4! mr-0!">
+          <div className="identity-widget-reset-password-email-field mt-0! ml-0! mb-4! mr-0!">
             <Input
               label="Email Address"
               id="reset-email"
@@ -196,19 +196,20 @@ const ResetPasswordForm = ({
               }}
               placeholder="Enter email"
               disabled={loading}
-              className="w-full!"
+              className="identity-widget-reset-password-email-input w-full!"
               autoComplete="email"
               endIcon={
                 <>
                   {checkingEmail && (
                     <div
-                      className="animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"
+                      className="identity-widget-reset-password-email-loading animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"
                       role="status"
                       aria-label="Checking email"
                     ></div>
                   )}
                   {!checkingEmail && emailExists && isEmailValid && !emailCheckError && (
                     <img
+                      className="identity-widget-reset-password-email-verified-icon"
                       src={checkSuccessImg}
                       alt="User found"
                       aria-label="User found"
@@ -229,7 +230,7 @@ const ResetPasswordForm = ({
                 setEmailCheckError(false);
                 setEmailCheckErrorMessage("");
               }}
-              className="mb-4!"
+              className="identity-widget-reset-password-email-check-error-banner mb-4!"
             />
           )}
 
@@ -241,7 +242,7 @@ const ResetPasswordForm = ({
               actionText="Want to sign in instead?"
               onActionClick={onBack}
               onClose={() => setErrorMessage("")}
-              className="mb-4!"
+              className="identity-widget-reset-password-submit-error-banner mb-4!"
             />
           )}
 
@@ -249,7 +250,7 @@ const ResetPasswordForm = ({
           <Button
             type={ButtonType.SUBMIT}
             disabled={loading || !email || !isEmailValid || !emailExists}
-            className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
               console.log("[ResetPassword] Button state:", {
                 loading,
@@ -260,14 +261,14 @@ const ResetPasswordForm = ({
             }}
           >
             {loading ? (
-              <span className="flex! items-center! justify-center!">
+              <span className="identity-widget-reset-password-submit-loading flex! items-center! justify-center!">
                 <svg
-                  className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
+                  className="identity-widget-reset-password-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
                   <circle
-                    className="opacity-25!"
+                    className="identity-widget-reset-password-submit-spinner-track opacity-25!"
                     cx="12"
                     cy="12"
                     r="10"
@@ -275,7 +276,7 @@ const ResetPasswordForm = ({
                     strokeWidth="4"
                   ></circle>
                   <path
-                    className="opacity-75!"
+                    className="identity-widget-reset-password-submit-spinner-fill opacity-75!"
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
@@ -293,9 +294,9 @@ const ResetPasswordForm = ({
             variant={ButtonVariant.OUTLINE}
             onClick={onBack}
             disabled={loading}
-            className="w-full! flex! items-center! justify-center! gap-3! mt-4!"
+            className="identity-widget-reset-password-back-button w-full! flex! items-center! justify-center! gap-3! mt-4!"
           >
-            <span>Back to sign in</span>
+            <span className="identity-widget-reset-password-back-text">Back to sign in</span>
           </Button>
         </form>
       </div>

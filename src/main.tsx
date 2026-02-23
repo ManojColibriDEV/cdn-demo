@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { createRoot, Root } from "react-dom/client";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import "./index.css";
 import "./theme-variables.css";
 import App from "./App";
@@ -10,6 +11,9 @@ import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
 import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
 
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
+const GOOGLE_CLIENT_ID =
+  (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ||
+  "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent.com";
 
 // Get widget styles from global (injected by vite plugin)
 // Following bloom-elements standard pattern
@@ -52,18 +56,21 @@ if (renderMode === "TEST") {
     });
 
   createRoot(document.getElementById("root")!).render(
-    <BrowserRouter>
-      <StrictMode>
-        <App
-          subsidiary="allied"
-          showLogin={true}
-          autoRedirection={false}
-          onTokenValidityCheck={(isTokenValid) => {
-            console.log(`[main.tsx] Token valid: ${isTokenValid}`);
-          }}
-        />
-      </StrictMode>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <StrictMode>
+          <App
+            subsidiary="allied"
+            showLogin={true}
+            autoRedirection={false}
+            googleClientId={GOOGLE_CLIENT_ID}
+            onTokenValidityCheck={(isTokenValid) => {
+              console.log(`[main.tsx] Token valid: ${isTokenValid}`);
+            }}
+          />
+        </StrictMode>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 } else {
   // Web Component mode for production deployment
@@ -84,6 +91,8 @@ if (renderMode === "TEST") {
         "customPrimaryColor",
         "auto-redirection",
         "autoRedirection",
+        "google-client-id",
+        "googleClientId",
       ];
     }
 
@@ -357,6 +366,10 @@ if (renderMode === "TEST") {
           this.getAttribute("customPrimaryColor") ||
           undefined,
         autoRedirection: autoRedirection,
+        googleClientId:
+          this.getAttribute("google-client-id") ||
+          this.getAttribute("googleClientId") ||
+          GOOGLE_CLIENT_ID,
         onRedirect: this.handleRedirect,
         onTokenValidityCheck: this.handleTokenValidity,
         handleClose: this.handleClose,
@@ -380,11 +393,13 @@ if (renderMode === "TEST") {
       const props = this.getProps();
 
       this.root.render(
-        <BrowserRouter>
-          <StrictMode>
-            <App {...props} />
-          </StrictMode>
-        </BrowserRouter>
+        <GoogleOAuthProvider clientId={props.googleClientId || GOOGLE_CLIENT_ID}>
+          <BrowserRouter>
+            <StrictMode>
+              <App {...props} />
+            </StrictMode>
+          </BrowserRouter>
+        </GoogleOAuthProvider>
       );
     }
   }

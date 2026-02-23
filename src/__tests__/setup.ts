@@ -7,6 +7,11 @@ import { afterEach, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
+vi.mock("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: unknown }) => children,
+  useGoogleLogin: vi.fn(() => vi.fn()),
+}));
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();

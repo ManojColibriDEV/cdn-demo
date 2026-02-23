@@ -44,8 +44,8 @@ const Button: FC<ButtonProps> = ({
 
   // Combine classes: base + variant + custom className
   const finalClasses = className
-    ? `${baseClasses} ${variantClasses[variant]} ${className}`
-    : `${baseClasses} ${variantClasses[variant]}`;
+    ? `identity-widget-button ${baseClasses} ${variantClasses[variant]} ${className}`
+    : `identity-widget-button ${baseClasses} ${variantClasses[variant]}`;
 
   return (
     <button
