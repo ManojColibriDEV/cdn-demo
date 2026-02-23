@@ -70,6 +70,7 @@
       <button id="changeColorBtn" style="background-color: #6c757d; margin-left: 10px">
         Change Primary Color
       </button>
+      <button id="logoutBtn" style="background-color: #dc3545; margin-left: 10px">Logout</button>
     </div>
 
     <div class="info">
@@ -82,10 +83,7 @@
     Example 1: No auto-redirection (default behavior)
     User will need to handle redirect event manually
   -->
-    <keycloak-widget
-      id="auth-embedded"
-    >
-    </keycloak-widget>
+    <keycloak-widget id="auth-embedded" autoRedirection="false"> </keycloak-widget>
 
     <!-- 
     Example 2: With auto-redirection enabled
@@ -102,6 +100,8 @@
     <script>
       const widget = document.getElementById("auth-embedded");
       const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const statusEl = document.getElementById("status");
 
       // Function to open the login form using login() method
       function openLoginForm() {
@@ -112,7 +112,6 @@
             widget.setAttribute("show-login", "true");
           }
           loginBtn.textContent = "Login Form Open...";
-          statusEl.textContent = "Login form is open";
         } else {
           console.error("Widget element not found");
         }
@@ -123,12 +122,22 @@
         if (widget) {
           widget.setAttribute("show-login", "false");
           loginBtn.textContent = "Open Login Form";
-          statusEl.textContent = "Login form closed";
         }
+      }
+
+      function triggerLogout() {
+        // Trigger logout via logout event (required integration path)
+        widget.dispatchEvent(
+          new CustomEvent("logout", {
+            bubbles: true,
+            composed: true,
+          })
+        );
       }
 
       // Add click event to the button
       loginBtn.addEventListener("click", openLoginForm);
+      logoutBtn.addEventListener("click", triggerLogout);
 
       // Listen for close event
       widget.addEventListener("close", function (e) {
@@ -139,6 +148,18 @@
       widget.addEventListener("redirect", function (e) {
         const { url, userSession } = e.detail;
         console.log("Redirect event received:", { url, userSession });
+        statusEl.textContent = "Authenticated - ready to test logout";
+        closeLoginForm();
+      });
+
+      // Listen for logout completion event
+      widget.addEventListener("logout", function (e) {
+        console.log("[widget-test] Logout event received:", e.detail);
+        if (e.detail?.initiatedByWidget) {
+          console.log("Logout completed by widget");
+          statusEl.textContent = "Logged out";
+          closeLoginForm();
+        }
       });
 
       // Listen for redirect event from the widget

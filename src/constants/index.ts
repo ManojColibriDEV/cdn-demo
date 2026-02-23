@@ -119,6 +119,7 @@ export const API_ENDPOINTS = {
   CHECK_EMAIL: "/api/check-email",
   FORGOT_PASSWORD: "/api/forgot-password",
   REFRESH_TOKEN: "/api/refresh",
+  LOGOUT: "/api/logout",
   GLOBAL_SUBSIDIARIES: "/global/subsidiaries",
 } as const;
 

@@ -25,6 +25,8 @@ import { STORAGE_KEYS, TOKEN_EXPIRY, COOKIE_NAMES } from "../../constants";
 vi.mock("jwt-decode");
 
 describe("Validation and Authentication Functions", () => {
+  const SILENT_REFRESH_INTERVAL_MS = 3 * 60 * 1000;
+
   beforeEach(() => {
     localStorage.clear();
     document.cookie.split(";").forEach((c) => {
@@ -396,6 +398,90 @@ describe("Validation and Authentication Functions", () => {
       await expect(refreshAuthenticationState()).resolves.toBe(false);
     });
 
+    it("refreshAuthenticationState returns false when refresh response has no access token", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          refresh_token: "refresh-new",
+        },
+      } as any);
+
+      await expect(refreshAuthenticationState()).resolves.toBe(false);
+    });
+
+    it("refreshAuthenticationState returns false when refreshed access token is already expired", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "access-expired",
+          refresh_token: "refresh-new",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "access-expired") {
+          return { exp: Math.floor(Date.now() / 1000) - 10 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+      });
+
+      await expect(refreshAuthenticationState()).resolves.toBe(false);
+    });
+
+    it("refreshAuthenticationState keeps remember-me timestamp unchanged when not previously set", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "access-new-2",
+          refresh_token: "refresh-new-2",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "access-new-2") {
+          return {
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            x_credentials: "x-cred-jwt",
+          };
+        }
+        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+      });
+
+      await expect(refreshAuthenticationState()).resolves.toBe(true);
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    });
+
+    it("refreshAuthenticationState succeeds when refresh token is not rotated", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "access-no-rotate",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "access-no-rotate") {
+          return {
+            exp: Math.floor(Date.now() / 1000) + 3600,
+            x_credentials: "x-cred-jwt",
+          };
+        }
+        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+      });
+
+      await expect(refreshAuthenticationState()).resolves.toBe(true);
+      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe("refresh-old");
+    });
+
+    it("refreshAuthenticationState returns false when authRefresh throws", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      vi.spyOn(serviceModule, "authRefresh").mockRejectedValue(new Error("refresh-api-error"));
+
+      await expect(refreshAuthenticationState()).resolves.toBe(false);
+    });
+
     it("checkTokenAndRedirectWithRefresh refreshes and then validates token state", async () => {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
@@ -430,6 +516,7 @@ describe("Validation and Authentication Functions", () => {
     it("silentTokenRefresh starts interval and triggers refresh flow", async () => {
       vi.useFakeTimers();
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-old");
 
       vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
         tokens: {
@@ -443,17 +530,21 @@ describe("Validation and Authentication Functions", () => {
         if (token === "refresh-old" || token === "refresh-silent") {
           return { exp: Math.floor(Date.now() / 1000) + 7200 };
         }
+        if (token === "access-old") {
+          return { exp: Math.floor(Date.now() / 1000) - 60 };
+        }
         if (token === "access-silent") {
           return {
             exp: Math.floor(Date.now() / 1000) + 3600,
             x_credentials: "x-cred-silent",
           };
         }
-        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+        // Treat any stale/unknown token as expired to force the refresh branch
+        return { exp: Math.floor(Date.now() / 1000) - 60 };
       });
 
       const cleanup = await silentTokenRefresh();
-      await vi.advanceTimersByTimeAsync(60000);
+      await vi.advanceTimersByTimeAsync(SILENT_REFRESH_INTERVAL_MS);
 
       expect(serviceModule.authRefresh).toHaveBeenCalledWith("refresh-old");
       expect(typeof cleanup).toBe("function");
@@ -462,6 +553,134 @@ describe("Validation and Authentication Functions", () => {
         cleanup();
       }
       vi.useRealTimers();
+    });
+
+    it("silentTokenRefresh returns true when no usable refresh token exists", async () => {
+      vi.mocked(jwtDecode).mockImplementation(() => {
+        throw new Error("bad-refresh-token");
+      });
+
+      await expect(silentTokenRefresh()).resolves.toBe(true);
+    });
+
+    it("silentTokenRefresh does not call refresh when access and x-credential are still valid", async () => {
+      vi.useFakeTimers();
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=access-valid; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=xcred-valid; path=/`;
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "unused",
+          refresh_token: "unused",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (
+          token === "refresh-old" ||
+          token === "access-valid" ||
+          token === "xcred-valid" ||
+          token === "unused"
+        ) {
+          return { exp: Math.floor(Date.now() / 1000) + 7200 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) - 60 };
+      });
+
+      const cleanup = await silentTokenRefresh();
+      await vi.advanceTimersByTimeAsync(SILENT_REFRESH_INTERVAL_MS);
+
+      expect(serviceModule.authRefresh).not.toHaveBeenCalled();
+
+      if (typeof cleanup === "function") {
+        cleanup();
+      }
+      vi.useRealTimers();
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when remember-me is not enabled", async () => {
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when refresh token is not available", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when refresh token is expired", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-expired");
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "refresh-expired") {
+          return { exp: Math.floor(Date.now() / 1000) - 10 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+      });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when current credentials are already valid", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-valid");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-valid");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() - 1000).toString());
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=xcred-valid; path=/`;
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "refresh-valid" || token === "access-valid" || token === "xcred-valid") {
+          return { exp: Math.floor(Date.now() / 1000) + 7200 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) - 60 };
+      });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+      expect(serviceModule.authRefresh).not.toHaveBeenCalled();
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when refresh succeeded but validation still fails", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "access-new-invalid",
+          refresh_token: "refresh-new",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "refresh-old" || token === "refresh-new") {
+          return { exp: Math.floor(Date.now() / 1000) + 7200 };
+        }
+        if (token === "access-new-invalid") {
+          return { exp: Math.floor(Date.now() / 1000) + 3600 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) - 60 };
+      });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when refreshAuthenticationState throws", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+
+      vi.spyOn(serviceModule, "authRefresh").mockRejectedValue(new Error("refresh-failure"));
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "refresh-old") {
+          return { exp: Math.floor(Date.now() / 1000) + 7200 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) - 60 };
+      });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
     });
   });
 

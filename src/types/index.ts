@@ -21,6 +21,7 @@ export interface EmbeddedLoginFormProps {
   title?: string;
   subtitle?: string;
   initialEmail?: string;
+  enableGoogleLogin?: boolean;
 }
 
 export interface ResetPasswordFormProps {
@@ -49,6 +50,7 @@ export interface AppProps {
   handleClose?: () => void;
   customPrimaryColor?: string;
   autoRedirection?: boolean;
+  googleClientId?: string;
 }
 
 // ============================================================================

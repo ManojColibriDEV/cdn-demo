@@ -28,24 +28,24 @@ const ResetPasswordSuccess = ({
 
   return (
     <div
-      className="fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
+      className="identity-widget-reset-success-overlay fixed! inset-0! bg-[#0000004f]! bg-opacity-10! flex! items-center! justify-center! z-2000! p-4"
       ref={overlayRef}
       onMouseDown={onOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="reset-success-dialog-title"
     >
-      <div className="bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
+      <div className="identity-widget-reset-success-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
         {/* Close Button */}
         <Button
           onClick={onClose}
           variant="link"
-          className="absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
+          className="identity-widget-reset-success-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!"
           type="button"
           ariaLabel="Close dialog"
         >
           <svg
-            className="w-6! h-6!"
+            className="identity-widget-reset-success-close-icon w-6! h-6!"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -61,21 +61,21 @@ const ResetPasswordSuccess = ({
         </Button>
 
         {/* Success Icon */}
-        <div className="flex! justify-center! mb-4!">
-          <img src={badgeCheckIcon} alt="Success" aria-hidden="true" className="w-16! h-16!" />
+        <div className="identity-widget-reset-success-icon-wrap flex! justify-center! mb-4!">
+          <img src={badgeCheckIcon} alt="Success" aria-hidden="true" className="identity-widget-reset-success-icon w-16! h-16!" />
         </div>
 
         {/* Header */}
-        <div className="mb-6! text-center!">
-          <h2 id="reset-success-dialog-title" className="text-2xl! font-bold! text-gray-800! mb-3!">
+        <div className="identity-widget-reset-success-header mb-6! text-center!">
+          <h2 id="reset-success-dialog-title" className="identity-widget-reset-success-title text-2xl! font-bold! text-gray-800! mb-3!">
             Check your email
           </h2>
-          <p className="text-base! text-gray-700! mb-2!">We've sent a password reset link to</p>
-          <p className="text-base! font-semibold! text-gray-900! mb-4!">{email}</p>
-          <p className="text-sm! text-gray-800! mb-2!">
+          <p className="identity-widget-reset-success-subtitle text-base! text-gray-700! mb-2!">We've sent a password reset link to</p>
+          <p className="identity-widget-reset-success-email text-base! font-semibold! text-gray-900! mb-4!">{email}</p>
+          <p className="identity-widget-reset-success-copy text-sm! text-gray-800! mb-2!">
             Follow the instructions in the email to reset your password and return to checkout.
           </p>
-          <p className="text-xs! text-gray-500!">
+          <p className="identity-widget-reset-success-note text-xs! text-gray-500!">
             Didn't receive the email? Check your spam folder or try again in a few minutes.
           </p>
         </div>
@@ -86,18 +86,18 @@ const ResetPasswordSuccess = ({
           onClick={onResendLink}
           disabled={loading}
           ariaLabel="Resend password reset link"
-          className="w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!"
+          className="identity-widget-submit-button identity-widget-reset-success-resend-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!"
         >
           {loading ? (
-            <span className="flex! items-center! justify-center!">
+            <span className="identity-widget-reset-success-resend-loading flex! items-center! justify-center!">
               <svg
-                className="animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
+                className="identity-widget-reset-success-resend-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
                 fill="none"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
               >
                 <circle
-                  className="opacity-25!"
+                  className="identity-widget-reset-success-resend-spinner-track opacity-25!"
                   cx="12"
                   cy="12"
                   r="10"
@@ -105,7 +105,7 @@ const ResetPasswordSuccess = ({
                   strokeWidth="4"
                 ></circle>
                 <path
-                  className="opacity-75!"
+                  className="identity-widget-reset-success-resend-spinner-fill opacity-75!"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
@@ -123,9 +123,9 @@ const ResetPasswordSuccess = ({
           variant="outline"
           onClick={onBack}
           disabled={loading}
-          className="w-full! flex! items-center! justify-center! gap-3!"
+          className="identity-widget-reset-success-back-button w-full! flex! items-center! justify-center! gap-3!"
         >
-          <span>Back to sign in</span>
+          <span className="identity-widget-reset-success-back-text">Back to sign in</span>
         </Button>
       </div>
     </div>

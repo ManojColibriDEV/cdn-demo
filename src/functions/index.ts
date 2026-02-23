@@ -59,6 +59,15 @@ const isRefreshTokenUsable = (refreshToken: string): boolean => {
   return !isJwtExpired(refreshToken);
 };
 
+let silentRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+const stopSilentRefreshTimer = (): void => {
+  if (silentRefreshTimer) {
+    clearInterval(silentRefreshTimer);
+    silentRefreshTimer = null;
+  }
+};
+
 export const refreshAuthenticationState = async (
   refreshTokenOverride?: string
 ): Promise<boolean> => {
@@ -118,15 +127,37 @@ export const refreshAuthenticationState = async (
 // Function to handle silent token refresh in the background
 export const silentTokenRefresh = async () => {
   const refreshToken = getStoredRefreshToken();
-  if (!refreshToken || !isRefreshTokenUsable(refreshToken)) {
+  const accessToken =
+    getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
+    localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+  if (!accessToken) {
+    stopSilentRefreshTimer();
     return true;
   }
 
-  const intervalMs = 60 * 1000;
-  const timer = setInterval(async () => {
+  if (!refreshToken || !isRefreshTokenUsable(refreshToken)) {
+    stopSilentRefreshTimer();
+    return true;
+  }
+
+  // Keep exactly one active timer; restart to avoid stale timer instances across lifecycles/tests
+  stopSilentRefreshTimer();
+
+  const intervalMs = 3 * 60 * 1000;
+  silentRefreshTimer = setInterval(async () => {
     const currentRefreshToken = getStoredRefreshToken();
+    const currentAccessToken =
+      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
+      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+    if (!currentAccessToken) {
+      stopSilentRefreshTimer();
+      return;
+    }
+
     if (!currentRefreshToken || !isRefreshTokenUsable(currentRefreshToken)) {
-      clearInterval(timer);
+      stopSilentRefreshTimer();
       return;
     }
 
@@ -145,7 +176,7 @@ export const silentTokenRefresh = async () => {
     }
   }, intervalMs);
 
-  return () => clearInterval(timer);
+  return () => stopSilentRefreshTimer();
 };
 
 /**
@@ -385,6 +416,7 @@ export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
   clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
   clearAuthCookie(COOKIE_NAMES.X_CREDENTIAL);
+  clearAuthCookie(COOKIE_NAMES.X_CREDENTIAL_OLD);
   clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
 
   // Clear all auth-related localStorage items
