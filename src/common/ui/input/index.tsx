@@ -34,17 +34,31 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
   const helperId = `${inputId}-helper`;
 
   return (
-    <div part="identity-widget-input-wrapper" className={`identity-widget-input-wrapper flex! flex-col! ${className || ""}`}>
+    <div
+      part="identity-widget-input-wrapper"
+      className={`identity-widget-input-wrapper flex! flex-col! ${className || ""}`}
+    >
       {label && (
         <label
           htmlFor={inputId}
           part="identity-widget-input-label"
           className="identity-widget-input-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
         >
-          {label} {optional && <span part="identity-widget-input-optional" className="identity-widget-input-optional text-gray-500 italic text-[13px]">(Optional)</span>}
+          {label}{" "}
+          {optional && (
+            <span
+              part="identity-widget-input-optional"
+              className="identity-widget-input-optional text-gray-500 italic text-[13px]"
+            >
+              (Optional)
+            </span>
+          )}
         </label>
       )}
-      <div part="identity-widget-input-container" className="identity-widget-input-container flex! items-center! relative!">
+      <div
+        part="identity-widget-input-container"
+        className="identity-widget-input-container flex! items-center! relative!"
+      >
         {startIcon && (
           <span
             part="identity-widget-input-start-icon"
@@ -75,7 +89,12 @@ const InputField = forwardRef<HTMLInputElement, InputFieldProps>((props, ref) =>
           >
             {options &&
               options.map((o) => (
-                <option part="identity-widget-input-option" className="identity-widget-input-option" key={o.value} value={o.value}>
+                <option
+                  part="identity-widget-input-option"
+                  className="identity-widget-input-option"
+                  key={o.value}
+                  value={o.value}
+                >
                   {o.label}
                 </option>
               ))}

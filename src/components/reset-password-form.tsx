@@ -62,7 +62,8 @@ const ResetPasswordForm = ({
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
         // Show error banner for API failure
-        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. Please try again.";
+        const errorMsg =
+          error instanceof Error ? error.message : "Unable to verify email. Please try again.";
         setEmailCheckError(true);
         setEmailCheckErrorMessage(errorMsg);
         setEmailExists(false);
@@ -145,7 +146,11 @@ const ResetPasswordForm = ({
       aria-modal="true"
       aria-labelledby="reset-password-dialog-title"
     >
-      <div part="identity-widget-reset-password-modal" className="identity-widget-reset-password-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
+      <div
+        part="identity-widget-reset-password-modal"
+        className="identity-widget-reset-password-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!"
+        role="document"
+      >
         {/* Close Button */}
         <Button
           onClick={handleClose}
@@ -173,7 +178,10 @@ const ResetPasswordForm = ({
         </Button>
 
         {/* Header */}
-        <div part="identity-widget-reset-password-header" className="identity-widget-reset-password-header mb-6! text-center!">
+        <div
+          part="identity-widget-reset-password-header"
+          className="identity-widget-reset-password-header mb-6! text-center!"
+        >
           <h2
             id="reset-password-dialog-title"
             part="identity-widget-reset-password-title"
@@ -181,14 +189,25 @@ const ResetPasswordForm = ({
           >
             Reset your password
           </h2>
-          <p part="identity-widget-reset-password-subtitle" className="identity-widget-reset-password-subtitle text-sm! text-gray-600!">
+          <p
+            part="identity-widget-reset-password-subtitle"
+            className="identity-widget-reset-password-subtitle text-sm! text-gray-600!"
+          >
             Enter your email and we'll send you a link to reset your password.
           </p>
         </div>
 
-        <form part="identity-widget-reset-password-form" onSubmit={handleSubmit} className="identity-widget-reset-password-form space-y-4!" aria-label="Reset password form">
+        <form
+          part="identity-widget-reset-password-form"
+          onSubmit={handleSubmit}
+          className="identity-widget-reset-password-form space-y-4!"
+          aria-label="Reset password form"
+        >
           {/* Email Address - Editable with validation */}
-          <div part="identity-widget-reset-password-email-field" className="identity-widget-reset-password-email-field mt-0! ml-0! mb-4! mr-0!">
+          <div
+            part="identity-widget-reset-password-email-field"
+            className="identity-widget-reset-password-email-field mt-0! ml-0! mb-4! mr-0!"
+          >
             <Input
               label="Email Address"
               id="reset-email"
@@ -268,7 +287,10 @@ const ResetPasswordForm = ({
             }}
           >
             {loading ? (
-              <span part="identity-widget-reset-password-submit-loading" className="identity-widget-reset-password-submit-loading flex! items-center! justify-center!">
+              <span
+                part="identity-widget-reset-password-submit-loading"
+                className="identity-widget-reset-password-submit-loading flex! items-center! justify-center!"
+              >
                 <svg
                   part="identity-widget-reset-password-submit-spinner"
                   className="identity-widget-reset-password-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
@@ -307,7 +329,12 @@ const ResetPasswordForm = ({
             part="identity-widget-reset-password-back-button"
             className="identity-widget-reset-password-back-button w-full! flex! items-center! justify-center! gap-3! mt-4!"
           >
-            <span part="identity-widget-reset-password-back-text" className="identity-widget-reset-password-back-text">Back to sign in</span>
+            <span
+              part="identity-widget-reset-password-back-text"
+              className="identity-widget-reset-password-back-text"
+            >
+              Back to sign in
+            </span>
           </Button>
         </form>
       </div>

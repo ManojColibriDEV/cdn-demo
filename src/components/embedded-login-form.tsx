@@ -228,7 +228,11 @@ const EmbeddedLoginForm = ({
       aria-modal="true"
       aria-labelledby="login-dialog-title"
     >
-      <div part="identity-widget-login-modal" className="identity-widget-login-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!" role="document">
+      <div
+        part="identity-widget-login-modal"
+        className="identity-widget-login-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!"
+        role="document"
+      >
         <Button
           onClick={handleClose}
           variant={ButtonVariant.LINK}
@@ -254,17 +258,37 @@ const EmbeddedLoginForm = ({
           </svg>
         </Button>
 
-        <div part="identity-widget-login-header" className="identity-widget-login-header mb-3! text-center!">
-          <h2 part="identity-widget-login-title" id="login-dialog-title" className="identity-widget-login-title text-2xl! font-bold! text-gray-800! mb-0!">
+        <div
+          part="identity-widget-login-header"
+          className="identity-widget-login-header mb-3! text-center!"
+        >
+          <h2
+            part="identity-widget-login-title"
+            id="login-dialog-title"
+            className="identity-widget-login-title text-2xl! font-bold! text-gray-800! mb-0!"
+          >
             {title}
           </h2>
-          <p part="identity-widget-login-subtitle" className="identity-widget-login-subtitle text-sm! text-gray-600! mt-1!">{subtitle}</p>
+          <p
+            part="identity-widget-login-subtitle"
+            className="identity-widget-login-subtitle text-sm! text-gray-600! mt-1!"
+          >
+            {subtitle}
+          </p>
         </div>
 
-        <form part="identity-widget-login-form" onSubmit={handleSubmit} className="identity-widget-login-form space-y-2!" aria-label="Login form">
+        <form
+          part="identity-widget-login-form"
+          onSubmit={handleSubmit}
+          className="identity-widget-login-form space-y-2!"
+          aria-label="Login form"
+        >
           {enableGoogleLogin && (
             <>
-              <div part="identity-widget-google-section" className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!">
+              <div
+                part="identity-widget-google-section"
+                className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!"
+              >
                 <Button
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
@@ -273,23 +297,50 @@ const EmbeddedLoginForm = ({
                   disabled={loading}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
-                  <img part="identity-widget-google-icon" src={googleIcon} alt="Google" className="identity-widget-google-icon w-[18px]! h-[18px]!" />
-                  <span part="identity-widget-google-text" className="identity-widget-google-text">Sign in with Google</span>
+                  <img
+                    part="identity-widget-google-icon"
+                    src={googleIcon}
+                    alt="Google"
+                    className="identity-widget-google-icon w-[18px]! h-[18px]!"
+                  />
+                  <span part="identity-widget-google-text" className="identity-widget-google-text">
+                    Sign in with Google
+                  </span>
                 </Button>
               </div>
 
-              <div part="identity-widget-login-divider" className="identity-widget-login-divider relative! mt-2! mb-4! hidden!">
-                <div part="identity-widget-login-divider-line-wrap" className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!">
-                  <div part="identity-widget-login-divider-line" className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"></div>
+              <div
+                part="identity-widget-login-divider"
+                className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+              >
+                <div
+                  part="identity-widget-login-divider-line-wrap"
+                  className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!"
+                >
+                  <div
+                    part="identity-widget-login-divider-line"
+                    className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"
+                  ></div>
                 </div>
-                <div part="identity-widget-login-divider-text-wrap" className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!">
-                  <span part="identity-widget-login-divider-text" className="identity-widget-login-divider-text px-2! bg-white text-gray-500">OR</span>
+                <div
+                  part="identity-widget-login-divider-text-wrap"
+                  className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!"
+                >
+                  <span
+                    part="identity-widget-login-divider-text"
+                    className="identity-widget-login-divider-text px-2! bg-white text-gray-500"
+                  >
+                    OR
+                  </span>
                 </div>
               </div>
             </>
           )}
 
-          <div part="identity-widget-login-email-field" className="identity-widget-login-email-field mt-0! ml-0! mb-4! mr-0!">
+          <div
+            part="identity-widget-login-email-field"
+            className="identity-widget-login-email-field mt-0! ml-0! mb-4! mr-0!"
+          >
             <Input
               label="Email or Username"
               id="email"
@@ -347,8 +398,14 @@ const EmbeddedLoginForm = ({
             />
           )}
 
-          <div part="identity-widget-login-password-field" className="identity-widget-login-password-field mt-0! ml-0! mb-0! mr-0!">
-            <div part="identity-widget-login-password-input-wrap" className="identity-widget-login-password-input-wrap relative! w-full!">
+          <div
+            part="identity-widget-login-password-field"
+            className="identity-widget-login-password-field mt-0! ml-0! mb-0! mr-0!"
+          >
+            <div
+              part="identity-widget-login-password-input-wrap"
+              className="identity-widget-login-password-input-wrap relative! w-full!"
+            >
               <Input
                 label="Password"
                 id="password"
@@ -417,8 +474,14 @@ const EmbeddedLoginForm = ({
             </div>
           </div>
 
-          <div part="identity-widget-login-meta-row" className="identity-widget-login-meta-row flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!">
-            <label part="identity-widget-login-remember-label" className="identity-widget-login-remember-label flex! items-center! m-0!">
+          <div
+            part="identity-widget-login-meta-row"
+            className="identity-widget-login-meta-row flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!"
+          >
+            <label
+              part="identity-widget-login-remember-label"
+              className="identity-widget-login-remember-label flex! items-center! m-0!"
+            >
               <input
                 type="checkbox"
                 part="identity-widget-login-remember-checkbox"
@@ -462,7 +525,10 @@ const EmbeddedLoginForm = ({
             className="identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
-              <span part="identity-widget-login-submit-loading" className="identity-widget-login-submit-loading flex! items-center! justify-center!">
+              <span
+                part="identity-widget-login-submit-loading"
+                className="identity-widget-login-submit-loading flex! items-center! justify-center!"
+              >
                 <svg
                   part="identity-widget-login-submit-spinner"
                   className="identity-widget-login-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
@@ -490,12 +556,29 @@ const EmbeddedLoginForm = ({
             )}
           </Button>
           {/* Divider */}
-          <div part="identity-widget-login-bottom-divider" className="identity-widget-login-bottom-divider relative! mt-4! mb-4!">
-            <div part="identity-widget-login-bottom-divider-line-wrap" className="identity-widget-login-bottom-divider-line-wrap absolute! inset-0! flex! items-center!">
-              <div part="identity-widget-login-bottom-divider-line" className="identity-widget-login-bottom-divider-line w-full! border-t! border-solid! border-gray-300!"></div>
+          <div
+            part="identity-widget-login-bottom-divider"
+            className="identity-widget-login-bottom-divider relative! mt-4! mb-4!"
+          >
+            <div
+              part="identity-widget-login-bottom-divider-line-wrap"
+              className="identity-widget-login-bottom-divider-line-wrap absolute! inset-0! flex! items-center!"
+            >
+              <div
+                part="identity-widget-login-bottom-divider-line"
+                className="identity-widget-login-bottom-divider-line w-full! border-t! border-solid! border-gray-300!"
+              ></div>
             </div>
-            <div part="identity-widget-login-bottom-divider-text-wrap" className="identity-widget-login-bottom-divider-text-wrap relative! flex! justify-center! text-sm!">
-              <span part="identity-widget-login-bottom-divider-text" className="identity-widget-login-bottom-divider-text px-2! bg-white text-gray-500">OR</span>
+            <div
+              part="identity-widget-login-bottom-divider-text-wrap"
+              className="identity-widget-login-bottom-divider-text-wrap relative! flex! justify-center! text-sm!"
+            >
+              <span
+                part="identity-widget-login-bottom-divider-text"
+                className="identity-widget-login-bottom-divider-text px-2! bg-white text-gray-500"
+              >
+                OR
+              </span>
             </div>
           </div>
 
@@ -507,7 +590,12 @@ const EmbeddedLoginForm = ({
             disabled={loading}
             className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
-            <span part="identity-widget-login-create-account-text" className="identity-widget-login-create-account-text">Create an Account</span>
+            <span
+              part="identity-widget-login-create-account-text"
+              className="identity-widget-login-create-account-text"
+            >
+              Create an Account
+            </span>
           </Button>
         </form>
       </div>

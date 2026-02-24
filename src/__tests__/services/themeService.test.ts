@@ -310,7 +310,9 @@ describe("ThemeWidget Service", () => {
         writable: true,
       });
 
-      global.fetch = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse });
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => mockBrandsResponse });
 
       const widget = await createThemeWidget({ autoDetect: true, cdnBaseUrl: mockCdnUrl });
       expect(widget).toBeInstanceOf(ThemeWidget);

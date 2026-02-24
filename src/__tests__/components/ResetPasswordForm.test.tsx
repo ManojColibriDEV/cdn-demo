@@ -279,7 +279,9 @@ describe("ResetPasswordForm Component", () => {
     await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Want to sign in instead\?/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /Want to sign in instead\?/i })
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: /Want to sign in instead\?/i }));

@@ -124,7 +124,9 @@ describe("EmbeddedLoginForm Component", () => {
     const passwordInput = screen.getByPlaceholderText(/password/i);
     expect(passwordInput).toHaveAttribute("type", "password");
 
-    const toggleButton = document.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    const toggleButton = document.querySelector(
+      'button[aria-label="Show password"]'
+    ) as HTMLButtonElement;
     expect(toggleButton).toBeTruthy();
     await user.click(toggleButton);
     expect(passwordInput).toHaveAttribute("type", "text");
@@ -308,7 +310,9 @@ describe("EmbeddedLoginForm Component", () => {
 
     await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
     await waitFor(() => {
-      expect(screen.queryByText(/No account found with this email address/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/No account found with this email address/i)
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -443,7 +447,9 @@ describe("EmbeddedLoginForm Component", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(() => {
-      expect(screen.getByText(/Unable to verify email. You can still proceed with login./i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Unable to verify email. You can still proceed with login./i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -518,9 +524,7 @@ describe("EmbeddedLoginForm Component", () => {
       expect(screen.queryAllByText("Toast auth error").length).toBeGreaterThan(0);
     });
   });
-
 });
-
 
 describe("App Component", () => {
   beforeEach(() => {
@@ -538,7 +542,6 @@ describe("App Component", () => {
         <App showLogin={true} autoRedirection={false} {...props} />
       </MemoryRouter>
     );
-
 
   it("should render Google sign-in button when enabled and invoke google login trigger", async () => {
     const user = userEvent.setup();
@@ -896,7 +899,11 @@ describe("App Component", () => {
 
     render(
       <MemoryRouter>
-        <App showLogin={true} autoRedirection={true} redirectUrl="https://example.com/refresh-redirect" />
+        <App
+          showLogin={true}
+          autoRedirection={true}
+          redirectUrl="https://example.com/refresh-redirect"
+        />
       </MemoryRouter>
     );
 
@@ -975,5 +982,4 @@ describe("App Component", () => {
       expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
     });
   });
-
 });

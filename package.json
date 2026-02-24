@@ -36,17 +36,16 @@
   },
   "scripts": {
     "dev": "vite",
-    "prebuild": "npm run test:run",
-    "build": "vite build",
+    "build": "npm run format && npm run lint:fix && npm run lint && npm run test:coverage && vite build",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist",
-    "build:dev": "npm run test:run && vite build",
-    "build:test": "npm run test:run && vite build",
-    "build:stage": "npm run test:run && vite build",
-    "build:prod": "npm run test:run && vite build",
+    "build:dev": "npm run build",
+    "build:test": "npm run build",
+    "build:stage": "npm run build",
+    "build:prod": "npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css}\"",
+    "format": "prettier --no-error-on-unmatched-pattern --write \"src/**/*.{ts,tsx,js,jsx,json,css}\" \"scripts/**/*.{ts,tsx,js,jsx,json}\" \"*.{js,ts,json,yml,yaml}\"",
+    "format:check": "prettier --no-error-on-unmatched-pattern --check \"src/**/*.{ts,tsx,js,jsx,json,css}\" \"scripts/**/*.{ts,tsx,js,jsx,json}\" \"*.{js,ts,json,yml,yaml}\"",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -56,7 +55,7 @@
     "test:coverage:watch": "vitest watch --coverage",
     "test:watch": "vitest watch",
     "coverage:report": "vitest run --coverage && start coverage/index.html",
-    "prepublishOnly": "npm run test:run && npm run build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@react-oauth/google": "^0.13.4",
@@ -71,6 +70,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@typescript-eslint/parser": "^8.46.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

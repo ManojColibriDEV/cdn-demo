@@ -149,8 +149,8 @@ export function setAuthCookie(
  * @returns Cookie value or null if not found
  */
 export function getCookie(name: string, decode: boolean = true): string | null {
-  const cookies = document.cookie.split(';');
-  
+  const cookies = document.cookie.split(";");
+
   for (const cookie of cookies) {
     const trimmedCookie = cookie.trim();
     if (trimmedCookie.startsWith(`${name}=`)) {
@@ -158,7 +158,7 @@ export function getCookie(name: string, decode: boolean = true): string | null {
       return decode ? decodeURIComponent(value) : value;
     }
   }
-  
+
   return null;
 }
 

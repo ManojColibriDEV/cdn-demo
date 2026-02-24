@@ -204,7 +204,10 @@ const CreateAccountForm = ({
       } catch (error) {
         console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Email check failed:`, error);
         // Show error banner for API failure (no toast for check-email)
-        const errorMsg = error instanceof Error ? error.message : "Unable to verify email. You can still proceed with registration.";
+        const errorMsg =
+          error instanceof Error
+            ? error.message
+            : "Unable to verify email. You can still proceed with registration.";
         setEmailCheckError(true);
         setEmailCheckErrorMessage(errorMsg);
         setShowBanner(true);
@@ -372,7 +375,10 @@ const CreateAccountForm = ({
             </svg>
           </Button>
 
-          <div part="identity-widget-create-account-header" className="identity-widget-create-account-header mb-6! text-center!">
+          <div
+            part="identity-widget-create-account-header"
+            className="identity-widget-create-account-header mb-6! text-center!"
+          >
             <h2
               id="create-account-dialog-title"
               part="identity-widget-create-account-title"
@@ -380,12 +386,25 @@ const CreateAccountForm = ({
             >
               {title}
             </h2>
-            <p part="identity-widget-create-account-subtitle" className="identity-widget-create-account-subtitle text-sm! text-gray-600! mt-1!">{subtitle}</p>
+            <p
+              part="identity-widget-create-account-subtitle"
+              className="identity-widget-create-account-subtitle text-sm! text-gray-600! mt-1!"
+            >
+              {subtitle}
+            </p>
           </div>
 
-          <form part="identity-widget-create-account-form" onSubmit={handleSubmit} className="identity-widget-create-account-form space-y-4!" aria-label="Create account form">
+          <form
+            part="identity-widget-create-account-form"
+            onSubmit={handleSubmit}
+            className="identity-widget-create-account-form space-y-4!"
+            aria-label="Create account form"
+          >
             {/* Email Address */}
-            <div part="identity-widget-create-account-email-field" className="identity-widget-create-account-email-field mt-0! ml-0! mb-4! mr-0!">
+            <div
+              part="identity-widget-create-account-email-field"
+              className="identity-widget-create-account-email-field mt-0! ml-0! mb-4! mr-0!"
+            >
               <Input
                 label="Email Address"
                 id="email"
@@ -450,7 +469,10 @@ const CreateAccountForm = ({
             )}
 
             {/* First Name and Last Name */}
-            <div part="identity-widget-create-account-name-row" className="identity-widget-create-account-name-row flex flex-col sm:flex-row gap-2 sm:gap-4 mt-0 ml-0 mb-4 mr-0">
+            <div
+              part="identity-widget-create-account-name-row"
+              className="identity-widget-create-account-name-row flex flex-col sm:flex-row gap-2 sm:gap-4 mt-0 ml-0 mb-4 mr-0"
+            >
               <Input
                 label="First Name"
                 id="firstName"
@@ -478,8 +500,14 @@ const CreateAccountForm = ({
             </div>
 
             {/* Password */}
-            <div part="identity-widget-create-account-password-field" className="identity-widget-create-account-password-field mt-0! ml-0! mb-4! mr-0!">
-              <div part="identity-widget-create-account-password-input-wrap" className="identity-widget-create-account-password-input-wrap relative! w-full!">
+            <div
+              part="identity-widget-create-account-password-field"
+              className="identity-widget-create-account-password-field mt-0! ml-0! mb-4! mr-0!"
+            >
+              <div
+                part="identity-widget-create-account-password-input-wrap"
+                className="identity-widget-create-account-password-input-wrap relative! w-full!"
+              >
                 <Input
                   label="Password"
                   id="password"
@@ -550,9 +578,18 @@ const CreateAccountForm = ({
 
             {/* Password Strength Indicator */}
             {password && (
-              <div part="identity-widget-create-account-strength" className="identity-widget-create-account-strength mt-2! mb-4!">
-                <div part="identity-widget-create-account-strength-row" className="identity-widget-create-account-strength-row flex! items-center! justify-between! mb-2!">
-                  <div part="identity-widget-create-account-strength-track" className="identity-widget-create-account-strength-track w-full! bg-gray-200! rounded-full! h-2! mr-3!">
+              <div
+                part="identity-widget-create-account-strength"
+                className="identity-widget-create-account-strength mt-2! mb-4!"
+              >
+                <div
+                  part="identity-widget-create-account-strength-row"
+                  className="identity-widget-create-account-strength-row flex! items-center! justify-between! mb-2!"
+                >
+                  <div
+                    part="identity-widget-create-account-strength-track"
+                    className="identity-widget-create-account-strength-track w-full! bg-gray-200! rounded-full! h-2! mr-3!"
+                  >
                     <div
                       part="identity-widget-create-account-strength-fill"
                       className="identity-widget-create-account-strength-fill h-2! rounded-full! transition-all! duration-300!"
@@ -572,10 +609,24 @@ const CreateAccountForm = ({
                 </div>
 
                 {/* Password Requirements Checklist */}
-                <div part="identity-widget-create-account-requirements" className="identity-widget-create-account-requirements mt-3!">
-                  <p part="identity-widget-create-account-requirements-title" className="identity-widget-create-account-requirements-title text-sm! font-medium! text-gray-700! mb-2!">Password must:</p>
-                  <ul part="identity-widget-create-account-requirements-list" className="identity-widget-create-account-requirements-list space-y-1!">
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                <div
+                  part="identity-widget-create-account-requirements"
+                  className="identity-widget-create-account-requirements mt-3!"
+                >
+                  <p
+                    part="identity-widget-create-account-requirements-title"
+                    className="identity-widget-create-account-requirements-title text-sm! font-medium! text-gray-700! mb-2!"
+                  >
+                    Password must:
+                  </p>
+                  <ul
+                    part="identity-widget-create-account-requirements-list"
+                    className="identity-widget-create-account-requirements-list space-y-1!"
+                  >
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.length ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -610,7 +661,10 @@ const CreateAccountForm = ({
                         be 9-15 characters
                       </span>
                     </li>
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.hasNumber ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -645,7 +699,10 @@ const CreateAccountForm = ({
                         have at least one number
                       </span>
                     </li>
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.hasUppercase ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -682,7 +739,10 @@ const CreateAccountForm = ({
                         have at least one uppercase letter
                       </span>
                     </li>
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.hasSpecialChar ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -719,7 +779,10 @@ const CreateAccountForm = ({
                         have at least one special character
                       </span>
                     </li>
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.onlyAllowedChars ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -756,7 +819,10 @@ const CreateAccountForm = ({
                         use only the following special characters !@#$%^&*._-
                       </span>
                     </li>
-                    <li part="identity-widget-create-account-requirement-item" className="identity-widget-create-account-requirement-item flex! items-center! text-sm!">
+                    <li
+                      part="identity-widget-create-account-requirement-item"
+                      className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
+                    >
                       {passwordChecks.differentFromUsername ? (
                         <svg
                           part="identity-widget-create-account-requirement-icon"
@@ -801,8 +867,14 @@ const CreateAccountForm = ({
             )}
 
             {/* Remember me checkbox */}
-            <div part="identity-widget-create-account-remember-row" className="identity-widget-create-account-remember-row flex! items-center! mt-4! ml-0! mb-4! mr-0!">
-              <label part="identity-widget-create-account-remember-label" className="identity-widget-create-account-remember-label flex! items-center! m-0!">
+            <div
+              part="identity-widget-create-account-remember-row"
+              className="identity-widget-create-account-remember-row flex! items-center! mt-4! ml-0! mb-4! mr-0!"
+            >
+              <label
+                part="identity-widget-create-account-remember-label"
+                className="identity-widget-create-account-remember-label flex! items-center! m-0!"
+              >
                 <input
                   type="checkbox"
                   part="identity-widget-create-account-remember-checkbox"
@@ -832,7 +904,10 @@ const CreateAccountForm = ({
               className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
               {loading ? (
-                <span part="identity-widget-create-account-submit-loading" className="identity-widget-create-account-submit-loading flex! items-center! justify-center!">
+                <span
+                  part="identity-widget-create-account-submit-loading"
+                  className="identity-widget-create-account-submit-loading flex! items-center! justify-center!"
+                >
                   <svg
                     part="identity-widget-create-account-submit-spinner"
                     className="identity-widget-create-account-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white"
@@ -863,12 +938,29 @@ const CreateAccountForm = ({
             </Button>
 
             {/* Divider */}
-            <div part="identity-widget-create-account-divider" className="identity-widget-create-account-divider relative! mt-4! mb-4!">
-              <div part="identity-widget-create-account-divider-line-wrap" className="identity-widget-create-account-divider-line-wrap absolute! inset-0! flex! items-center!">
-                <div part="identity-widget-create-account-divider-line" className="identity-widget-create-account-divider-line w-full! border-t! border-solid! border-gray-300!"></div>
+            <div
+              part="identity-widget-create-account-divider"
+              className="identity-widget-create-account-divider relative! mt-4! mb-4!"
+            >
+              <div
+                part="identity-widget-create-account-divider-line-wrap"
+                className="identity-widget-create-account-divider-line-wrap absolute! inset-0! flex! items-center!"
+              >
+                <div
+                  part="identity-widget-create-account-divider-line"
+                  className="identity-widget-create-account-divider-line w-full! border-t! border-solid! border-gray-300!"
+                ></div>
               </div>
-              <div part="identity-widget-create-account-divider-text-wrap" className="identity-widget-create-account-divider-text-wrap relative! flex! justify-center! text-sm!">
-                <span part="identity-widget-create-account-divider-text" className="identity-widget-create-account-divider-text px-2! bg-white text-gray-500">OR</span>
+              <div
+                part="identity-widget-create-account-divider-text-wrap"
+                className="identity-widget-create-account-divider-text-wrap relative! flex! justify-center! text-sm!"
+              >
+                <span
+                  part="identity-widget-create-account-divider-text"
+                  className="identity-widget-create-account-divider-text px-2! bg-white text-gray-500"
+                >
+                  OR
+                </span>
               </div>
             </div>
 
@@ -881,7 +973,12 @@ const CreateAccountForm = ({
               part="identity-widget-create-account-signin-button"
               className="identity-widget-create-account-signin-button w-full! flex! items-center! justify-center! gap-3!"
             >
-              <span part="identity-widget-create-account-signin-text" className="identity-widget-create-account-signin-text">Sign In</span>
+              <span
+                part="identity-widget-create-account-signin-text"
+                className="identity-widget-create-account-signin-text"
+              >
+                Sign In
+              </span>
             </Button>
           </form>
         </div>

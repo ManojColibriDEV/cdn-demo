@@ -591,7 +591,9 @@ describe("CreateAccountForm Component", () => {
     fireEvent.submit(screen.getByRole("form", { name: /create account form/i }));
 
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: /close notification/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: /close notification/i }).length).toBeGreaterThan(
+        0
+      );
     });
 
     const closeButtons = screen.getAllByRole("button", { name: /close notification/i });
@@ -649,7 +651,9 @@ describe("CreateAccountForm Component", () => {
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
     vi.mocked(services.authRegister).mockResolvedValue({ success: true, message: "ok" });
 
-    const authSpy = vi.spyOn(functions, "handleAuthentication").mockRejectedValue("bad-auth" as any);
+    const authSpy = vi
+      .spyOn(functions, "handleAuthentication")
+      .mockRejectedValue("bad-auth" as any);
 
     renderCreateAccountForm({ onError });
     await user.type(screen.getByPlaceholderText(/email/i), "user2@example.com");
@@ -685,13 +689,16 @@ describe("CreateAccountForm Component", () => {
     const passwordInput = screen.getByPlaceholderText(/password/i);
     expect(passwordInput).toHaveAttribute("type", "password");
 
-    const showButton = document.querySelector('button[aria-label="Show password"]') as HTMLButtonElement;
+    const showButton = document.querySelector(
+      'button[aria-label="Show password"]'
+    ) as HTMLButtonElement;
     fireEvent.click(showButton);
     expect(passwordInput).toHaveAttribute("type", "text");
 
-    const hideButton = document.querySelector('button[aria-label="Hide password"]') as HTMLButtonElement;
+    const hideButton = document.querySelector(
+      'button[aria-label="Hide password"]'
+    ) as HTMLButtonElement;
     fireEvent.click(hideButton);
     expect(passwordInput).toHaveAttribute("type", "password");
   });
-
 });
