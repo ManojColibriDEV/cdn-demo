@@ -1,13 +1,13 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from '@tailwindcss/vite'
-import { cssInjectedByJsPlugin } from './src/tools/vite-plugin-css-injector';
+import tailwindcss from "@tailwindcss/vite";
+import { cssInjectedByJsPlugin } from "./src/tools/vite-plugin-css-injector";
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  const env = loadEnv(mode, process.cwd(), '');
-  
+  const env = loadEnv(mode, process.cwd(), "");
+
   return {
     plugins: [react(), tailwindcss(), cssInjectedByJsPlugin()],
     server: {
@@ -23,14 +23,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/global/, "/global"),
-        }
+        },
       },
     },
     define: {
       "process.env.NODE_ENV": '"production"',
       // Force WEBCOMPONENT mode for production builds
-      ...(mode === 'production' && {
-        "import.meta.env.VITE_RENDER_MODE": '"WEBCOMPONENT"'
+      ...(mode === "production" && {
+        "import.meta.env.VITE_RENDER_MODE": '"WEBCOMPONENT"',
       }),
       process: {},
     },

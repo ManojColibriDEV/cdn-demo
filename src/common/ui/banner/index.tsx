@@ -77,7 +77,12 @@ const Banner: FC<BannerProps> = ({
     switch (type) {
       case MessageType.SUCCESS:
         return (
-          <svg part="identity-widget-banner-icon-svg" className="identity-widget-banner-icon-svg w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            part="identity-widget-banner-icon-svg"
+            className="identity-widget-banner-icon-svg w-5! h-5!"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -87,7 +92,12 @@ const Banner: FC<BannerProps> = ({
         );
       case MessageType.WARNING:
         return (
-          <svg part="identity-widget-banner-icon-svg" className="identity-widget-banner-icon-svg w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            part="identity-widget-banner-icon-svg"
+            className="identity-widget-banner-icon-svg w-5! h-5!"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
@@ -97,7 +107,12 @@ const Banner: FC<BannerProps> = ({
         );
       case MessageType.ERROR:
         return (
-          <svg part="identity-widget-banner-icon-svg" className="identity-widget-banner-icon-svg w-5! h-5!" fill="currentColor" viewBox="0 0 20 20">
+          <svg
+            part="identity-widget-banner-icon-svg"
+            className="identity-widget-banner-icon-svg w-5! h-5!"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
             <path
               fillRule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -107,7 +122,14 @@ const Banner: FC<BannerProps> = ({
         );
       case MessageType.INFO:
       default:
-        return <img part="identity-widget-banner-icon-image" src={infoWarningCircle} alt="info" className="identity-widget-banner-icon-image w-5! h-5!" />;
+        return (
+          <img
+            part="identity-widget-banner-icon-image"
+            src={infoWarningCircle}
+            alt="info"
+            className="identity-widget-banner-icon-image w-5! h-5!"
+          />
+        );
     }
   };
 
@@ -136,11 +158,23 @@ const Banner: FC<BannerProps> = ({
       aria-atomic="true"
       className={`identity-widget-banner flex! items-center! max-[500px]:items-start! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}
     >
-      <div part="identity-widget-banner-icon" className={`identity-widget-banner-icon flex-shrink-0! ${styles.iconColor}!`} aria-hidden="true">
+      <div
+        part="identity-widget-banner-icon"
+        className={`identity-widget-banner-icon flex-shrink-0! ${styles.iconColor}!`}
+        aria-hidden="true"
+      >
         {getIcon()}
       </div>
-      <div part="identity-widget-banner-content" className="identity-widget-banner-content ml-3! flex-1! flex! items-center! gap-2! max-[500px]:items-start! max-[500px]:flex-col!">
-        <span part="identity-widget-banner-message" className={`identity-widget-banner-message text-sm! font-medium! ${styles.text}`}>{message}</span>
+      <div
+        part="identity-widget-banner-content"
+        className="identity-widget-banner-content ml-3! flex-1! flex! items-center! gap-2! max-[500px]:items-start! max-[500px]:flex-col!"
+      >
+        <span
+          part="identity-widget-banner-message"
+          className={`identity-widget-banner-message text-sm! font-medium! ${styles.text}`}
+        >
+          {message}
+        </span>
         {actionText && onActionClick && (
           <button
             part="identity-widget-banner-action"
@@ -162,8 +196,19 @@ const Banner: FC<BannerProps> = ({
           aria-label="Dismiss banner"
           className={`identity-widget-banner-close ml-2! flex-shrink-0! inline-flex! ${styles.iconColor} ${styles.closeButtonHover} bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`}
         >
-          <span part="identity-widget-banner-close-text" className="identity-widget-banner-close-text sr-only">Dismiss</span>
-          <svg part="identity-widget-banner-close-icon" className="identity-widget-banner-close-icon w-5! h-5!" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <span
+            part="identity-widget-banner-close-text"
+            className="identity-widget-banner-close-text sr-only"
+          >
+            Dismiss
+          </span>
+          <svg
+            part="identity-widget-banner-close-icon"
+            className="identity-widget-banner-close-icon w-5! h-5!"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+            aria-hidden="true"
+          >
             <path
               fillRule="evenodd"
               d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"

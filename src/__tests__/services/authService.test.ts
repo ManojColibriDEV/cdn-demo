@@ -102,16 +102,14 @@ describe("Authentication Service", () => {
     });
 
     it("should prefer x-credential from response headers", async () => {
-      mockAxios
-        .onPost(/\/api\/auth$/)
-        .reply(
-          200,
-          {
-            ...mockAuthLoginSuccessResponse,
-            x_credential: "body-value",
-          },
-          { "x-credential": "header-value" }
-        );
+      mockAxios.onPost(/\/api\/auth$/).reply(
+        200,
+        {
+          ...mockAuthLoginSuccessResponse,
+          x_credential: "body-value",
+        },
+        { "x-credential": "header-value" }
+      );
 
       const response = await authLogin("john.doe@example.com", "SecureP@ss123!");
       expect(response.x_credential).toBe("header-value");
@@ -266,9 +264,7 @@ describe("Authentication Service", () => {
 
     it("should handle generic fallback message", async () => {
       mockAxios.onPost(/\/api\/check-email$/).reply(400, {});
-      await expect(checkEmail("test@example.com")).rejects.toThrow(
-        "Email verification failed"
-      );
+      await expect(checkEmail("test@example.com")).rejects.toThrow("Email verification failed");
     });
 
     it("should hit unable-to-verify fallback when error has no response and no message", async () => {

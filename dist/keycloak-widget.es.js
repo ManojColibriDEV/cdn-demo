@@ -12457,105 +12457,135 @@ const pe = {
     id: b,
     ...R
   } = l, C = !!d || !!m, q = R.type === "select" || !!g, A = b || `input-${Math.random().toString(36).substr(2, 9)}`, z = `${A}-error`, D = `${A}-helper`;
-  return /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-input-wrapper", className: `identity-widget-input-wrapper flex! flex-col! ${p || ""}`, children: [
-    s && /* @__PURE__ */ v.jsxs(
-      "label",
-      {
-        htmlFor: A,
-        part: "identity-widget-input-label",
-        className: "identity-widget-input-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!",
-        children: [
-          s,
-          " ",
-          y && /* @__PURE__ */ v.jsx("span", { part: "identity-widget-input-optional", className: "identity-widget-input-optional text-gray-500 italic text-[13px]", children: "(Optional)" })
-        ]
-      }
-    ),
-    /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-input-container", className: "identity-widget-input-container flex! items-center! relative!", children: [
-      o && /* @__PURE__ */ v.jsx(
-        "span",
-        {
-          part: "identity-widget-input-start-icon",
-          className: "identity-widget-input-start-icon flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!",
-          style: { top: "50%", transform: "translateY(-50%)" },
-          "aria-hidden": !0,
-          children: o
-        }
-      ),
-      q ? /* @__PURE__ */ v.jsx(
-        "select",
-        {
-          ref: r,
-          id: A,
-          part: "identity-widget-input-select",
-          "aria-label": typeof s == "string" ? s : R["aria-label"],
-          "aria-invalid": C,
-          "aria-describedby": C ? z : void 0,
-          "aria-required": R.required,
-          className: "identity-widget-input-select flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!",
-          style: {
-            borderWidth: "1px",
-            borderStyle: "solid",
-            borderColor: C ? "#d64545" : "#cbd5d5",
-            ...R.style
-          },
-          ...R,
-          children: g && g.map((G) => /* @__PURE__ */ v.jsx("option", { part: "identity-widget-input-option", className: "identity-widget-input-option", value: G.value, children: G.label }, G.value))
-        }
-      ) : /* @__PURE__ */ v.jsx(
-        "input",
-        {
-          ref: r,
-          id: A,
-          part: "identity-widget-input-field",
-          "aria-label": typeof s == "string" ? s : R["aria-label"],
-          "aria-invalid": C,
-          "aria-describedby": C ? z : void 0,
-          "aria-required": R.required,
-          className: "identity-widget-input-field flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!",
-          style: {
-            borderWidth: "1px",
-            borderStyle: "solid",
-            borderColor: C ? "#d64545" : "#cbd5d5",
-            ...R.style
-          },
-          ...R
-        }
-      ),
-      c && /* @__PURE__ */ v.jsx(
-        "span",
-        {
-          part: "identity-widget-input-end-icon",
-          className: "identity-widget-input-end-icon flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!",
-          style: { top: "50%", transform: "translateY(-50%)" },
-          "aria-hidden": !0,
-          children: c
-        }
-      )
-    ] }),
-    d && typeof d == "string" && /* @__PURE__ */ v.jsx(
-      "div",
-      {
-        id: z,
-        role: "alert",
-        "aria-live": "polite",
-        part: "identity-widget-input-error",
-        className: "identity-widget-input-error text-[#d64545] text-[13px]! mt-1.5! text-left!",
-        children: d
-      }
-    ),
-    !d && m && /* @__PURE__ */ v.jsx(
-      "div",
-      {
-        id: D,
-        role: "status",
-        "aria-live": "polite",
-        part: "identity-widget-input-helper",
-        className: "identity-widget-input-helper text-[#d64545] text-[13px]! mt-1.5! text-left!",
-        children: m
-      }
-    )
-  ] });
+  return /* @__PURE__ */ v.jsxs(
+    "div",
+    {
+      part: "identity-widget-input-wrapper",
+      className: `identity-widget-input-wrapper flex! flex-col! ${p || ""}`,
+      children: [
+        s && /* @__PURE__ */ v.jsxs(
+          "label",
+          {
+            htmlFor: A,
+            part: "identity-widget-input-label",
+            className: "identity-widget-input-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!",
+            children: [
+              s,
+              " ",
+              y && /* @__PURE__ */ v.jsx(
+                "span",
+                {
+                  part: "identity-widget-input-optional",
+                  className: "identity-widget-input-optional text-gray-500 italic text-[13px]",
+                  children: "(Optional)"
+                }
+              )
+            ]
+          }
+        ),
+        /* @__PURE__ */ v.jsxs(
+          "div",
+          {
+            part: "identity-widget-input-container",
+            className: "identity-widget-input-container flex! items-center! relative!",
+            children: [
+              o && /* @__PURE__ */ v.jsx(
+                "span",
+                {
+                  part: "identity-widget-input-start-icon",
+                  className: "identity-widget-input-start-icon flex! items-center! justify-center! absolute! left-2.5! pointer-events-auto! z-2!",
+                  style: { top: "50%", transform: "translateY(-50%)" },
+                  "aria-hidden": !0,
+                  children: o
+                }
+              ),
+              q ? /* @__PURE__ */ v.jsx(
+                "select",
+                {
+                  ref: r,
+                  id: A,
+                  part: "identity-widget-input-select",
+                  "aria-label": typeof s == "string" ? s : R["aria-label"],
+                  "aria-invalid": C,
+                  "aria-describedby": C ? z : void 0,
+                  "aria-required": R.required,
+                  className: "identity-widget-input-select flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! appearance-none! bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!",
+                  style: {
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: C ? "#d64545" : "#cbd5d5",
+                    ...R.style
+                  },
+                  ...R,
+                  children: g && g.map((G) => /* @__PURE__ */ v.jsx(
+                    "option",
+                    {
+                      part: "identity-widget-input-option",
+                      className: "identity-widget-input-option",
+                      value: G.value,
+                      children: G.label
+                    },
+                    G.value
+                  ))
+                }
+              ) : /* @__PURE__ */ v.jsx(
+                "input",
+                {
+                  ref: r,
+                  id: A,
+                  part: "identity-widget-input-field",
+                  "aria-label": typeof s == "string" ? s : R["aria-label"],
+                  "aria-invalid": C,
+                  "aria-describedby": C ? z : void 0,
+                  "aria-required": R.required,
+                  className: "identity-widget-input-field flex-1! py-2.5! pr-11! pl-3! rounded-md! text-sm! outline-none! box-border! focus:shadow-[0_0_0_3px_rgba(59,130,246,0.08)]!",
+                  style: {
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                    borderColor: C ? "#d64545" : "#cbd5d5",
+                    ...R.style
+                  },
+                  ...R
+                }
+              ),
+              c && /* @__PURE__ */ v.jsx(
+                "span",
+                {
+                  part: "identity-widget-input-end-icon",
+                  className: "identity-widget-input-end-icon flex! items-center! justify-center! absolute! right-2.5! pointer-events-auto! z-2!",
+                  style: { top: "50%", transform: "translateY(-50%)" },
+                  "aria-hidden": !0,
+                  children: c
+                }
+              )
+            ]
+          }
+        ),
+        d && typeof d == "string" && /* @__PURE__ */ v.jsx(
+          "div",
+          {
+            id: z,
+            role: "alert",
+            "aria-live": "polite",
+            part: "identity-widget-input-error",
+            className: "identity-widget-input-error text-[#d64545] text-[13px]! mt-1.5! text-left!",
+            children: d
+          }
+        ),
+        !d && m && /* @__PURE__ */ v.jsx(
+          "div",
+          {
+            id: D,
+            role: "status",
+            "aria-live": "polite",
+            part: "identity-widget-input-helper",
+            className: "identity-widget-input-helper text-[#d64545] text-[13px]! mt-1.5! text-left!",
+            children: m
+          }
+        )
+      ]
+    }
+  );
 }), Cv = "data:image/svg+xml,%3csvg%20width='20'%20height='20'%20viewBox='0%200%2020%2020'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cpath%20d='M10%201.875C5.50781%201.875%201.875%205.50781%201.875%2010C1.875%2014.4922%205.50781%2018.125%2010%2018.125C14.4922%2018.125%2018.125%2014.4922%2018.125%2010C18.125%205.50781%2014.4922%201.875%2010%201.875ZM10%2020C4.49219%2020%200%2015.5078%200%2010C0%204.49219%204.49219%200%2010%200C15.5078%200%2020%204.49219%2020%2010C20%2015.5078%2015.5078%2020%2010%2020ZM8.4375%2013.125H9.375V10.625H8.4375C7.92969%2010.625%207.5%2010.1953%207.5%209.6875C7.5%209.17969%207.92969%208.75%208.4375%208.75H10.3125C10.8203%208.75%2011.25%209.17969%2011.25%209.6875V13.125H11.5625C12.0703%2013.125%2012.5%2013.5547%2012.5%2014.0625C12.5%2014.5703%2012.0703%2015%2011.5625%2015H8.4375C7.92969%2015%207.5%2014.5703%207.5%2014.0625C7.5%2013.5547%207.92969%2013.125%208.4375%2013.125ZM10%207.5C9.29688%207.5%208.75%206.95312%208.75%206.25C8.75%205.54688%209.29688%205%2010%205C10.7031%205%2011.25%205.54688%2011.25%206.25C11.25%206.95312%2010.7031%207.5%2010%207.5Z'%20fill='%231FBDD2'/%3e%3c/svg%3e", pl = ({
   type: l,
   message: r,
@@ -12616,35 +12646,70 @@ const pe = {
   }, p = () => {
     switch (l) {
       case de.SUCCESS:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-banner-icon-svg", className: "identity-widget-banner-icon-svg w-5! h-5!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-            clipRule: "evenodd"
+            part: "identity-widget-banner-icon-svg",
+            className: "identity-widget-banner-icon-svg w-5! h-5!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.WARNING:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-banner-icon-svg", className: "identity-widget-banner-icon-svg w-5! h-5!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z",
-            clipRule: "evenodd"
+            part: "identity-widget-banner-icon-svg",
+            className: "identity-widget-banner-icon-svg w-5! h-5!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.ERROR:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-banner-icon-svg", className: "identity-widget-banner-icon-svg w-5! h-5!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z",
-            clipRule: "evenodd"
+            part: "identity-widget-banner-icon-svg",
+            className: "identity-widget-banner-icon-svg w-5! h-5!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.INFO:
       default:
-        return /* @__PURE__ */ v.jsx("img", { part: "identity-widget-banner-icon-image", src: Cv, alt: "info", className: "identity-widget-banner-icon-image w-5! h-5!" });
+        return /* @__PURE__ */ v.jsx(
+          "img",
+          {
+            part: "identity-widget-banner-icon-image",
+            src: Cv,
+            alt: "info",
+            className: "identity-widget-banner-icon-image w-5! h-5!"
+          }
+        );
     }
   }, g = y(), b = () => {
     switch (l) {
@@ -12668,22 +12733,44 @@ const pe = {
       "aria-atomic": "true",
       className: `identity-widget-banner flex! items-center! max-[500px]:items-start! py-3! px-4! rounded! ${g.bg} ${g.border} ${d}`,
       children: [
-        /* @__PURE__ */ v.jsx("div", { part: "identity-widget-banner-icon", className: `identity-widget-banner-icon flex-shrink-0! ${g.iconColor}!`, "aria-hidden": "true", children: p() }),
-        /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-banner-content", className: "identity-widget-banner-content ml-3! flex-1! flex! items-center! gap-2! max-[500px]:items-start! max-[500px]:flex-col!", children: [
-          /* @__PURE__ */ v.jsx("span", { part: "identity-widget-banner-message", className: `identity-widget-banner-message text-sm! font-medium! ${g.text}`, children: r }),
-          s && o && /* @__PURE__ */ v.jsx(
-            "button",
-            {
-              part: "identity-widget-banner-action",
-              type: "button",
-              onClick: o,
-              "aria-label": s,
-              className: `identity-widget-banner-action text-sm! font-medium! ${g.actionColor} ${g.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! max-[500px]:whitespace-normal! max-[500px]:self-start! shadow-none!`,
-              children: s
-            }
-          ),
-          m
-        ] }),
+        /* @__PURE__ */ v.jsx(
+          "div",
+          {
+            part: "identity-widget-banner-icon",
+            className: `identity-widget-banner-icon flex-shrink-0! ${g.iconColor}!`,
+            "aria-hidden": "true",
+            children: p()
+          }
+        ),
+        /* @__PURE__ */ v.jsxs(
+          "div",
+          {
+            part: "identity-widget-banner-content",
+            className: "identity-widget-banner-content ml-3! flex-1! flex! items-center! gap-2! max-[500px]:items-start! max-[500px]:flex-col!",
+            children: [
+              /* @__PURE__ */ v.jsx(
+                "span",
+                {
+                  part: "identity-widget-banner-message",
+                  className: `identity-widget-banner-message text-sm! font-medium! ${g.text}`,
+                  children: r
+                }
+              ),
+              s && o && /* @__PURE__ */ v.jsx(
+                "button",
+                {
+                  part: "identity-widget-banner-action",
+                  type: "button",
+                  onClick: o,
+                  "aria-label": s,
+                  className: `identity-widget-banner-action text-sm! font-medium! ${g.actionColor} ${g.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! max-[500px]:whitespace-normal! max-[500px]:self-start! shadow-none!`,
+                  children: s
+                }
+              ),
+              m
+            ]
+          }
+        ),
         c && /* @__PURE__ */ v.jsxs(
           "button",
           {
@@ -12693,15 +12780,32 @@ const pe = {
             "aria-label": "Dismiss banner",
             className: `identity-widget-banner-close ml-2! flex-shrink-0! inline-flex! ${g.iconColor} ${g.closeButtonHover} bg-transparent! border-none! cursor-pointer! p-0! shadow-none!`,
             children: [
-              /* @__PURE__ */ v.jsx("span", { part: "identity-widget-banner-close-text", className: "identity-widget-banner-close-text sr-only", children: "Dismiss" }),
-              /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-banner-close-icon", className: "identity-widget-banner-close-icon w-5! h-5!", fill: "currentColor", viewBox: "0 0 20 20", "aria-hidden": "true", children: /* @__PURE__ */ v.jsx(
-                "path",
+              /* @__PURE__ */ v.jsx(
+                "span",
                 {
-                  fillRule: "evenodd",
-                  d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
-                  clipRule: "evenodd"
+                  part: "identity-widget-banner-close-text",
+                  className: "identity-widget-banner-close-text sr-only",
+                  children: "Dismiss"
                 }
-              ) })
+              ),
+              /* @__PURE__ */ v.jsx(
+                "svg",
+                {
+                  part: "identity-widget-banner-close-icon",
+                  className: "identity-widget-banner-close-icon w-5! h-5!",
+                  fill: "currentColor",
+                  viewBox: "0 0 20 20",
+                  "aria-hidden": "true",
+                  children: /* @__PURE__ */ v.jsx(
+                    "path",
+                    {
+                      fillRule: "evenodd",
+                      d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
+                      clipRule: "evenodd"
+                    }
+                  )
+                }
+              )
             ]
           }
         )
@@ -12752,42 +12856,78 @@ const pe = {
   }, R = () => {
     switch (l) {
       case de.SUCCESS:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-toast-icon-svg", className: "identity-widget-toast-icon-svg w-6! h-6!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-            clipRule: "evenodd"
+            part: "identity-widget-toast-icon-svg",
+            className: "identity-widget-toast-icon-svg w-6! h-6!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.WARNING:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-toast-icon-svg", className: "identity-widget-toast-icon-svg w-6! h-6!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z",
-            clipRule: "evenodd"
+            part: "identity-widget-toast-icon-svg",
+            className: "identity-widget-toast-icon-svg w-6! h-6!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.ERROR:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-toast-icon-svg", className: "identity-widget-toast-icon-svg w-6! h-6!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z",
-            clipRule: "evenodd"
+            part: "identity-widget-toast-icon-svg",
+            className: "identity-widget-toast-icon-svg w-6! h-6!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
       case de.INFO:
       default:
-        return /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-toast-icon-svg", className: "identity-widget-toast-icon-svg w-6! h-6!", fill: "currentColor", viewBox: "0 0 20 20", children: /* @__PURE__ */ v.jsx(
-          "path",
+        return /* @__PURE__ */ v.jsx(
+          "svg",
           {
-            fillRule: "evenodd",
-            d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z",
-            clipRule: "evenodd"
+            part: "identity-widget-toast-icon-svg",
+            className: "identity-widget-toast-icon-svg w-6! h-6!",
+            fill: "currentColor",
+            viewBox: "0 0 20 20",
+            children: /* @__PURE__ */ v.jsx(
+              "path",
+              {
+                fillRule: "evenodd",
+                d: "M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z",
+                clipRule: "evenodd"
+              }
+            )
           }
-        ) });
+        );
     }
   }, C = b(), q = () => {
     switch (l) {
@@ -12810,31 +12950,77 @@ const pe = {
       "aria-atomic": "true",
       className: `identity-widget-toast fixed! top-4! right-4! z-[${Wo.Z_INDEX}]! transition-all! duration-300! ${d && !y ? "translate-x-0! opacity-100!" : "translate-x-full! opacity-0!"} ${c}`,
       style: { maxWidth: Wo.MAX_WIDTH, width: Wo.WIDTH },
-      children: /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-toast-body", className: `identity-widget-toast-body flex! items-center! p-4! rounded-lg! shadow-lg! ${C.bg}`, children: [
-        /* @__PURE__ */ v.jsx("div", { part: "identity-widget-toast-icon", className: `identity-widget-toast-icon flex-shrink-0! ${C.icon}`, "aria-hidden": "true", children: R() }),
-        /* @__PURE__ */ v.jsx("div", { part: "identity-widget-toast-content", className: `identity-widget-toast-content ml-3! flex-1! ${C.text}`, children: /* @__PURE__ */ v.jsx("p", { part: "identity-widget-toast-message", className: "identity-widget-toast-message text-sm! font-medium!", children: r }) }),
-        /* @__PURE__ */ v.jsxs(
-          "button",
-          {
-            part: "identity-widget-toast-close",
-            type: "button",
-            onClick: g,
-            "aria-label": "Close notification",
-            className: `identity-widget-toast-close ml-4! flex-shrink-0! inline-flex! ${C.text} hover:opacity-75! bg-transparent! border-none! cursor-pointer! p-0! transition-opacity!`,
-            children: [
-              /* @__PURE__ */ v.jsx("span", { part: "identity-widget-toast-close-text", className: "identity-widget-toast-close-text sr-only", children: "Close" }),
-              /* @__PURE__ */ v.jsx("svg", { part: "identity-widget-toast-close-icon", className: "identity-widget-toast-close-icon w-5! h-5!", fill: "currentColor", viewBox: "0 0 20 20", "aria-hidden": "true", children: /* @__PURE__ */ v.jsx(
-                "path",
-                {
-                  fillRule: "evenodd",
-                  d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
-                  clipRule: "evenodd"
-                }
-              ) })
-            ]
-          }
-        )
-      ] })
+      children: /* @__PURE__ */ v.jsxs(
+        "div",
+        {
+          part: "identity-widget-toast-body",
+          className: `identity-widget-toast-body flex! items-center! p-4! rounded-lg! shadow-lg! ${C.bg}`,
+          children: [
+            /* @__PURE__ */ v.jsx(
+              "div",
+              {
+                part: "identity-widget-toast-icon",
+                className: `identity-widget-toast-icon flex-shrink-0! ${C.icon}`,
+                "aria-hidden": "true",
+                children: R()
+              }
+            ),
+            /* @__PURE__ */ v.jsx(
+              "div",
+              {
+                part: "identity-widget-toast-content",
+                className: `identity-widget-toast-content ml-3! flex-1! ${C.text}`,
+                children: /* @__PURE__ */ v.jsx(
+                  "p",
+                  {
+                    part: "identity-widget-toast-message",
+                    className: "identity-widget-toast-message text-sm! font-medium!",
+                    children: r
+                  }
+                )
+              }
+            ),
+            /* @__PURE__ */ v.jsxs(
+              "button",
+              {
+                part: "identity-widget-toast-close",
+                type: "button",
+                onClick: g,
+                "aria-label": "Close notification",
+                className: `identity-widget-toast-close ml-4! flex-shrink-0! inline-flex! ${C.text} hover:opacity-75! bg-transparent! border-none! cursor-pointer! p-0! transition-opacity!`,
+                children: [
+                  /* @__PURE__ */ v.jsx(
+                    "span",
+                    {
+                      part: "identity-widget-toast-close-text",
+                      className: "identity-widget-toast-close-text sr-only",
+                      children: "Close"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "svg",
+                    {
+                      part: "identity-widget-toast-close-icon",
+                      className: "identity-widget-toast-close-icon w-5! h-5!",
+                      fill: "currentColor",
+                      viewBox: "0 0 20 20",
+                      "aria-hidden": "true",
+                      children: /* @__PURE__ */ v.jsx(
+                        "path",
+                        {
+                          fillRule: "evenodd",
+                          d: "M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z",
+                          clipRule: "evenodd"
+                        }
+                      )
+                    }
+                  )
+                ]
+              }
+            )
+          ]
+        }
+      )
     }
   );
 }, zh = () => /* @__PURE__ */ v.jsx(
@@ -14741,9 +14927,7 @@ const _a = (l) => {
   return rg === pc.TEST ? r : `${oE(r)}${r}`;
 }, cE = async (l) => {
   try {
-    return (await He.get(_a(Na.GLOBAL_SUBSIDIARIES)))?.data?.find(
-      (o) => o?.siteURL?.includes(l)
-    );
+    return (await He.get(_a(Na.GLOBAL_SUBSIDIARIES)))?.data?.find((o) => o?.siteURL?.includes(l));
   } catch (r) {
     console.error("Error fetching subsidiaries:", r);
   }
@@ -14928,7 +15112,10 @@ const yl = () => {
     const c = Rt(Ge.X_CREDENTIAL, !1) || Rt(Ge.X_CREDENTIAL_OLD, !1), d = Rt(Ge.ACCESS_TOKEN, !1) || localStorage.getItem(pe.ACCESS_TOKEN), m = !c || Ci(c), y = !d || Ci(d);
     return !m && !y || !await Rc(o) ? !1 : uh(l);
   } catch (s) {
-    return console.error(`${Ze.CHECK_TOKEN_AND_REDIRECT} checkTokenAndRedirectWithRefresh Error:`, s), !1;
+    return console.error(
+      `${Ze.CHECK_TOKEN_AND_REDIRECT} checkTokenAndRedirectWithRefresh Error:`,
+      s
+    ), !1;
   }
 }, vE = () => {
   try {
@@ -15185,557 +15372,754 @@ const yl = () => {
                   )
                 }
               ),
-              /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-header", className: "identity-widget-create-account-header mb-6! text-center!", children: [
-                /* @__PURE__ */ v.jsx(
-                  "h2",
-                  {
-                    id: "create-account-dialog-title",
-                    part: "identity-widget-create-account-title",
-                    className: "identity-widget-create-account-title text-2xl! font-bold! text-gray-800! mb-1!",
-                    children: c
-                  }
-                ),
-                /* @__PURE__ */ v.jsx("p", { part: "identity-widget-create-account-subtitle", className: "identity-widget-create-account-subtitle text-sm! text-gray-600! mt-1!", children: d })
-              ] }),
-              /* @__PURE__ */ v.jsxs("form", { part: "identity-widget-create-account-form", onSubmit: Tl, className: "identity-widget-create-account-form space-y-4!", "aria-label": "Create account form", children: [
-                /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-email-field", className: "identity-widget-create-account-email-field mt-0! ml-0! mb-4! mr-0!", children: /* @__PURE__ */ v.jsx(
-                  wa,
-                  {
-                    label: "Email Address",
-                    id: "email",
-                    type: "email",
-                    value: y,
-                    onChange: (Ee) => {
-                      p(Ee.target.value), V("");
-                    },
-                    placeholder: "Enter email address",
-                    disabled: z,
-                    className: "identity-widget-create-account-email-input w-full!",
-                    autoComplete: "email",
-                    error: re && !y ? "Required" : G || "",
-                    endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
-                      _e && /* @__PURE__ */ v.jsx(zh, {}),
-                      !_e && !Le && !Xe && y && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(y) && /* @__PURE__ */ v.jsx(
-                        "img",
-                        {
-                          part: "identity-widget-create-account-email-available-icon",
-                          className: "identity-widget-create-account-email-available-icon",
-                          src: Tu,
-                          alt: "Email available",
-                          "aria-label": "Email is available",
-                          style: { width: 18, height: 18 }
-                        }
-                      )
-                    ] })
-                  }
-                ) }),
-                ee && Le && !Xe && /* @__PURE__ */ v.jsx(
-                  pl,
-                  {
-                    type: de.INFO,
-                    message: "We found an existing account.",
-                    actionText: "Want to sign in instead?",
-                    onActionClick: () => {
-                      ce(!1), o(y);
-                    },
-                    onClose: () => ce(!1),
-                    className: "identity-widget-create-account-existing-banner mb-4!"
-                  }
-                ),
-                ee && Xe && /* @__PURE__ */ v.jsx(
-                  pl,
-                  {
-                    type: de.ERROR,
-                    message: Y,
-                    onClose: () => {
-                      ce(!1), k(!1), X("");
-                    },
-                    className: "identity-widget-create-account-error-banner mb-4!"
-                  }
-                ),
-                /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-name-row", className: "identity-widget-create-account-name-row flex flex-col sm:flex-row gap-2 sm:gap-4 mt-0 ml-0 mb-4 mr-0", children: [
-                  /* @__PURE__ */ v.jsx(
-                    wa,
-                    {
-                      label: "First Name",
-                      id: "firstName",
-                      type: "text",
-                      value: g,
-                      onChange: (Ee) => b(Ee.target.value),
-                      placeholder: "First Name",
-                      disabled: z,
-                      className: "identity-widget-create-account-firstname-input w-full!",
-                      autoComplete: "given-name",
-                      error: re && !g ? "Required" : ""
-                    }
-                  ),
-                  /* @__PURE__ */ v.jsx(
-                    wa,
-                    {
-                      label: "Last Name",
-                      id: "lastName",
-                      type: "text",
-                      value: R,
-                      onChange: (Ee) => C(Ee.target.value),
-                      placeholder: "Last Name",
-                      disabled: z,
-                      className: "identity-widget-create-account-lastname-input w-full!",
-                      autoComplete: "family-name",
-                      error: re && !R ? "Required" : ""
-                    }
-                  )
-                ] }),
-                /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-password-field", className: "identity-widget-create-account-password-field mt-0! ml-0! mb-4! mr-0!", children: /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-password-input-wrap", className: "identity-widget-create-account-password-input-wrap relative! w-full!", children: /* @__PURE__ */ v.jsx(
-                  wa,
-                  {
-                    label: "Password",
-                    id: "password",
-                    type: W ? "text" : "password",
-                    value: q,
-                    onChange: (Ee) => {
-                      A(Ee.target.value), I("");
-                    },
-                    placeholder: "Enter Password...",
-                    disabled: z,
-                    className: "identity-widget-create-account-password-input w-full!",
-                    autoComplete: "new-password",
-                    error: Q,
-                    endIcon: /* @__PURE__ */ v.jsx(
-                      "button",
+              /* @__PURE__ */ v.jsxs(
+                "div",
+                {
+                  part: "identity-widget-create-account-header",
+                  className: "identity-widget-create-account-header mb-6! text-center!",
+                  children: [
+                    /* @__PURE__ */ v.jsx(
+                      "h2",
                       {
-                        type: "button",
-                        part: "identity-widget-create-account-password-toggle",
-                        onClick: () => me(!W),
-                        className: "identity-widget-create-account-password-toggle text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!",
-                        tabIndex: -1,
-                        "aria-label": W ? "Hide password" : "Show password",
-                        children: W ? /* @__PURE__ */ v.jsx(
-                          "svg",
+                        id: "create-account-dialog-title",
+                        part: "identity-widget-create-account-title",
+                        className: "identity-widget-create-account-title text-2xl! font-bold! text-gray-800! mb-1!",
+                        children: c
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      "p",
+                      {
+                        part: "identity-widget-create-account-subtitle",
+                        className: "identity-widget-create-account-subtitle text-sm! text-gray-600! mt-1!",
+                        children: d
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ v.jsxs(
+                "form",
+                {
+                  part: "identity-widget-create-account-form",
+                  onSubmit: Tl,
+                  className: "identity-widget-create-account-form space-y-4!",
+                  "aria-label": "Create account form",
+                  children: [
+                    /* @__PURE__ */ v.jsx(
+                      "div",
+                      {
+                        part: "identity-widget-create-account-email-field",
+                        className: "identity-widget-create-account-email-field mt-0! ml-0! mb-4! mr-0!",
+                        children: /* @__PURE__ */ v.jsx(
+                          wa,
                           {
-                            part: "identity-widget-create-account-password-hide-icon",
-                            className: "identity-widget-create-account-password-hide-icon w-5! h-5!",
-                            fill: "none",
-                            stroke: "currentColor",
-                            viewBox: "0 0 24 24",
-                            "aria-hidden": "true",
+                            label: "Email Address",
+                            id: "email",
+                            type: "email",
+                            value: y,
+                            onChange: (Ee) => {
+                              p(Ee.target.value), V("");
+                            },
+                            placeholder: "Enter email address",
+                            disabled: z,
+                            className: "identity-widget-create-account-email-input w-full!",
+                            autoComplete: "email",
+                            error: re && !y ? "Required" : G || "",
+                            endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
+                              _e && /* @__PURE__ */ v.jsx(zh, {}),
+                              !_e && !Le && !Xe && y && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(y) && /* @__PURE__ */ v.jsx(
+                                "img",
+                                {
+                                  part: "identity-widget-create-account-email-available-icon",
+                                  className: "identity-widget-create-account-email-available-icon",
+                                  src: Tu,
+                                  alt: "Email available",
+                                  "aria-label": "Email is available",
+                                  style: { width: 18, height: 18 }
+                                }
+                              )
+                            ] })
+                          }
+                        )
+                      }
+                    ),
+                    ee && Le && !Xe && /* @__PURE__ */ v.jsx(
+                      pl,
+                      {
+                        type: de.INFO,
+                        message: "We found an existing account.",
+                        actionText: "Want to sign in instead?",
+                        onActionClick: () => {
+                          ce(!1), o(y);
+                        },
+                        onClose: () => ce(!1),
+                        className: "identity-widget-create-account-existing-banner mb-4!"
+                      }
+                    ),
+                    ee && Xe && /* @__PURE__ */ v.jsx(
+                      pl,
+                      {
+                        type: de.ERROR,
+                        message: Y,
+                        onClose: () => {
+                          ce(!1), k(!1), X("");
+                        },
+                        className: "identity-widget-create-account-error-banner mb-4!"
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsxs(
+                      "div",
+                      {
+                        part: "identity-widget-create-account-name-row",
+                        className: "identity-widget-create-account-name-row flex flex-col sm:flex-row gap-2 sm:gap-4 mt-0 ml-0 mb-4 mr-0",
+                        children: [
+                          /* @__PURE__ */ v.jsx(
+                            wa,
+                            {
+                              label: "First Name",
+                              id: "firstName",
+                              type: "text",
+                              value: g,
+                              onChange: (Ee) => b(Ee.target.value),
+                              placeholder: "First Name",
+                              disabled: z,
+                              className: "identity-widget-create-account-firstname-input w-full!",
+                              autoComplete: "given-name",
+                              error: re && !g ? "Required" : ""
+                            }
+                          ),
+                          /* @__PURE__ */ v.jsx(
+                            wa,
+                            {
+                              label: "Last Name",
+                              id: "lastName",
+                              type: "text",
+                              value: R,
+                              onChange: (Ee) => C(Ee.target.value),
+                              placeholder: "Last Name",
+                              disabled: z,
+                              className: "identity-widget-create-account-lastname-input w-full!",
+                              autoComplete: "family-name",
+                              error: re && !R ? "Required" : ""
+                            }
+                          )
+                        ]
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      "div",
+                      {
+                        part: "identity-widget-create-account-password-field",
+                        className: "identity-widget-create-account-password-field mt-0! ml-0! mb-4! mr-0!",
+                        children: /* @__PURE__ */ v.jsx(
+                          "div",
+                          {
+                            part: "identity-widget-create-account-password-input-wrap",
+                            className: "identity-widget-create-account-password-input-wrap relative! w-full!",
                             children: /* @__PURE__ */ v.jsx(
-                              "path",
+                              wa,
                               {
-                                strokeLinecap: "round",
-                                strokeLinejoin: "round",
-                                strokeWidth: 2,
-                                d: "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                label: "Password",
+                                id: "password",
+                                type: W ? "text" : "password",
+                                value: q,
+                                onChange: (Ee) => {
+                                  A(Ee.target.value), I("");
+                                },
+                                placeholder: "Enter Password...",
+                                disabled: z,
+                                className: "identity-widget-create-account-password-input w-full!",
+                                autoComplete: "new-password",
+                                error: Q,
+                                endIcon: /* @__PURE__ */ v.jsx(
+                                  "button",
+                                  {
+                                    type: "button",
+                                    part: "identity-widget-create-account-password-toggle",
+                                    onClick: () => me(!W),
+                                    className: "identity-widget-create-account-password-toggle text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!",
+                                    tabIndex: -1,
+                                    "aria-label": W ? "Hide password" : "Show password",
+                                    children: W ? /* @__PURE__ */ v.jsx(
+                                      "svg",
+                                      {
+                                        part: "identity-widget-create-account-password-hide-icon",
+                                        className: "identity-widget-create-account-password-hide-icon w-5! h-5!",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24",
+                                        "aria-hidden": "true",
+                                        children: /* @__PURE__ */ v.jsx(
+                                          "path",
+                                          {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                          }
+                                        )
+                                      }
+                                    ) : /* @__PURE__ */ v.jsxs(
+                                      "svg",
+                                      {
+                                        part: "identity-widget-create-account-password-show-icon",
+                                        className: "identity-widget-create-account-password-show-icon w-5! h-5!",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24",
+                                        "aria-hidden": "true",
+                                        children: [
+                                          /* @__PURE__ */ v.jsx(
+                                            "path",
+                                            {
+                                              strokeLinecap: "round",
+                                              strokeLinejoin: "round",
+                                              strokeWidth: 2,
+                                              d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                            }
+                                          ),
+                                          /* @__PURE__ */ v.jsx(
+                                            "path",
+                                            {
+                                              strokeLinecap: "round",
+                                              strokeLinejoin: "round",
+                                              strokeWidth: 2,
+                                              d: "M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                            }
+                                          )
+                                        ]
+                                      }
+                                    )
+                                  }
+                                )
                               }
                             )
                           }
-                        ) : /* @__PURE__ */ v.jsxs(
-                          "svg",
+                        )
+                      }
+                    ),
+                    q && /* @__PURE__ */ v.jsxs(
+                      "div",
+                      {
+                        part: "identity-widget-create-account-strength",
+                        className: "identity-widget-create-account-strength mt-2! mb-4!",
+                        children: [
+                          /* @__PURE__ */ v.jsxs(
+                            "div",
+                            {
+                              part: "identity-widget-create-account-strength-row",
+                              className: "identity-widget-create-account-strength-row flex! items-center! justify-between! mb-2!",
+                              children: [
+                                /* @__PURE__ */ v.jsx(
+                                  "div",
+                                  {
+                                    part: "identity-widget-create-account-strength-track",
+                                    className: "identity-widget-create-account-strength-track w-full! bg-gray-200! rounded-full! h-2! mr-3!",
+                                    children: /* @__PURE__ */ v.jsx(
+                                      "div",
+                                      {
+                                        part: "identity-widget-create-account-strength-fill",
+                                        className: "identity-widget-create-account-strength-fill h-2! rounded-full! transition-all! duration-300!",
+                                        style: {
+                                          width: te.width,
+                                          backgroundColor: te.color
+                                        }
+                                      }
+                                    )
+                                  }
+                                ),
+                                /* @__PURE__ */ v.jsx(
+                                  "span",
+                                  {
+                                    part: "identity-widget-create-account-strength-label",
+                                    className: "identity-widget-create-account-strength-label text-sm! font-medium! whitespace-nowrap!",
+                                    style: { color: te.color },
+                                    children: te.strength
+                                  }
+                                )
+                              ]
+                            }
+                          ),
+                          /* @__PURE__ */ v.jsxs(
+                            "div",
+                            {
+                              part: "identity-widget-create-account-requirements",
+                              className: "identity-widget-create-account-requirements mt-3!",
+                              children: [
+                                /* @__PURE__ */ v.jsx(
+                                  "p",
+                                  {
+                                    part: "identity-widget-create-account-requirements-title",
+                                    className: "identity-widget-create-account-requirements-title text-sm! font-medium! text-gray-700! mb-2!",
+                                    children: "Password must:"
+                                  }
+                                ),
+                                /* @__PURE__ */ v.jsxs(
+                                  "ul",
+                                  {
+                                    part: "identity-widget-create-account-requirements-list",
+                                    className: "identity-widget-create-account-requirements-list space-y-1!",
+                                    children: [
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.length ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.length ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "be 9-15 characters"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      ),
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.hasNumber ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.hasNumber ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "have at least one number"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      ),
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.hasUppercase ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.hasUppercase ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "have at least one uppercase letter"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      ),
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.hasSpecialChar ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.hasSpecialChar ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "have at least one special character"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      ),
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.onlyAllowedChars ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.onlyAllowedChars ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "use only the following special characters !@#$%^&*._-"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      ),
+                                      /* @__PURE__ */ v.jsxs(
+                                        "li",
+                                        {
+                                          part: "identity-widget-create-account-requirement-item",
+                                          className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!",
+                                          children: [
+                                            J.differentFromUsername ? /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ) : /* @__PURE__ */ v.jsx(
+                                              "svg",
+                                              {
+                                                part: "identity-widget-create-account-requirement-icon",
+                                                className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
+                                                fill: "currentColor",
+                                                viewBox: "0 0 20 20",
+                                                children: /* @__PURE__ */ v.jsx(
+                                                  "path",
+                                                  {
+                                                    fillRule: "evenodd",
+                                                    d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
+                                                    clipRule: "evenodd"
+                                                  }
+                                                )
+                                              }
+                                            ),
+                                            /* @__PURE__ */ v.jsx(
+                                              "span",
+                                              {
+                                                part: "identity-widget-create-account-requirement-text",
+                                                className: `identity-widget-create-account-requirement-text ${J.differentFromUsername ? "text-green-600!" : "text-gray-500!"}`,
+                                                children: "be different from username"
+                                              }
+                                            )
+                                          ]
+                                        }
+                                      )
+                                    ]
+                                  }
+                                )
+                              ]
+                            }
+                          )
+                        ]
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      "div",
+                      {
+                        part: "identity-widget-create-account-remember-row",
+                        className: "identity-widget-create-account-remember-row flex! items-center! mt-4! ml-0! mb-4! mr-0!",
+                        children: /* @__PURE__ */ v.jsxs(
+                          "label",
                           {
-                            part: "identity-widget-create-account-password-show-icon",
-                            className: "identity-widget-create-account-password-show-icon w-5! h-5!",
-                            fill: "none",
-                            stroke: "currentColor",
-                            viewBox: "0 0 24 24",
-                            "aria-hidden": "true",
+                            part: "identity-widget-create-account-remember-label",
+                            className: "identity-widget-create-account-remember-label flex! items-center! m-0!",
                             children: [
                               /* @__PURE__ */ v.jsx(
-                                "path",
+                                "input",
                                 {
-                                  strokeLinecap: "round",
-                                  strokeLinejoin: "round",
-                                  strokeWidth: 2,
-                                  d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                  type: "checkbox",
+                                  part: "identity-widget-create-account-remember-checkbox",
+                                  checked: ue,
+                                  onChange: (Ee) => Ae(Ee.target.checked),
+                                  className: "identity-widget-create-account-remember-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!",
+                                  "aria-label": "Remember me"
                                 }
                               ),
                               /* @__PURE__ */ v.jsx(
-                                "path",
+                                "span",
                                 {
-                                  strokeLinecap: "round",
-                                  strokeLinejoin: "round",
-                                  strokeWidth: 2,
-                                  d: "M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                  part: "identity-widget-create-account-remember-text",
+                                  className: "identity-widget-create-account-remember-text text-gray-600! text-sm!",
+                                  style: {
+                                    fontWeight: "500",
+                                    color: "#5F5B7D"
+                                  },
+                                  children: "Remember me"
                                 }
                               )
                             ]
                           }
                         )
                       }
-                    )
-                  }
-                ) }) }),
-                q && /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-strength", className: "identity-widget-create-account-strength mt-2! mb-4!", children: [
-                  /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-strength-row", className: "identity-widget-create-account-strength-row flex! items-center! justify-between! mb-2!", children: [
-                    /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-strength-track", className: "identity-widget-create-account-strength-track w-full! bg-gray-200! rounded-full! h-2! mr-3!", children: /* @__PURE__ */ v.jsx(
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      Ht,
+                      {
+                        type: gt.SUBMIT,
+                        disabled: z || Le || !Ft,
+                        part: "identity-widget-submit-button identity-widget-create-account-submit-button",
+                        className: "identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
+                        children: z ? /* @__PURE__ */ v.jsxs(
+                          "span",
+                          {
+                            part: "identity-widget-create-account-submit-loading",
+                            className: "identity-widget-create-account-submit-loading flex! items-center! justify-center!",
+                            children: [
+                              /* @__PURE__ */ v.jsxs(
+                                "svg",
+                                {
+                                  part: "identity-widget-create-account-submit-spinner",
+                                  className: "identity-widget-create-account-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
+                                  fill: "none",
+                                  viewBox: "0 0 24 24",
+                                  children: [
+                                    /* @__PURE__ */ v.jsx(
+                                      "circle",
+                                      {
+                                        part: "identity-widget-create-account-submit-spinner-track",
+                                        className: "identity-widget-create-account-submit-spinner-track opacity-25!",
+                                        cx: "12",
+                                        cy: "12",
+                                        r: "10",
+                                        stroke: "currentColor",
+                                        strokeWidth: "4"
+                                      }
+                                    ),
+                                    /* @__PURE__ */ v.jsx(
+                                      "path",
+                                      {
+                                        part: "identity-widget-create-account-submit-spinner-fill",
+                                        className: "identity-widget-create-account-submit-spinner-fill opacity-75!",
+                                        fill: "currentColor",
+                                        d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                      }
+                                    )
+                                  ]
+                                }
+                              ),
+                              "Creating Account..."
+                            ]
+                          }
+                        ) : "Create Account"
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsxs(
                       "div",
                       {
-                        part: "identity-widget-create-account-strength-fill",
-                        className: "identity-widget-create-account-strength-fill h-2! rounded-full! transition-all! duration-300!",
-                        style: {
-                          width: te.width,
-                          backgroundColor: te.color
-                        }
+                        part: "identity-widget-create-account-divider",
+                        className: "identity-widget-create-account-divider relative! mt-4! mb-4!",
+                        children: [
+                          /* @__PURE__ */ v.jsx(
+                            "div",
+                            {
+                              part: "identity-widget-create-account-divider-line-wrap",
+                              className: "identity-widget-create-account-divider-line-wrap absolute! inset-0! flex! items-center!",
+                              children: /* @__PURE__ */ v.jsx(
+                                "div",
+                                {
+                                  part: "identity-widget-create-account-divider-line",
+                                  className: "identity-widget-create-account-divider-line w-full! border-t! border-solid! border-gray-300!"
+                                }
+                              )
+                            }
+                          ),
+                          /* @__PURE__ */ v.jsx(
+                            "div",
+                            {
+                              part: "identity-widget-create-account-divider-text-wrap",
+                              className: "identity-widget-create-account-divider-text-wrap relative! flex! justify-center! text-sm!",
+                              children: /* @__PURE__ */ v.jsx(
+                                "span",
+                                {
+                                  part: "identity-widget-create-account-divider-text",
+                                  className: "identity-widget-create-account-divider-text px-2! bg-white text-gray-500",
+                                  children: "OR"
+                                }
+                              )
+                            }
+                          )
+                        ]
                       }
-                    ) }),
+                    ),
                     /* @__PURE__ */ v.jsx(
-                      "span",
+                      Ht,
                       {
-                        part: "identity-widget-create-account-strength-label",
-                        className: "identity-widget-create-account-strength-label text-sm! font-medium! whitespace-nowrap!",
-                        style: { color: te.color },
-                        children: te.strength
+                        type: gt.BUTTON,
+                        variant: Tt.OUTLINE,
+                        onClick: () => o(y),
+                        disabled: z,
+                        part: "identity-widget-create-account-signin-button",
+                        className: "identity-widget-create-account-signin-button w-full! flex! items-center! justify-center! gap-3!",
+                        children: /* @__PURE__ */ v.jsx(
+                          "span",
+                          {
+                            part: "identity-widget-create-account-signin-text",
+                            className: "identity-widget-create-account-signin-text",
+                            children: "Sign In"
+                          }
+                        )
                       }
                     )
-                  ] }),
-                  /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-requirements", className: "identity-widget-create-account-requirements mt-3!", children: [
-                    /* @__PURE__ */ v.jsx("p", { part: "identity-widget-create-account-requirements-title", className: "identity-widget-create-account-requirements-title text-sm! font-medium! text-gray-700! mb-2!", children: "Password must:" }),
-                    /* @__PURE__ */ v.jsxs("ul", { part: "identity-widget-create-account-requirements-list", className: "identity-widget-create-account-requirements-list space-y-1!", children: [
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.length ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.length ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "be 9-15 characters"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.hasNumber ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.hasNumber ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "have at least one number"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.hasUppercase ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.hasUppercase ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "have at least one uppercase letter"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.hasSpecialChar ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.hasSpecialChar ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "have at least one special character"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.onlyAllowedChars ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.onlyAllowedChars ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "use only the following special characters !@#$%^&*._-"
-                          }
-                        )
-                      ] }),
-                      /* @__PURE__ */ v.jsxs("li", { part: "identity-widget-create-account-requirement-item", className: "identity-widget-create-account-requirement-item flex! items-center! text-sm!", children: [
-                        J.differentFromUsername ? /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-green-500!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ) : /* @__PURE__ */ v.jsx(
-                          "svg",
-                          {
-                            part: "identity-widget-create-account-requirement-icon",
-                            className: "identity-widget-create-account-requirement-icon w-4! h-4! mr-2! text-gray-400!",
-                            fill: "currentColor",
-                            viewBox: "0 0 20 20",
-                            children: /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                fillRule: "evenodd",
-                                d: "M10 18a8 8 0 100-16 8 8 0 000 16zm0-2a6 6 0 100-12 6 6 0 000 12z",
-                                clipRule: "evenodd"
-                              }
-                            )
-                          }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "span",
-                          {
-                            part: "identity-widget-create-account-requirement-text",
-                            className: `identity-widget-create-account-requirement-text ${J.differentFromUsername ? "text-green-600!" : "text-gray-500!"}`,
-                            children: "be different from username"
-                          }
-                        )
-                      ] })
-                    ] })
-                  ] })
-                ] }),
-                /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-remember-row", className: "identity-widget-create-account-remember-row flex! items-center! mt-4! ml-0! mb-4! mr-0!", children: /* @__PURE__ */ v.jsxs("label", { part: "identity-widget-create-account-remember-label", className: "identity-widget-create-account-remember-label flex! items-center! m-0!", children: [
-                  /* @__PURE__ */ v.jsx(
-                    "input",
-                    {
-                      type: "checkbox",
-                      part: "identity-widget-create-account-remember-checkbox",
-                      checked: ue,
-                      onChange: (Ee) => Ae(Ee.target.checked),
-                      className: "identity-widget-create-account-remember-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!",
-                      "aria-label": "Remember me"
-                    }
-                  ),
-                  /* @__PURE__ */ v.jsx(
-                    "span",
-                    {
-                      part: "identity-widget-create-account-remember-text",
-                      className: "identity-widget-create-account-remember-text text-gray-600! text-sm!",
-                      style: {
-                        fontWeight: "500",
-                        color: "#5F5B7D"
-                      },
-                      children: "Remember me"
-                    }
-                  )
-                ] }) }),
-                /* @__PURE__ */ v.jsx(
-                  Ht,
-                  {
-                    type: gt.SUBMIT,
-                    disabled: z || Le || !Ft,
-                    part: "identity-widget-submit-button identity-widget-create-account-submit-button",
-                    className: "identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
-                    children: z ? /* @__PURE__ */ v.jsxs("span", { part: "identity-widget-create-account-submit-loading", className: "identity-widget-create-account-submit-loading flex! items-center! justify-center!", children: [
-                      /* @__PURE__ */ v.jsxs(
-                        "svg",
-                        {
-                          part: "identity-widget-create-account-submit-spinner",
-                          className: "identity-widget-create-account-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
-                          fill: "none",
-                          viewBox: "0 0 24 24",
-                          children: [
-                            /* @__PURE__ */ v.jsx(
-                              "circle",
-                              {
-                                part: "identity-widget-create-account-submit-spinner-track",
-                                className: "identity-widget-create-account-submit-spinner-track opacity-25!",
-                                cx: "12",
-                                cy: "12",
-                                r: "10",
-                                stroke: "currentColor",
-                                strokeWidth: "4"
-                              }
-                            ),
-                            /* @__PURE__ */ v.jsx(
-                              "path",
-                              {
-                                part: "identity-widget-create-account-submit-spinner-fill",
-                                className: "identity-widget-create-account-submit-spinner-fill opacity-75!",
-                                fill: "currentColor",
-                                d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              }
-                            )
-                          ]
-                        }
-                      ),
-                      "Creating Account..."
-                    ] }) : "Create Account"
-                  }
-                ),
-                /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-create-account-divider", className: "identity-widget-create-account-divider relative! mt-4! mb-4!", children: [
-                  /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-divider-line-wrap", className: "identity-widget-create-account-divider-line-wrap absolute! inset-0! flex! items-center!", children: /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-divider-line", className: "identity-widget-create-account-divider-line w-full! border-t! border-solid! border-gray-300!" }) }),
-                  /* @__PURE__ */ v.jsx("div", { part: "identity-widget-create-account-divider-text-wrap", className: "identity-widget-create-account-divider-text-wrap relative! flex! justify-center! text-sm!", children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-create-account-divider-text", className: "identity-widget-create-account-divider-text px-2! bg-white text-gray-500", children: "OR" }) })
-                ] }),
-                /* @__PURE__ */ v.jsx(
-                  Ht,
-                  {
-                    type: gt.BUTTON,
-                    variant: Tt.OUTLINE,
-                    onClick: () => o(y),
-                    disabled: z,
-                    part: "identity-widget-create-account-signin-button",
-                    className: "identity-widget-create-account-signin-button w-full! flex! items-center! justify-center! gap-3!",
-                    children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-create-account-signin-text", className: "identity-widget-create-account-signin-text", children: "Sign In" })
-                  }
-                )
-              ] })
+                  ]
+                }
+              )
             ]
           }
         )
@@ -15770,106 +16154,187 @@ const yl = () => {
       role: "dialog",
       "aria-modal": "true",
       "aria-labelledby": "reset-success-dialog-title",
-      children: /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-reset-success-modal", className: "identity-widget-reset-success-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!", role: "document", children: [
-        /* @__PURE__ */ v.jsx(
-          Ht,
-          {
-            onClick: c,
-            variant: Tt.LINK,
-            part: "identity-widget-reset-success-close-button",
-            className: "identity-widget-reset-success-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
-            type: gt.BUTTON,
-            ariaLabel: "Close dialog",
-            children: /* @__PURE__ */ v.jsx(
-              "svg",
+      children: /* @__PURE__ */ v.jsxs(
+        "div",
+        {
+          part: "identity-widget-reset-success-modal",
+          className: "identity-widget-reset-success-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!",
+          role: "document",
+          children: [
+            /* @__PURE__ */ v.jsx(
+              Ht,
               {
-                part: "identity-widget-reset-success-close-icon",
-                className: "identity-widget-reset-success-close-icon w-6! h-6!",
-                fill: "none",
-                stroke: "currentColor",
-                viewBox: "0 0 24 24",
-                "aria-hidden": "true",
+                onClick: c,
+                variant: Tt.LINK,
+                part: "identity-widget-reset-success-close-button",
+                className: "identity-widget-reset-success-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
+                type: gt.BUTTON,
+                ariaLabel: "Close dialog",
                 children: /* @__PURE__ */ v.jsx(
-                  "path",
+                  "svg",
                   {
-                    strokeLinecap: "round",
-                    strokeLinejoin: "round",
-                    strokeWidth: 2,
-                    d: "M6 18L18 6M6 6l12 12"
+                    part: "identity-widget-reset-success-close-icon",
+                    className: "identity-widget-reset-success-close-icon w-6! h-6!",
+                    fill: "none",
+                    stroke: "currentColor",
+                    viewBox: "0 0 24 24",
+                    "aria-hidden": "true",
+                    children: /* @__PURE__ */ v.jsx(
+                      "path",
+                      {
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round",
+                        strokeWidth: 2,
+                        d: "M6 18L18 6M6 6l12 12"
+                      }
+                    )
+                  }
+                )
+              }
+            ),
+            /* @__PURE__ */ v.jsx(
+              "div",
+              {
+                part: "identity-widget-reset-success-icon-wrap",
+                className: "identity-widget-reset-success-icon-wrap flex! justify-center! mb-4!",
+                children: /* @__PURE__ */ v.jsx(
+                  "img",
+                  {
+                    part: "identity-widget-reset-success-icon",
+                    src: Tu,
+                    alt: "Success",
+                    "aria-hidden": "true",
+                    className: "identity-widget-reset-success-icon w-16! h-16!"
+                  }
+                )
+              }
+            ),
+            /* @__PURE__ */ v.jsxs(
+              "div",
+              {
+                part: "identity-widget-reset-success-header",
+                className: "identity-widget-reset-success-header mb-6! text-center!",
+                children: [
+                  /* @__PURE__ */ v.jsx(
+                    "h2",
+                    {
+                      part: "identity-widget-reset-success-title",
+                      id: "reset-success-dialog-title",
+                      className: "identity-widget-reset-success-title text-2xl! font-bold! text-gray-800! mb-3!",
+                      children: "Check your email"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "p",
+                    {
+                      part: "identity-widget-reset-success-subtitle",
+                      className: "identity-widget-reset-success-subtitle text-base! text-gray-700! mb-2!",
+                      children: "We've sent a password reset link to"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "p",
+                    {
+                      part: "identity-widget-reset-success-email",
+                      className: "identity-widget-reset-success-email text-base! font-semibold! text-gray-900! mb-4!",
+                      children: l
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "p",
+                    {
+                      part: "identity-widget-reset-success-copy",
+                      className: "identity-widget-reset-success-copy text-sm! text-gray-800! mb-2!",
+                      children: "Follow the instructions in the email to reset your password and return to checkout."
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "p",
+                    {
+                      part: "identity-widget-reset-success-note",
+                      className: "identity-widget-reset-success-note text-xs! text-gray-500!",
+                      children: "Didn't receive the email? Check your spam folder or try again in a few minutes."
+                    }
+                  )
+                ]
+              }
+            ),
+            /* @__PURE__ */ v.jsx(
+              Ht,
+              {
+                type: gt.BUTTON,
+                onClick: s,
+                disabled: r,
+                ariaLabel: "Resend password reset link",
+                part: "identity-widget-submit-button identity-widget-reset-success-resend-button",
+                className: "identity-widget-submit-button identity-widget-reset-success-resend-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!",
+                children: r ? /* @__PURE__ */ v.jsxs(
+                  "span",
+                  {
+                    part: "identity-widget-reset-success-resend-loading",
+                    className: "identity-widget-reset-success-resend-loading flex! items-center! justify-center!",
+                    children: [
+                      /* @__PURE__ */ v.jsxs(
+                        "svg",
+                        {
+                          part: "identity-widget-reset-success-resend-spinner",
+                          className: "identity-widget-reset-success-resend-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
+                          fill: "none",
+                          viewBox: "0 0 24 24",
+                          "aria-hidden": "true",
+                          children: [
+                            /* @__PURE__ */ v.jsx(
+                              "circle",
+                              {
+                                part: "identity-widget-reset-success-resend-spinner-track",
+                                className: "identity-widget-reset-success-resend-spinner-track opacity-25!",
+                                cx: "12",
+                                cy: "12",
+                                r: "10",
+                                stroke: "currentColor",
+                                strokeWidth: "4"
+                              }
+                            ),
+                            /* @__PURE__ */ v.jsx(
+                              "path",
+                              {
+                                part: "identity-widget-reset-success-resend-spinner-fill",
+                                className: "identity-widget-reset-success-resend-spinner-fill opacity-75!",
+                                fill: "currentColor",
+                                d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              }
+                            )
+                          ]
+                        }
+                      ),
+                      "Sending..."
+                    ]
+                  }
+                ) : "Resend link"
+              }
+            ),
+            /* @__PURE__ */ v.jsx(
+              Ht,
+              {
+                type: gt.BUTTON,
+                variant: Tt.OUTLINE,
+                onClick: o,
+                disabled: r,
+                part: "identity-widget-reset-success-back-button",
+                className: "identity-widget-reset-success-back-button w-full! flex! items-center! justify-center! gap-3!",
+                children: /* @__PURE__ */ v.jsx(
+                  "span",
+                  {
+                    part: "identity-widget-reset-success-back-text",
+                    className: "identity-widget-reset-success-back-text",
+                    children: "Back to sign in"
                   }
                 )
               }
             )
-          }
-        ),
-        /* @__PURE__ */ v.jsx("div", { part: "identity-widget-reset-success-icon-wrap", className: "identity-widget-reset-success-icon-wrap flex! justify-center! mb-4!", children: /* @__PURE__ */ v.jsx("img", { part: "identity-widget-reset-success-icon", src: Tu, alt: "Success", "aria-hidden": "true", className: "identity-widget-reset-success-icon w-16! h-16!" }) }),
-        /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-reset-success-header", className: "identity-widget-reset-success-header mb-6! text-center!", children: [
-          /* @__PURE__ */ v.jsx("h2", { part: "identity-widget-reset-success-title", id: "reset-success-dialog-title", className: "identity-widget-reset-success-title text-2xl! font-bold! text-gray-800! mb-3!", children: "Check your email" }),
-          /* @__PURE__ */ v.jsx("p", { part: "identity-widget-reset-success-subtitle", className: "identity-widget-reset-success-subtitle text-base! text-gray-700! mb-2!", children: "We've sent a password reset link to" }),
-          /* @__PURE__ */ v.jsx("p", { part: "identity-widget-reset-success-email", className: "identity-widget-reset-success-email text-base! font-semibold! text-gray-900! mb-4!", children: l }),
-          /* @__PURE__ */ v.jsx("p", { part: "identity-widget-reset-success-copy", className: "identity-widget-reset-success-copy text-sm! text-gray-800! mb-2!", children: "Follow the instructions in the email to reset your password and return to checkout." }),
-          /* @__PURE__ */ v.jsx("p", { part: "identity-widget-reset-success-note", className: "identity-widget-reset-success-note text-xs! text-gray-500!", children: "Didn't receive the email? Check your spam folder or try again in a few minutes." })
-        ] }),
-        /* @__PURE__ */ v.jsx(
-          Ht,
-          {
-            type: gt.BUTTON,
-            onClick: s,
-            disabled: r,
-            ariaLabel: "Resend password reset link",
-            part: "identity-widget-submit-button identity-widget-reset-success-resend-button",
-            className: "identity-widget-submit-button identity-widget-reset-success-resend-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!",
-            children: r ? /* @__PURE__ */ v.jsxs("span", { part: "identity-widget-reset-success-resend-loading", className: "identity-widget-reset-success-resend-loading flex! items-center! justify-center!", children: [
-              /* @__PURE__ */ v.jsxs(
-                "svg",
-                {
-                  part: "identity-widget-reset-success-resend-spinner",
-                  className: "identity-widget-reset-success-resend-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
-                  fill: "none",
-                  viewBox: "0 0 24 24",
-                  "aria-hidden": "true",
-                  children: [
-                    /* @__PURE__ */ v.jsx(
-                      "circle",
-                      {
-                        part: "identity-widget-reset-success-resend-spinner-track",
-                        className: "identity-widget-reset-success-resend-spinner-track opacity-25!",
-                        cx: "12",
-                        cy: "12",
-                        r: "10",
-                        stroke: "currentColor",
-                        strokeWidth: "4"
-                      }
-                    ),
-                    /* @__PURE__ */ v.jsx(
-                      "path",
-                      {
-                        part: "identity-widget-reset-success-resend-spinner-fill",
-                        className: "identity-widget-reset-success-resend-spinner-fill opacity-75!",
-                        fill: "currentColor",
-                        d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      }
-                    )
-                  ]
-                }
-              ),
-              "Sending..."
-            ] }) : "Resend link"
-          }
-        ),
-        /* @__PURE__ */ v.jsx(
-          Ht,
-          {
-            type: gt.BUTTON,
-            variant: Tt.OUTLINE,
-            onClick: o,
-            disabled: r,
-            part: "identity-widget-reset-success-back-button",
-            className: "identity-widget-reset-success-back-button w-full! flex! items-center! justify-center! gap-3!",
-            children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-reset-success-back-text", className: "identity-widget-reset-success-back-text", children: "Back to sign in" })
-          }
-        )
-      ] })
+          ]
+        }
+      )
     }
   );
 }, wE = ({
@@ -15952,177 +16417,229 @@ const yl = () => {
       role: "dialog",
       "aria-modal": "true",
       "aria-labelledby": "reset-password-dialog-title",
-      children: /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-reset-password-modal", className: "identity-widget-reset-password-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!", role: "document", children: [
-        /* @__PURE__ */ v.jsx(
-          Ht,
-          {
-            onClick: s,
-            variant: Tt.LINK,
-            part: "identity-widget-reset-password-close-button",
-            className: "identity-widget-reset-password-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
-            type: gt.BUTTON,
-            ariaLabel: "Close dialog",
-            children: /* @__PURE__ */ v.jsx(
-              "svg",
+      children: /* @__PURE__ */ v.jsxs(
+        "div",
+        {
+          part: "identity-widget-reset-password-modal",
+          className: "identity-widget-reset-password-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!",
+          role: "document",
+          children: [
+            /* @__PURE__ */ v.jsx(
+              Ht,
               {
-                part: "identity-widget-reset-password-close-icon",
-                className: "identity-widget-reset-password-close-icon w-6! h-6!",
-                fill: "none",
-                stroke: "currentColor",
-                viewBox: "0 0 24 24",
-                "aria-hidden": "true",
+                onClick: s,
+                variant: Tt.LINK,
+                part: "identity-widget-reset-password-close-button",
+                className: "identity-widget-reset-password-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
+                type: gt.BUTTON,
+                ariaLabel: "Close dialog",
                 children: /* @__PURE__ */ v.jsx(
-                  "path",
+                  "svg",
                   {
-                    strokeLinecap: "round",
-                    strokeLinejoin: "round",
-                    strokeWidth: 2,
-                    d: "M6 18L18 6M6 6l12 12"
+                    part: "identity-widget-reset-password-close-icon",
+                    className: "identity-widget-reset-password-close-icon w-6! h-6!",
+                    fill: "none",
+                    stroke: "currentColor",
+                    viewBox: "0 0 24 24",
+                    "aria-hidden": "true",
+                    children: /* @__PURE__ */ v.jsx(
+                      "path",
+                      {
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round",
+                        strokeWidth: 2,
+                        d: "M6 18L18 6M6 6l12 12"
+                      }
+                    )
                   }
                 )
               }
-            )
-          }
-        ),
-        /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-reset-password-header", className: "identity-widget-reset-password-header mb-6! text-center!", children: [
-          /* @__PURE__ */ v.jsx(
-            "h2",
-            {
-              id: "reset-password-dialog-title",
-              part: "identity-widget-reset-password-title",
-              className: "identity-widget-reset-password-title text-2xl! font-bold! text-gray-800! mb-2!",
-              children: "Reset your password"
-            }
-          ),
-          /* @__PURE__ */ v.jsx("p", { part: "identity-widget-reset-password-subtitle", className: "identity-widget-reset-password-subtitle text-sm! text-gray-600!", children: "Enter your email and we'll send you a link to reset your password." })
-        ] }),
-        /* @__PURE__ */ v.jsxs("form", { part: "identity-widget-reset-password-form", onSubmit: re, className: "identity-widget-reset-password-form space-y-4!", "aria-label": "Reset password form", children: [
-          /* @__PURE__ */ v.jsx("div", { part: "identity-widget-reset-password-email-field", className: "identity-widget-reset-password-email-field mt-0! ml-0! mb-4! mr-0!", children: /* @__PURE__ */ v.jsx(
-            wa,
-            {
-              label: "Email Address",
-              id: "reset-email",
-              type: "email",
-              value: o,
-              onChange: (ee) => {
-                c(ee.target.value), b("");
-              },
-              placeholder: "Enter email",
-              disabled: d,
-              className: "identity-widget-reset-password-email-input w-full!",
-              autoComplete: "email",
-              endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
-                R && /* @__PURE__ */ v.jsx(
-                  "div",
-                  {
-                    part: "identity-widget-reset-password-email-loading",
-                    className: "identity-widget-reset-password-email-loading animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!",
-                    role: "status",
-                    "aria-label": "Checking email"
-                  }
-                ),
-                !R && q && z && !G && /* @__PURE__ */ v.jsx(
-                  "img",
-                  {
-                    part: "identity-widget-reset-password-email-verified-icon",
-                    className: "identity-widget-reset-password-email-verified-icon",
-                    src: Tu,
-                    alt: "User found",
-                    "aria-label": "User found",
-                    style: { width: 18, height: 18 }
-                  }
-                )
-              ] })
-            }
-          ) }),
-          G && /* @__PURE__ */ v.jsx(
-            pl,
-            {
-              type: de.ERROR,
-              message: Q,
-              onClose: () => {
-                V(!1), I("");
-              },
-              className: "identity-widget-reset-password-email-check-error-banner mb-4!"
-            }
-          ),
-          g && /* @__PURE__ */ v.jsx(
-            pl,
-            {
-              type: de.ERROR,
-              message: g,
-              actionText: "Want to sign in instead?",
-              onActionClick: r,
-              onClose: () => b(""),
-              className: "identity-widget-reset-password-submit-error-banner mb-4!"
-            }
-          ),
-          /* @__PURE__ */ v.jsx(
-            Ht,
-            {
-              type: gt.SUBMIT,
-              part: "identity-widget-submit-button identity-widget-reset-password-submit-button",
-              disabled: d || !o || !z || !q,
-              className: "identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
-              onClick: () => {
-                console.log("[ResetPassword] Button state:", {
-                  loading: d,
-                  email: o,
-                  isEmailValid: z,
-                  emailExists: q
-                });
-              },
-              children: d ? /* @__PURE__ */ v.jsxs("span", { part: "identity-widget-reset-password-submit-loading", className: "identity-widget-reset-password-submit-loading flex! items-center! justify-center!", children: [
-                /* @__PURE__ */ v.jsxs(
-                  "svg",
-                  {
-                    part: "identity-widget-reset-password-submit-spinner",
-                    className: "identity-widget-reset-password-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
-                    fill: "none",
-                    viewBox: "0 0 24 24",
-                    children: [
-                      /* @__PURE__ */ v.jsx(
-                        "circle",
+            ),
+            /* @__PURE__ */ v.jsxs(
+              "div",
+              {
+                part: "identity-widget-reset-password-header",
+                className: "identity-widget-reset-password-header mb-6! text-center!",
+                children: [
+                  /* @__PURE__ */ v.jsx(
+                    "h2",
+                    {
+                      id: "reset-password-dialog-title",
+                      part: "identity-widget-reset-password-title",
+                      className: "identity-widget-reset-password-title text-2xl! font-bold! text-gray-800! mb-2!",
+                      children: "Reset your password"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    "p",
+                    {
+                      part: "identity-widget-reset-password-subtitle",
+                      className: "identity-widget-reset-password-subtitle text-sm! text-gray-600!",
+                      children: "Enter your email and we'll send you a link to reset your password."
+                    }
+                  )
+                ]
+              }
+            ),
+            /* @__PURE__ */ v.jsxs(
+              "form",
+              {
+                part: "identity-widget-reset-password-form",
+                onSubmit: re,
+                className: "identity-widget-reset-password-form space-y-4!",
+                "aria-label": "Reset password form",
+                children: [
+                  /* @__PURE__ */ v.jsx(
+                    "div",
+                    {
+                      part: "identity-widget-reset-password-email-field",
+                      className: "identity-widget-reset-password-email-field mt-0! ml-0! mb-4! mr-0!",
+                      children: /* @__PURE__ */ v.jsx(
+                        wa,
                         {
-                          part: "identity-widget-reset-password-submit-spinner-track",
-                          className: "identity-widget-reset-password-submit-spinner-track opacity-25!",
-                          cx: "12",
-                          cy: "12",
-                          r: "10",
-                          stroke: "currentColor",
-                          strokeWidth: "4"
-                        }
-                      ),
-                      /* @__PURE__ */ v.jsx(
-                        "path",
-                        {
-                          part: "identity-widget-reset-password-submit-spinner-fill",
-                          className: "identity-widget-reset-password-submit-spinner-fill opacity-75!",
-                          fill: "currentColor",
-                          d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          label: "Email Address",
+                          id: "reset-email",
+                          type: "email",
+                          value: o,
+                          onChange: (ee) => {
+                            c(ee.target.value), b("");
+                          },
+                          placeholder: "Enter email",
+                          disabled: d,
+                          className: "identity-widget-reset-password-email-input w-full!",
+                          autoComplete: "email",
+                          endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
+                            R && /* @__PURE__ */ v.jsx(
+                              "div",
+                              {
+                                part: "identity-widget-reset-password-email-loading",
+                                className: "identity-widget-reset-password-email-loading animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!",
+                                role: "status",
+                                "aria-label": "Checking email"
+                              }
+                            ),
+                            !R && q && z && !G && /* @__PURE__ */ v.jsx(
+                              "img",
+                              {
+                                part: "identity-widget-reset-password-email-verified-icon",
+                                className: "identity-widget-reset-password-email-verified-icon",
+                                src: Tu,
+                                alt: "User found",
+                                "aria-label": "User found",
+                                style: { width: 18, height: 18 }
+                              }
+                            )
+                          ] })
                         }
                       )
-                    ]
-                  }
-                ),
-                "Sending..."
-              ] }) : "Send reset link"
-            }
-          ),
-          /* @__PURE__ */ v.jsx(
-            Ht,
-            {
-              type: gt.BUTTON,
-              variant: Tt.OUTLINE,
-              onClick: r,
-              disabled: d,
-              part: "identity-widget-reset-password-back-button",
-              className: "identity-widget-reset-password-back-button w-full! flex! items-center! justify-center! gap-3! mt-4!",
-              children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-reset-password-back-text", className: "identity-widget-reset-password-back-text", children: "Back to sign in" })
-            }
-          )
-        ] })
-      ] })
+                    }
+                  ),
+                  G && /* @__PURE__ */ v.jsx(
+                    pl,
+                    {
+                      type: de.ERROR,
+                      message: Q,
+                      onClose: () => {
+                        V(!1), I("");
+                      },
+                      className: "identity-widget-reset-password-email-check-error-banner mb-4!"
+                    }
+                  ),
+                  g && /* @__PURE__ */ v.jsx(
+                    pl,
+                    {
+                      type: de.ERROR,
+                      message: g,
+                      actionText: "Want to sign in instead?",
+                      onActionClick: r,
+                      onClose: () => b(""),
+                      className: "identity-widget-reset-password-submit-error-banner mb-4!"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    Ht,
+                    {
+                      type: gt.SUBMIT,
+                      part: "identity-widget-submit-button identity-widget-reset-password-submit-button",
+                      disabled: d || !o || !z || !q,
+                      className: "identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
+                      onClick: () => {
+                        console.log("[ResetPassword] Button state:", {
+                          loading: d,
+                          email: o,
+                          isEmailValid: z,
+                          emailExists: q
+                        });
+                      },
+                      children: d ? /* @__PURE__ */ v.jsxs(
+                        "span",
+                        {
+                          part: "identity-widget-reset-password-submit-loading",
+                          className: "identity-widget-reset-password-submit-loading flex! items-center! justify-center!",
+                          children: [
+                            /* @__PURE__ */ v.jsxs(
+                              "svg",
+                              {
+                                part: "identity-widget-reset-password-submit-spinner",
+                                className: "identity-widget-reset-password-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
+                                fill: "none",
+                                viewBox: "0 0 24 24",
+                                children: [
+                                  /* @__PURE__ */ v.jsx(
+                                    "circle",
+                                    {
+                                      part: "identity-widget-reset-password-submit-spinner-track",
+                                      className: "identity-widget-reset-password-submit-spinner-track opacity-25!",
+                                      cx: "12",
+                                      cy: "12",
+                                      r: "10",
+                                      stroke: "currentColor",
+                                      strokeWidth: "4"
+                                    }
+                                  ),
+                                  /* @__PURE__ */ v.jsx(
+                                    "path",
+                                    {
+                                      part: "identity-widget-reset-password-submit-spinner-fill",
+                                      className: "identity-widget-reset-password-submit-spinner-fill opacity-75!",
+                                      fill: "currentColor",
+                                      d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    }
+                                  )
+                                ]
+                              }
+                            ),
+                            "Sending..."
+                          ]
+                        }
+                      ) : "Send reset link"
+                    }
+                  ),
+                  /* @__PURE__ */ v.jsx(
+                    Ht,
+                    {
+                      type: gt.BUTTON,
+                      variant: Tt.OUTLINE,
+                      onClick: r,
+                      disabled: d,
+                      part: "identity-widget-reset-password-back-button",
+                      className: "identity-widget-reset-password-back-button w-full! flex! items-center! justify-center! gap-3! mt-4!",
+                      children: /* @__PURE__ */ v.jsx(
+                        "span",
+                        {
+                          part: "identity-widget-reset-password-back-text",
+                          className: "identity-widget-reset-password-back-text",
+                          children: "Back to sign in"
+                        }
+                      )
+                    }
+                  )
+                ]
+              }
+            )
+          ]
+        }
+      )
     }
   );
 }, RE = "data:image/svg+xml,%3csvg%20width='18'%20height='18'%20viewBox='0%200%2018%2018'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cg%20clip-path='url(%23clip0_21254_78867)'%3e%3cpath%20d='M17.64%209.20419C17.64%208.56601%2017.5827%207.95237%2017.4764%207.36328H9V10.8447H13.8436C13.635%2011.9697%2013.0009%2012.9228%2012.0477%2013.561V15.8192H14.9564C16.6582%2014.2524%2017.64%2011.9451%2017.64%209.20419Z'%20fill='%234285F4'/%3e%3cpath%20d='M9.00366%2018C11.4337%2018%2013.471%2017.1941%2014.9601%2015.8195L12.0514%2013.5613C11.2455%2014.1013%2010.2146%2014.4204%209.00366%2014.4204C6.65957%2014.4204%204.67548%2012.8372%203.96775%2010.71H0.960938V13.0418C2.44184%2015.9831%205.48548%2018%209.00366%2018Z'%20fill='%2334A853'/%3e%3cpath%20d='M3.96409%2010.7098C3.78409%2010.1698%203.68182%209.59301%203.68182%208.99983C3.68182%208.40665%203.78409%207.82983%203.96409%207.28983V4.95801H0.957275C0.347727%206.17301%200%207.54755%200%208.99983C0%2010.4521%200.347727%2011.8266%200.957275%2013.0416L3.96409%2010.7098Z'%20fill='%23FBBC04'/%3e%3cpath%20d='M9.00366%203.57955C10.3251%203.57955%2011.5114%204.03364%2012.4442%204.92545L15.0255%202.34409C13.4669%200.891818%2011.4296%200%209.00366%200C5.48548%200%202.44184%202.01682%200.960938%204.95818L3.96775%207.29C4.67548%205.16273%206.65957%203.57955%209.00366%203.57955Z'%20fill='%23EA4335'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_21254_78867'%3e%3crect%20width='18'%20height='18'%20fill='white'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e", TE = ({
@@ -16237,297 +16754,468 @@ const yl = () => {
       "aria-modal": "true",
       "aria-labelledby": "login-dialog-title",
       children: [
-        /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-login-modal", className: "identity-widget-login-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!", role: "document", children: [
-          /* @__PURE__ */ v.jsx(
-            Ht,
-            {
-              onClick: s,
-              variant: Tt.LINK,
-              part: "identity-widget-login-close-button",
-              className: "identity-widget-login-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
-              type: gt.BUTTON,
-              ariaLabel: "Close dialog",
-              children: /* @__PURE__ */ v.jsx(
-                "svg",
-                {
-                  part: "identity-widget-login-close-icon",
-                  className: "identity-widget-login-close-icon w-6! h-6!",
-                  fill: "none",
-                  stroke: "currentColor",
-                  viewBox: "0 0 24 24",
-                  "aria-hidden": "true",
-                  children: /* @__PURE__ */ v.jsx(
-                    "path",
-                    {
-                      strokeLinecap: "round",
-                      strokeLinejoin: "round",
-                      strokeWidth: 2,
-                      d: "M6 18L18 6M6 6l12 12"
-                    }
-                  )
-                }
-              )
-            }
-          ),
-          /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-login-header", className: "identity-widget-login-header mb-3! text-center!", children: [
-            /* @__PURE__ */ v.jsx("h2", { part: "identity-widget-login-title", id: "login-dialog-title", className: "identity-widget-login-title text-2xl! font-bold! text-gray-800! mb-0!", children: c }),
-            /* @__PURE__ */ v.jsx("p", { part: "identity-widget-login-subtitle", className: "identity-widget-login-subtitle text-sm! text-gray-600! mt-1!", children: d })
-          ] }),
-          /* @__PURE__ */ v.jsxs("form", { part: "identity-widget-login-form", onSubmit: we, className: "identity-widget-login-form space-y-2!", "aria-label": "Login form", children: [
-            y && /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
-              /* @__PURE__ */ v.jsx("div", { part: "identity-widget-google-section", className: "identity-widget-google-section mt-0! mb-4! hidden! justify-center!", children: /* @__PURE__ */ v.jsxs(
+        /* @__PURE__ */ v.jsxs(
+          "div",
+          {
+            part: "identity-widget-login-modal",
+            className: "identity-widget-login-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative!",
+            role: "document",
+            children: [
+              /* @__PURE__ */ v.jsx(
                 Ht,
                 {
+                  onClick: s,
+                  variant: Tt.LINK,
+                  part: "identity-widget-login-close-button",
+                  className: "identity-widget-login-close-button absolute! top-4! right-4! text-gray-400! hover:text-gray-600! transition-colors! bg-transparent! border-none! outline-none! shadow-none! p-0!",
                   type: gt.BUTTON,
-                  variant: Tt.OUTLINE,
-                  part: "identity-widget-google-button",
-                  onClick: () => K(),
-                  disabled: C,
-                  className: "identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!",
-                  children: [
-                    /* @__PURE__ */ v.jsx("img", { part: "identity-widget-google-icon", src: RE, alt: "Google", className: "identity-widget-google-icon w-[18px]! h-[18px]!" }),
-                    /* @__PURE__ */ v.jsx("span", { part: "identity-widget-google-text", className: "identity-widget-google-text", children: "Sign in with Google" })
-                  ]
-                }
-              ) }),
-              /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-login-divider", className: "identity-widget-login-divider relative! mt-2! mb-4! hidden!", children: [
-                /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-divider-line-wrap", className: "identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!", children: /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-divider-line", className: "identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!" }) }),
-                /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-divider-text-wrap", className: "identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!", children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-login-divider-text", className: "identity-widget-login-divider-text px-2! bg-white text-gray-500", children: "OR" }) })
-              ] })
-            ] }),
-            /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-email-field", className: "identity-widget-login-email-field mt-0! ml-0! mb-4! mr-0!", children: /* @__PURE__ */ v.jsx(
-              wa,
-              {
-                label: "Email or Username",
-                id: "email",
-                type: "text",
-                value: p,
-                onChange: (te) => g(te.target.value),
-                placeholder: "Enter email or username",
-                disabled: C,
-                className: "w-full!",
-                autoComplete: "username",
-                endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
-                  ce && /* @__PURE__ */ v.jsx(zh, {}),
-                  !ce && ae && le && !Je && /* @__PURE__ */ v.jsx(
-                    "img",
+                  ariaLabel: "Close dialog",
+                  children: /* @__PURE__ */ v.jsx(
+                    "svg",
                     {
-                      part: "identity-widget-login-email-verified-icon",
-                      className: "identity-widget-login-email-verified-icon",
-                      src: Tu,
-                      alt: "User verified",
-                      "aria-label": "User found",
-                      style: { width: 18, height: 18 }
+                      part: "identity-widget-login-close-icon",
+                      className: "identity-widget-login-close-icon w-6! h-6!",
+                      fill: "none",
+                      stroke: "currentColor",
+                      viewBox: "0 0 24 24",
+                      "aria-hidden": "true",
+                      children: /* @__PURE__ */ v.jsx(
+                        "path",
+                        {
+                          strokeLinecap: "round",
+                          strokeLinejoin: "round",
+                          strokeWidth: 2,
+                          d: "M6 18L18 6M6 6l12 12"
+                        }
+                      )
                     }
                   )
-                ] })
-              }
-            ) }),
-            Ne && !ae && le && !Je && /* @__PURE__ */ v.jsx(
-              pl,
-              {
-                type: de.INFO,
-                message: Av.EMAIL_NOT_FOUND,
-                actionText: "Let's create one to continue?",
-                onActionClick: () => {
-                  _e(!1), W(!0);
-                },
-                onClose: () => _e(!1),
-                className: "mb-4!"
-              }
-            ),
-            Ne && Je && /* @__PURE__ */ v.jsx(
-              pl,
-              {
-                type: de.ERROR,
-                message: k,
-                onClose: () => {
-                  _e(!1), Xe(!1), Y("");
-                },
-                className: "mb-4!"
-              }
-            ),
-            /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-password-field", className: "identity-widget-login-password-field mt-0! ml-0! mb-0! mr-0!", children: /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-password-input-wrap", className: "identity-widget-login-password-input-wrap relative! w-full!", children: /* @__PURE__ */ v.jsx(
-              wa,
-              {
-                label: "Password",
-                id: "password",
-                type: A ? "text" : "password",
-                value: b,
-                onChange: (te) => {
-                  R(te.target.value), G("");
-                },
-                placeholder: "Enter Password...",
-                disabled: C,
-                className: "w-full!",
-                autoComplete: "current-password",
-                error: D,
-                endIcon: /* @__PURE__ */ v.jsx(
-                  "button",
-                  {
-                    type: "button",
-                    part: "identity-widget-login-password-toggle",
-                    onClick: () => z(!A),
-                    className: "identity-widget-login-password-toggle text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!",
-                    tabIndex: -1,
-                    "aria-label": A ? "Hide password" : "Show password",
-                    children: A ? /* @__PURE__ */ v.jsx(
-                      "svg",
+                }
+              ),
+              /* @__PURE__ */ v.jsxs(
+                "div",
+                {
+                  part: "identity-widget-login-header",
+                  className: "identity-widget-login-header mb-3! text-center!",
+                  children: [
+                    /* @__PURE__ */ v.jsx(
+                      "h2",
                       {
-                        part: "identity-widget-login-password-hide-icon",
-                        className: "identity-widget-login-password-hide-icon w-5! h-5!",
-                        fill: "none",
-                        stroke: "currentColor",
-                        viewBox: "0 0 24 24",
-                        "aria-hidden": "true",
+                        part: "identity-widget-login-title",
+                        id: "login-dialog-title",
+                        className: "identity-widget-login-title text-2xl! font-bold! text-gray-800! mb-0!",
+                        children: c
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      "p",
+                      {
+                        part: "identity-widget-login-subtitle",
+                        className: "identity-widget-login-subtitle text-sm! text-gray-600! mt-1!",
+                        children: d
+                      }
+                    )
+                  ]
+                }
+              ),
+              /* @__PURE__ */ v.jsxs(
+                "form",
+                {
+                  part: "identity-widget-login-form",
+                  onSubmit: we,
+                  className: "identity-widget-login-form space-y-2!",
+                  "aria-label": "Login form",
+                  children: [
+                    y && /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
+                      /* @__PURE__ */ v.jsx(
+                        "div",
+                        {
+                          part: "identity-widget-google-section",
+                          className: "identity-widget-google-section mt-0! mb-4! hidden! justify-center!",
+                          children: /* @__PURE__ */ v.jsxs(
+                            Ht,
+                            {
+                              type: gt.BUTTON,
+                              variant: Tt.OUTLINE,
+                              part: "identity-widget-google-button",
+                              onClick: () => K(),
+                              disabled: C,
+                              className: "identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!",
+                              children: [
+                                /* @__PURE__ */ v.jsx(
+                                  "img",
+                                  {
+                                    part: "identity-widget-google-icon",
+                                    src: RE,
+                                    alt: "Google",
+                                    className: "identity-widget-google-icon w-[18px]! h-[18px]!"
+                                  }
+                                ),
+                                /* @__PURE__ */ v.jsx("span", { part: "identity-widget-google-text", className: "identity-widget-google-text", children: "Sign in with Google" })
+                              ]
+                            }
+                          )
+                        }
+                      ),
+                      /* @__PURE__ */ v.jsxs(
+                        "div",
+                        {
+                          part: "identity-widget-login-divider",
+                          className: "identity-widget-login-divider relative! mt-2! mb-4! hidden!",
+                          children: [
+                            /* @__PURE__ */ v.jsx(
+                              "div",
+                              {
+                                part: "identity-widget-login-divider-line-wrap",
+                                className: "identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!",
+                                children: /* @__PURE__ */ v.jsx(
+                                  "div",
+                                  {
+                                    part: "identity-widget-login-divider-line",
+                                    className: "identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"
+                                  }
+                                )
+                              }
+                            ),
+                            /* @__PURE__ */ v.jsx(
+                              "div",
+                              {
+                                part: "identity-widget-login-divider-text-wrap",
+                                className: "identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!",
+                                children: /* @__PURE__ */ v.jsx(
+                                  "span",
+                                  {
+                                    part: "identity-widget-login-divider-text",
+                                    className: "identity-widget-login-divider-text px-2! bg-white text-gray-500",
+                                    children: "OR"
+                                  }
+                                )
+                              }
+                            )
+                          ]
+                        }
+                      )
+                    ] }),
+                    /* @__PURE__ */ v.jsx(
+                      "div",
+                      {
+                        part: "identity-widget-login-email-field",
+                        className: "identity-widget-login-email-field mt-0! ml-0! mb-4! mr-0!",
                         children: /* @__PURE__ */ v.jsx(
-                          "path",
+                          wa,
                           {
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
-                            strokeWidth: 2,
-                            d: "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                            label: "Email or Username",
+                            id: "email",
+                            type: "text",
+                            value: p,
+                            onChange: (te) => g(te.target.value),
+                            placeholder: "Enter email or username",
+                            disabled: C,
+                            className: "w-full!",
+                            autoComplete: "username",
+                            endIcon: /* @__PURE__ */ v.jsxs(v.Fragment, { children: [
+                              ce && /* @__PURE__ */ v.jsx(zh, {}),
+                              !ce && ae && le && !Je && /* @__PURE__ */ v.jsx(
+                                "img",
+                                {
+                                  part: "identity-widget-login-email-verified-icon",
+                                  className: "identity-widget-login-email-verified-icon",
+                                  src: Tu,
+                                  alt: "User verified",
+                                  "aria-label": "User found",
+                                  style: { width: 18, height: 18 }
+                                }
+                              )
+                            ] })
                           }
                         )
                       }
-                    ) : /* @__PURE__ */ v.jsxs(
-                      "svg",
+                    ),
+                    Ne && !ae && le && !Je && /* @__PURE__ */ v.jsx(
+                      pl,
                       {
-                        part: "identity-widget-login-password-show-icon",
-                        className: "identity-widget-login-password-show-icon w-5! h-5!",
-                        fill: "none",
-                        stroke: "currentColor",
-                        viewBox: "0 0 24 24",
-                        "aria-hidden": "true",
+                        type: de.INFO,
+                        message: Av.EMAIL_NOT_FOUND,
+                        actionText: "Let's create one to continue?",
+                        onActionClick: () => {
+                          _e(!1), W(!0);
+                        },
+                        onClose: () => _e(!1),
+                        className: "mb-4!"
+                      }
+                    ),
+                    Ne && Je && /* @__PURE__ */ v.jsx(
+                      pl,
+                      {
+                        type: de.ERROR,
+                        message: k,
+                        onClose: () => {
+                          _e(!1), Xe(!1), Y("");
+                        },
+                        className: "mb-4!"
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      "div",
+                      {
+                        part: "identity-widget-login-password-field",
+                        className: "identity-widget-login-password-field mt-0! ml-0! mb-0! mr-0!",
+                        children: /* @__PURE__ */ v.jsx(
+                          "div",
+                          {
+                            part: "identity-widget-login-password-input-wrap",
+                            className: "identity-widget-login-password-input-wrap relative! w-full!",
+                            children: /* @__PURE__ */ v.jsx(
+                              wa,
+                              {
+                                label: "Password",
+                                id: "password",
+                                type: A ? "text" : "password",
+                                value: b,
+                                onChange: (te) => {
+                                  R(te.target.value), G("");
+                                },
+                                placeholder: "Enter Password...",
+                                disabled: C,
+                                className: "w-full!",
+                                autoComplete: "current-password",
+                                error: D,
+                                endIcon: /* @__PURE__ */ v.jsx(
+                                  "button",
+                                  {
+                                    type: "button",
+                                    part: "identity-widget-login-password-toggle",
+                                    onClick: () => z(!A),
+                                    className: "identity-widget-login-password-toggle text-gray-500! hover:text-gray-700 focus:outline-none! bg-transparent! border-none! p-0! m-0!",
+                                    tabIndex: -1,
+                                    "aria-label": A ? "Hide password" : "Show password",
+                                    children: A ? /* @__PURE__ */ v.jsx(
+                                      "svg",
+                                      {
+                                        part: "identity-widget-login-password-hide-icon",
+                                        className: "identity-widget-login-password-hide-icon w-5! h-5!",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24",
+                                        "aria-hidden": "true",
+                                        children: /* @__PURE__ */ v.jsx(
+                                          "path",
+                                          {
+                                            strokeLinecap: "round",
+                                            strokeLinejoin: "round",
+                                            strokeWidth: 2,
+                                            d: "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
+                                          }
+                                        )
+                                      }
+                                    ) : /* @__PURE__ */ v.jsxs(
+                                      "svg",
+                                      {
+                                        part: "identity-widget-login-password-show-icon",
+                                        className: "identity-widget-login-password-show-icon w-5! h-5!",
+                                        fill: "none",
+                                        stroke: "currentColor",
+                                        viewBox: "0 0 24 24",
+                                        "aria-hidden": "true",
+                                        children: [
+                                          /* @__PURE__ */ v.jsx(
+                                            "path",
+                                            {
+                                              strokeLinecap: "round",
+                                              strokeLinejoin: "round",
+                                              strokeWidth: 2,
+                                              d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                            }
+                                          ),
+                                          /* @__PURE__ */ v.jsx(
+                                            "path",
+                                            {
+                                              strokeLinecap: "round",
+                                              strokeLinejoin: "round",
+                                              strokeWidth: 2,
+                                              d: "M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                            }
+                                          )
+                                        ]
+                                      }
+                                    )
+                                  }
+                                )
+                              }
+                            )
+                          }
+                        )
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsxs(
+                      "div",
+                      {
+                        part: "identity-widget-login-meta-row",
+                        className: "identity-widget-login-meta-row flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!",
                         children: [
-                          /* @__PURE__ */ v.jsx(
-                            "path",
+                          /* @__PURE__ */ v.jsxs(
+                            "label",
                             {
-                              strokeLinecap: "round",
-                              strokeLinejoin: "round",
-                              strokeWidth: 2,
-                              d: "M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              part: "identity-widget-login-remember-label",
+                              className: "identity-widget-login-remember-label flex! items-center! m-0!",
+                              children: [
+                                /* @__PURE__ */ v.jsx(
+                                  "input",
+                                  {
+                                    type: "checkbox",
+                                    part: "identity-widget-login-remember-checkbox",
+                                    checked: V,
+                                    onChange: (te) => Q(te.target.checked),
+                                    className: "identity-widget-login-remember-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!",
+                                    "aria-label": "Remember me"
+                                  }
+                                ),
+                                /* @__PURE__ */ v.jsx(
+                                  "span",
+                                  {
+                                    part: "identity-widget-login-remember-text",
+                                    className: "identity-widget-login-remember-text text-gray-600!",
+                                    style: {
+                                      fontWeight: "500",
+                                      color: "#5F5B7D"
+                                    },
+                                    children: "Remember me"
+                                  }
+                                )
+                              ]
                             }
                           ),
                           /* @__PURE__ */ v.jsx(
-                            "path",
+                            "a",
                             {
-                              strokeLinecap: "round",
-                              strokeLinejoin: "round",
-                              strokeWidth: 2,
-                              d: "M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              href: "#",
+                              part: "identity-widget-login-forgot-link",
+                              className: "identity-widget-login-forgot-link no-underline!",
+                              style: {
+                                fontWeight: "500",
+                                color: "#5F5B7D"
+                              },
+                              onClick: (te) => {
+                                te.preventDefault(), re(!0);
+                              },
+                              children: "Forgot Password?"
                             }
                           )
                         ]
                       }
-                    )
-                  }
-                )
-              }
-            ) }) }),
-            /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-login-meta-row", className: "identity-widget-login-meta-row flex! items-center! justify-between! text-sm! h-0! mt-7! ml-0! mb-7! mr-0!", children: [
-              /* @__PURE__ */ v.jsxs("label", { part: "identity-widget-login-remember-label", className: "identity-widget-login-remember-label flex! items-center! m-0!", children: [
-                /* @__PURE__ */ v.jsx(
-                  "input",
-                  {
-                    type: "checkbox",
-                    part: "identity-widget-login-remember-checkbox",
-                    checked: V,
-                    onChange: (te) => Q(te.target.checked),
-                    className: "identity-widget-login-remember-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!",
-                    "aria-label": "Remember me"
-                  }
-                ),
-                /* @__PURE__ */ v.jsx(
-                  "span",
-                  {
-                    part: "identity-widget-login-remember-text",
-                    className: "identity-widget-login-remember-text text-gray-600!",
-                    style: {
-                      fontWeight: "500",
-                      color: "#5F5B7D"
-                    },
-                    children: "Remember me"
-                  }
-                )
-              ] }),
-              /* @__PURE__ */ v.jsx(
-                "a",
-                {
-                  href: "#",
-                  part: "identity-widget-login-forgot-link",
-                  className: "identity-widget-login-forgot-link no-underline!",
-                  style: {
-                    fontWeight: "500",
-                    color: "#5F5B7D"
-                  },
-                  onClick: (te) => {
-                    te.preventDefault(), re(!0);
-                  },
-                  children: "Forgot Password?"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ v.jsx(
-              Ht,
-              {
-                type: gt.SUBMIT,
-                part: "identity-widget-submit-button identity-widget-login-submit-button",
-                disabled: C || !p,
-                className: "identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
-                children: C ? /* @__PURE__ */ v.jsxs("span", { part: "identity-widget-login-submit-loading", className: "identity-widget-login-submit-loading flex! items-center! justify-center!", children: [
-                  /* @__PURE__ */ v.jsxs(
-                    "svg",
-                    {
-                      part: "identity-widget-login-submit-spinner",
-                      className: "identity-widget-login-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
-                      fill: "none",
-                      viewBox: "0 0 24 24",
-                      children: [
-                        /* @__PURE__ */ v.jsx(
-                          "circle",
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      Ht,
+                      {
+                        type: gt.SUBMIT,
+                        part: "identity-widget-submit-button identity-widget-login-submit-button",
+                        disabled: C || !p,
+                        className: "identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!",
+                        children: C ? /* @__PURE__ */ v.jsxs(
+                          "span",
                           {
-                            className: "opacity-25!",
-                            cx: "12",
-                            cy: "12",
-                            r: "10",
-                            stroke: "currentColor",
-                            strokeWidth: "4"
+                            part: "identity-widget-login-submit-loading",
+                            className: "identity-widget-login-submit-loading flex! items-center! justify-center!",
+                            children: [
+                              /* @__PURE__ */ v.jsxs(
+                                "svg",
+                                {
+                                  part: "identity-widget-login-submit-spinner",
+                                  className: "identity-widget-login-submit-spinner animate-spin! -ml-1! mr-3! h-5! w-5! text-white",
+                                  fill: "none",
+                                  viewBox: "0 0 24 24",
+                                  children: [
+                                    /* @__PURE__ */ v.jsx(
+                                      "circle",
+                                      {
+                                        className: "opacity-25!",
+                                        cx: "12",
+                                        cy: "12",
+                                        r: "10",
+                                        stroke: "currentColor",
+                                        strokeWidth: "4"
+                                      }
+                                    ),
+                                    /* @__PURE__ */ v.jsx(
+                                      "path",
+                                      {
+                                        className: "opacity-75!",
+                                        fill: "currentColor",
+                                        d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                      }
+                                    )
+                                  ]
+                                }
+                              ),
+                              "Signing in..."
+                            ]
                           }
-                        ),
-                        /* @__PURE__ */ v.jsx(
-                          "path",
+                        ) : "Sign In"
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsxs(
+                      "div",
+                      {
+                        part: "identity-widget-login-bottom-divider",
+                        className: "identity-widget-login-bottom-divider relative! mt-4! mb-4!",
+                        children: [
+                          /* @__PURE__ */ v.jsx(
+                            "div",
+                            {
+                              part: "identity-widget-login-bottom-divider-line-wrap",
+                              className: "identity-widget-login-bottom-divider-line-wrap absolute! inset-0! flex! items-center!",
+                              children: /* @__PURE__ */ v.jsx(
+                                "div",
+                                {
+                                  part: "identity-widget-login-bottom-divider-line",
+                                  className: "identity-widget-login-bottom-divider-line w-full! border-t! border-solid! border-gray-300!"
+                                }
+                              )
+                            }
+                          ),
+                          /* @__PURE__ */ v.jsx(
+                            "div",
+                            {
+                              part: "identity-widget-login-bottom-divider-text-wrap",
+                              className: "identity-widget-login-bottom-divider-text-wrap relative! flex! justify-center! text-sm!",
+                              children: /* @__PURE__ */ v.jsx(
+                                "span",
+                                {
+                                  part: "identity-widget-login-bottom-divider-text",
+                                  className: "identity-widget-login-bottom-divider-text px-2! bg-white text-gray-500",
+                                  children: "OR"
+                                }
+                              )
+                            }
+                          )
+                        ]
+                      }
+                    ),
+                    /* @__PURE__ */ v.jsx(
+                      Ht,
+                      {
+                        type: gt.BUTTON,
+                        variant: Tt.OUTLINE,
+                        part: "identity-widget-login-create-account-button",
+                        onClick: () => W(!0),
+                        disabled: C,
+                        className: "identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!",
+                        children: /* @__PURE__ */ v.jsx(
+                          "span",
                           {
-                            className: "opacity-75!",
-                            fill: "currentColor",
-                            d: "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            part: "identity-widget-login-create-account-text",
+                            className: "identity-widget-login-create-account-text",
+                            children: "Create an Account"
                           }
                         )
-                      ]
-                    }
-                  ),
-                  "Signing in..."
-                ] }) : "Sign In"
-              }
-            ),
-            /* @__PURE__ */ v.jsxs("div", { part: "identity-widget-login-bottom-divider", className: "identity-widget-login-bottom-divider relative! mt-4! mb-4!", children: [
-              /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-bottom-divider-line-wrap", className: "identity-widget-login-bottom-divider-line-wrap absolute! inset-0! flex! items-center!", children: /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-bottom-divider-line", className: "identity-widget-login-bottom-divider-line w-full! border-t! border-solid! border-gray-300!" }) }),
-              /* @__PURE__ */ v.jsx("div", { part: "identity-widget-login-bottom-divider-text-wrap", className: "identity-widget-login-bottom-divider-text-wrap relative! flex! justify-center! text-sm!", children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-login-bottom-divider-text", className: "identity-widget-login-bottom-divider-text px-2! bg-white text-gray-500", children: "OR" }) })
-            ] }),
-            /* @__PURE__ */ v.jsx(
-              Ht,
-              {
-                type: gt.BUTTON,
-                variant: Tt.OUTLINE,
-                part: "identity-widget-login-create-account-button",
-                onClick: () => W(!0),
-                disabled: C,
-                className: "identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!",
-                children: /* @__PURE__ */ v.jsx("span", { part: "identity-widget-login-create-account-text", className: "identity-widget-login-create-account-text", children: "Create an Account" })
-              }
-            )
-          ] })
-        ] }),
+                      }
+                    )
+                  ]
+                }
+              )
+            ]
+          }
+        ),
         X && /* @__PURE__ */ v.jsx(ic, { message: X, type: Ae, onClose: () => ue("") })
       ]
     }

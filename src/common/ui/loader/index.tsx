@@ -6,7 +6,9 @@ const Loader = () => {
       role="status"
       aria-label="Loading"
     >
-      <span part="identity-widget-loader-text" className="identity-widget-loader-text sr-only">Loading...</span>
+      <span part="identity-widget-loader-text" className="identity-widget-loader-text sr-only">
+        Loading...
+      </span>
     </span>
   );
 };

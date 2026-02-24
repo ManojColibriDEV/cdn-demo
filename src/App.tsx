@@ -33,7 +33,7 @@ const App = (props: AppProps) => {
       clearAuthorityOverride();
     };
   }, [authority]);
-  
+
   useEffect(() => {
     let cleanup: (() => void) | undefined;
 

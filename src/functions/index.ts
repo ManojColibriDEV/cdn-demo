@@ -40,8 +40,7 @@ export const isRefreshTokenExpiredFromCookie = (): boolean => {
 
 const getStoredRefreshToken = (): string | null => {
   return (
-    getCookie(COOKIE_NAMES.REFRESH_TOKEN, false) ||
-    localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+    getCookie(COOKIE_NAMES.REFRESH_TOKEN, false) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
   );
 };
 
@@ -128,8 +127,7 @@ export const refreshAuthenticationState = async (
 export const silentTokenRefresh = async () => {
   const refreshToken = getStoredRefreshToken();
   const accessToken =
-    getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
-    localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 
   if (!accessToken) {
     stopSilentRefreshTimer();
@@ -362,7 +360,10 @@ export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Pr
 
     return checkTokenAndRedirect(redirectUrl);
   } catch (error) {
-    console.error(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} checkTokenAndRedirectWithRefresh Error:`, error);
+    console.error(
+      `${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} checkTokenAndRedirectWithRefresh Error:`,
+      error
+    );
     return false;
   }
 };
