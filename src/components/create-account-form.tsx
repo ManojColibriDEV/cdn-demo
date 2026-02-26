@@ -22,9 +22,11 @@ import {
   PASSWORD_STRENGTH_WIDTHS,
   LOG_PREFIX,
   ERROR_MESSAGES,
+  INFO_MESSAGES,
   ButtonType,
   ButtonVariant,
 } from "../constants";
+import { isCapsLockEnabled } from "../utils/keyboard";
 
 const CreateAccountForm = ({
   onSuccess,
@@ -43,6 +45,7 @@ const CreateAccountForm = ({
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [touched, setTouched] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
@@ -320,6 +323,27 @@ const CreateAccountForm = ({
     }
   };
 
+  const handlePasswordCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "CapsLock" && event.type === "keydown") {
+      setCapsLockOn((prev) => !prev);
+      return;
+    }
+
+    if (event.key === "CapsLock") {
+      return;
+    }
+
+    setCapsLockOn(isCapsLockEnabled(event));
+  };
+
+  const handlePasswordFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    setCapsLockOn(isCapsLockEnabled(event));
+  };
+
+  const handlePasswordBlur = () => {
+    setCapsLockOn(false);
+  };
+
   return (
     <>
       {/* Toast Notification */}
@@ -517,6 +541,10 @@ const CreateAccountForm = ({
                     setPassword(e.target.value);
                     setPasswordError(""); // Clear error on change
                   }}
+                  onKeyDown={handlePasswordCapsLock}
+                  onKeyUp={handlePasswordCapsLock}
+                  onFocus={handlePasswordFocus}
+                  onBlur={handlePasswordBlur}
                   placeholder="Enter Password..."
                   disabled={loading}
                   className="identity-widget-create-account-password-input w-full!"
@@ -573,6 +601,16 @@ const CreateAccountForm = ({
                     </button>
                   }
                 />
+                {capsLockOn && (
+                  <p
+                    part="identity-widget-create-account-password-capslock"
+                    className="identity-widget-create-account-password-capslock mt-1! text-sm! text-gray-600!"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {INFO_MESSAGES.CAPS_LOCK_ON}
+                  </p>
+                )}
               </div>
             </div>
 

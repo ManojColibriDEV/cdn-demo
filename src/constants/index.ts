@@ -306,6 +306,7 @@ export const SUCCESS_MESSAGES = {
 export const INFO_MESSAGES = {
   EMAIL_NOT_FOUND: "No account found with this email address.",
   EMAIL_CHECK_IN_PROGRESS: "Checking email...",
+  CAPS_LOCK_ON: "Caps Lock is on",
   LOADING: "Loading...",
 } as const;
 

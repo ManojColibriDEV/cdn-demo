@@ -48,3 +48,101 @@ export const mockUserSessionInfo = {
   email_verified: true,
   sub: "test-user-id",
 };
+
+export const mockGetSubsidariesResponse = [
+  {
+    subsidiaryId: 1,
+    subsidiaryName: "McKissock LP",
+    siteURL: "www.mckissock.com",
+  },
+  {
+    subsidiaryId: 2,
+    subsidiaryName: "Elite Professional Education LLC",
+    siteURL: "www.elitelearning.com",
+  },
+  {
+    subsidiaryId: 3,
+    subsidiaryName: "Colibri Real Estate LLC",
+    siteURL: "www.colibrirealestate.com",
+  },
+  {
+    subsidiaryId: 16,
+    subsidiaryName: "Superior School of Real Estate Ed",
+    siteURL: "www.superiorschoolnc.com",
+  },
+  {
+    subsidiaryId: 20,
+    subsidiaryName: "Allied School LLC",
+    siteURL: "www.alliedschools.com",
+  },
+  {
+    subsidiaryId: 21,
+    subsidiaryName: "Xcel Solutions LLC",
+    siteURL: "www.xceltesting.com",
+  },
+  {
+    subsidiaryId: 22,
+    subsidiaryName: "Western",
+    siteURL: "www.westernschools.com",
+  },
+  {
+    subsidiaryId: 23,
+    subsidiaryName: "CE Express",
+    siteURL: "www.ce-express.com",
+  },
+  {
+    subsidiaryId: 25,
+    subsidiaryName: "Fitzgerald",
+    siteURL: "www.fhea.com",
+  },
+  {
+    subsidiaryId: 29,
+    subsidiaryName: "Hondros Learning",
+    siteURL: "www.hondroslearning.com",
+  },
+  {
+    subsidiaryId: 31,
+    subsidiaryName: "CompuCram",
+    siteURL: "www.compucram.com",
+  },
+  {
+    subsidiaryId: 34,
+    subsidiaryName: "HomeCEU",
+    siteURL: null,
+  },
+  {
+    subsidiaryId: 35,
+    subsidiaryName: "Rockwell Publishing Company LLC",
+    siteURL: "www.rockwellinstitute.com",
+  },
+  {
+    subsidiaryId: 36,
+    subsidiaryName: "Gold Coast Professional Schools LLC",
+    siteURL: "www.goldcoastschools.com",
+  },
+  {
+    subsidiaryId: 58,
+    subsidiaryName: "NetCEBuyer Inc",
+    siteURL: "www.netce.com",
+  },
+  {
+    subsidiaryId: 136,
+    subsidiaryName: "Informed",
+    siteURL: null,
+  },
+  {
+    subsidiaryId: 137,
+    subsidiaryName: "Securities Training Corporation",
+    siteURL: "www.stcusa.com",
+  },
+  {
+    subsidiaryId: 138,
+    subsidiaryName: "STC School of Insurance",
+    siteURL: "www.stcusa.com",
+  },
+  {
+    subsidiaryId: 142,
+    subsidiaryName: "Internal Employees",
+    siteURL: "www.colibrigroup.com",
+  },
+];

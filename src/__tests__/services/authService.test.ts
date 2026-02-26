@@ -25,6 +25,7 @@ import {
   mockAuthLoginUnauthorizedResponse,
   mockRefreshTokenSuccessResponse,
   mockRefreshTokenExpiredResponse,
+  mockGetSubsidariesResponse,
 } from "../mocks/mockAuthResponses";
 import {
   mockCheckEmailAvailableResponse,
@@ -402,11 +403,11 @@ describe("Authentication Service", () => {
 
   describe("fetchSubsidiaries", () => {
     it("should fetch and filter subsidiaries by domain", async () => {
-      mockAxios.onGet(/\/global\/subsidiaries$/).reply(200, mockSubsidiariesResponse);
-
       const subsidiary = await fetchSubsidiaries("elitelearning.com");
 
-      expect(subsidiary).toEqual(mockSubsidiariesResponse[0]);
+      expect(subsidiary).toEqual(
+        mockGetSubsidariesResponse.find((item) => item?.siteURL?.includes("elitelearning.com"))
+      );
     });
 
     it("should return undefined for non-matching domain", async () => {
@@ -429,15 +430,17 @@ describe("Authentication Service", () => {
   describe("getBrandHeaders", () => {
     it("should return brand headers when brand data exists", async () => {
       localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
-      mockAxios.onGet(/\/global\/subsidiaries$/).reply(200, mockSubsidiariesResponse);
+      const expectedSubsidiary = mockGetSubsidariesResponse.find((item) =>
+        item?.siteURL?.includes(mockBrandData.domain)
+      );
 
       const headers = await getBrandHeaders();
 
-      expect(headers).toHaveProperty("X-Brand-Id", mockSubsidiariesResponse[0].subsidiaryName);
+      expect(headers).toHaveProperty("X-Brand-Id", expectedSubsidiary?.subsidiaryName);
       expect(headers).toHaveProperty("X-Brand-Domain", mockBrandData.domain);
       expect(headers).toHaveProperty(
         "X-Subsidiary-Id",
-        mockSubsidiariesResponse[0].subsidiaryId.toString()
+        expectedSubsidiary?.subsidiaryId.toString()
       );
     });
 
