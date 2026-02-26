@@ -13,6 +13,7 @@ import {
   ENV_PREFIXES,
   LOCALHOST,
 } from "../constants";
+import { mockGetSubsidariesResponse } from "../__tests__/mocks/mockAuthResponses";
 
 // Subsidiary type from global API
 interface Subsidiary {
@@ -146,8 +147,10 @@ const apiUrl = (path: string): string => {
  */
 export const fetchSubsidiaries = async (domain: string): Promise<Subsidiary | undefined> => {
   try {
-    const response = await axios.get<Subsidiary[]>(apiUrl(API_ENDPOINTS.GLOBAL_SUBSIDIARIES));
-    const filterSubsidiary: any = response?.data?.find((sub) => sub?.siteURL?.includes(domain));
+    // const response = await axios.get<Subsidiary[]>(apiUrl(API_ENDPOINTS.GLOBAL_SUBSIDIARIES));
+    const filterSubsidiary: any = mockGetSubsidariesResponse?.find((sub) =>
+      sub?.siteURL?.includes(domain)
+    );
     return filterSubsidiary;
   } catch (error) {
     console.error("Error fetching subsidiaries:", error);

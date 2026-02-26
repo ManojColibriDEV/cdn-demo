@@ -100,6 +100,27 @@ describe("CreateAccountForm Component", () => {
     expect(passwordInput).toHaveValue("weak");
   });
 
+  it("should show caps lock indicator when caps lock is on in password field", () => {
+    renderCreateAccountForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+
+    expect(screen.getByText(/caps lock is on/i)).toBeInTheDocument();
+  });
+
+  it("should hide caps lock indicator when caps lock is off in password field", () => {
+    renderCreateAccountForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+    expect(screen.getByText(/caps lock is on/i)).toBeInTheDocument();
+
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+
+    expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
+  });
+
   it("should show password requirements", async () => {
     const user = userEvent.setup();
     renderCreateAccountForm();

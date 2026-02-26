@@ -117,6 +117,27 @@ describe("EmbeddedLoginForm Component", () => {
     expect(passwordInput).toHaveValue("SecureP@ss123$");
   });
 
+  it("should show caps lock indicator when caps lock is on in password field", () => {
+    renderLoginForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+
+    expect(screen.getByText(/caps lock is on/i)).toBeInTheDocument();
+  });
+
+  it("should hide caps lock indicator when caps lock is off in password field", () => {
+    renderLoginForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+    expect(screen.getByText(/caps lock is on/i)).toBeInTheDocument();
+
+    fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+
+    expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
+  });
+
   it("should toggle password visibility", async () => {
     const user = userEvent.setup();
     renderLoginForm();

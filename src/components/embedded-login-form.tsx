@@ -13,6 +13,7 @@ import ResetPasswordForm from "./reset-password-form";
 import checkSuccessImg from "../icons/badge-check.svg";
 import googleIcon from "../icons/google-icon.svg";
 import { MessageType, EMAIL_REGEX, ButtonType, ButtonVariant, INFO_MESSAGES } from "../constants";
+import { isCapsLockEnabled } from "../utils/keyboard";
 
 const EmbeddedLoginForm = ({
   onSuccess,
@@ -28,6 +29,7 @@ const EmbeddedLoginForm = ({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
@@ -183,6 +185,27 @@ const EmbeddedLoginForm = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePasswordCapsLock = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "CapsLock" && event.type === "keydown") {
+      setCapsLockOn((prev) => !prev);
+      return;
+    }
+
+    if (event.key === "CapsLock") {
+      return;
+    }
+
+    setCapsLockOn(isCapsLockEnabled(event));
+  };
+
+  const handlePasswordFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    setCapsLockOn(isCapsLockEnabled(event));
+  };
+
+  const handlePasswordBlur = () => {
+    setCapsLockOn(false);
   };
 
   // If showing reset password form, render that instead
@@ -415,6 +438,10 @@ const EmbeddedLoginForm = ({
                   setPassword(e.target.value);
                   setErrorMessage(""); // Clear error when user types
                 }}
+                onKeyDown={handlePasswordCapsLock}
+                onKeyUp={handlePasswordCapsLock}
+                onFocus={handlePasswordFocus}
+                onBlur={handlePasswordBlur}
                 placeholder="Enter Password..."
                 disabled={loading}
                 className="w-full!"
@@ -471,6 +498,16 @@ const EmbeddedLoginForm = ({
                   </button>
                 }
               />
+              {capsLockOn && (
+                <p
+                  part="identity-widget-login-password-capslock"
+                  className="identity-widget-login-password-capslock mt-1! text-sm! text-gray-600!"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {INFO_MESSAGES.CAPS_LOCK_ON}
+                </p>
+              )}
             </div>
           </div>
 

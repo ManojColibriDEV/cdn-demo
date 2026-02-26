@@ -164,6 +164,11 @@ describe("Input Component", () => {
     expect(screen.getByTestId("start-icon")).toBeInTheDocument();
   });
 
+  it("should render end icon when provided", () => {
+    render(<Input label="With end icon" endIcon={<span data-testid="end-icon">E</span>} />);
+    expect(screen.getByTestId("end-icon")).toBeInTheDocument();
+  });
+
   it("should show helper text when error is boolean", () => {
     render(<Input label="Field" error={true} helperText="helper" />);
     expect(screen.queryByText("helper")).not.toBeInTheDocument();
@@ -210,5 +215,20 @@ describe("Input Component", () => {
 
     const select = screen.getByLabelText("Country");
     expect(select).toHaveAttribute("aria-describedby");
+  });
+
+  it("should use aria-label prop for select when label is not a string", () => {
+    render(
+      <Input
+        label={<span>Country Label</span>}
+        aria-label="Country Select"
+        type="select"
+        options={[{ value: "us", label: "United States" }]}
+        value="us"
+        onChange={vi.fn()}
+      />
+    );
+
+    expect(screen.getByLabelText("Country Select").tagName.toLowerCase()).toBe("select");
   });
 });
