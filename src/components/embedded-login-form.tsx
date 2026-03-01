@@ -541,10 +541,9 @@ const EmbeddedLoginForm = ({
             <a
               href="#"
               part="identity-widget-login-forgot-link"
-              className="identity-widget-login-forgot-link no-underline!"
+              className="identity-widget-login-forgot-link no-underline! --button-primary-text!"
               style={{
                 fontWeight: "500",
-                color: "#5F5B7D",
               }}
               onClick={(e) => {
                 e.preventDefault();
@@ -559,7 +558,7 @@ const EmbeddedLoginForm = ({
             type={ButtonType.SUBMIT}
             part="identity-widget-submit-button identity-widget-login-submit-button"
             disabled={loading || !email}
-            className="identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            className="identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-10! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
               <span
