@@ -718,7 +718,9 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Google sign-in completed\. Connect this credential to your backend login flow\./i)
+        screen.getByText(
+          /Google sign-in completed\. Connect this credential to your backend login flow\./i
+        )
       ).toBeInTheDocument();
     });
   });
