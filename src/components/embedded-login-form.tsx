@@ -10,6 +10,7 @@ import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
+import HelpCenter from "./help-center";
 import checkSuccessImg from "../icons/badge-check.svg";
 import googleIcon from "../icons/google-icon.svg";
 import { MessageType, EMAIL_REGEX, ButtonType, ButtonVariant, INFO_MESSAGES } from "../constants";
@@ -34,6 +35,7 @@ const EmbeddedLoginForm = ({
   const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -217,6 +219,10 @@ const EmbeddedLoginForm = ({
         handleClose={handleClose}
       />
     );
+  }
+
+  if (showHelpCenter) {
+    return <HelpCenter onBack={() => setShowHelpCenter(false)} handleClose={handleClose} />;
   }
 
   // If showing create account form, render that instead
@@ -633,6 +639,23 @@ const EmbeddedLoginForm = ({
               Create an Account
             </span>
           </Button>
+
+          <div
+            part="identity-widget-login-help-center-wrap"
+            className="identity-widget-login-help-center-wrap text-center! mt-4!"
+          >
+            <button
+              type="button"
+              part="identity-widget-login-help-center-button"
+              className="identity-widget-login-help-center-button group bg-transparent! border-none! p-0! text-sm! font-normal! cursor-pointer!"
+              onClick={() => setShowHelpCenter(true)}
+            >
+              <span className="text-gray-800!">Can&apos;t log in? </span>
+              <span className="text-blue-400! text-base! font-bold! transition-all! duration-150! group-hover:underline!">
+                Visit our help center
+              </span>
+            </button>
+          </div>
         </form>
       </div>
       {toastMessage && (

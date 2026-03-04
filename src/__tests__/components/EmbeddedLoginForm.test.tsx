@@ -12,7 +12,7 @@ import EmbeddedLoginForm from "../../components/embedded-login-form";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS, COOKIE_NAMES } from "../../constants";
+import { STORAGE_KEYS } from "../../constants";
 
 // Mock services
 vi.mock("../../services", () => ({
@@ -56,6 +56,14 @@ const renderLoginForm = (props = {}) => {
   );
 };
 
+const getLoginSubmitButton = (): HTMLButtonElement => {
+  const submitButton = document.querySelector(
+    'button[part~="identity-widget-login-submit-button"]'
+  ) as HTMLButtonElement | null;
+  expect(submitButton).not.toBeNull();
+  return submitButton as HTMLButtonElement;
+};
+
 describe("EmbeddedLoginForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -89,7 +97,7 @@ describe("EmbeddedLoginForm Component", () => {
   it("should render login button", () => {
     renderLoginForm();
 
-    const loginButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const loginButton = getLoginSubmitButton();
     expect(loginButton).toBeInTheDocument();
   });
 
@@ -277,6 +285,32 @@ describe("EmbeddedLoginForm Component", () => {
     });
   });
 
+  it("should render styled help center entry text", () => {
+    renderLoginForm();
+
+    const helpCenterCta = screen.getByText(/visit our help center/i);
+    expect(helpCenterCta).toBeInTheDocument();
+    expect(helpCenterCta).toHaveClass("text-base!");
+    expect(helpCenterCta).toHaveClass("font-bold!");
+  });
+
+  it("should open help center and return to login", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByRole("button", { name: /can't log in\?/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /help center/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /back to sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /continue to login/i })).toBeInTheDocument();
+    });
+  });
+
   it("should return from reset password to login when back button is clicked", async () => {
     const user = userEvent.setup();
     renderLoginForm();
@@ -300,7 +334,7 @@ describe("EmbeddedLoginForm Component", () => {
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "invalid-email");
 
-    const submitButton = screen.getAllByRole("button", { name: /login|sign in|continue/i })[0];
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     // Form validates email internally
@@ -354,7 +388,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "SecureP@ss123$");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -373,7 +407,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "wrong@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "WrongPassword");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     // Verify error callback was called
@@ -412,7 +446,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "SecureP@ss123$");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     expect(submitButton).toBeDisabled();
@@ -665,6 +699,27 @@ describe("App Component", () => {
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith("Google sign-in failed.");
       expect(screen.getByText(/Google sign-in failed\./i)).toBeInTheDocument();
+    });
+  });
+
+  it("should show info toast when Google OAuth succeeds", async () => {
+    let googleConfig: any;
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+
+    renderLoginForm({ enableGoogleLogin: true, onError: vi.fn() });
+
+    act(() => {
+      googleConfig.onSuccess({ code: "google-auth-code" });
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Google sign-in completed\. Connect this credential to your backend login flow\./i)
+      ).toBeInTheDocument();
     });
   });
 
