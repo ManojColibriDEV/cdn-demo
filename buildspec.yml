@@ -34,8 +34,12 @@ phases:
     commands:
       - echo "Post-build started on $(date)"
       
-      # Publish NPM package to CodeArtifact
+      # Auto-increment version and publish NPM package to CodeArtifact
       - echo "Publishing NPM package to CodeArtifact..."
+      - CURRENT_VERSION=$(node -p "require('./package.json').version")
+      - TIMESTAMP=$(date +%Y%m%d%H%M%S)
+      - npm version "$CURRENT_VERSION-build.$TIMESTAMP" --no-git-tag-version
+      - echo "Publishing version $(node -p "require('./package.json').version")..."
       - npm publish
       - echo "NPM package published successfully to CodeArtifact"
       
