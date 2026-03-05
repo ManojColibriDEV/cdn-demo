@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
 import ResetPasswordForm from "../../components/reset-password-form";
 import * as services from "../../services";
+import { ERROR_MESSAGES } from "../../constants";
 
 vi.mock("../../services", () => ({
   forgotPassword: vi.fn(),
@@ -344,6 +345,33 @@ describe("ResetPasswordForm Component", () => {
     });
   });
 
+  it("should use generic email-check error for non-Error failures", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockRejectedValue({} as any);
+
+    renderResetPasswordForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "fallback@example.com");
+
+    await waitFor(() => {
+      expect(screen.getByText("Unable to verify email. Please try again.")).toBeInTheDocument();
+    });
+  });
+
+  it("should use generic forgot-password error when submit throws non-Error", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
+    vi.mocked(services.forgotPassword).mockRejectedValue({} as any);
+
+    renderResetPasswordForm({ email: "nonerror-submit@example.com" });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(ERROR_MESSAGES.RESET_LINK_FAILED)).toBeInTheDocument();
+    });
+  });
+
   it("success view should handle resend, back, close and escape", async () => {
     const user = userEvent.setup();
     const handleClose = vi.fn();
@@ -395,6 +423,52 @@ describe("ResetPasswordForm Component", () => {
       expect(screen.getByText("resend failed")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /send|reset|submit/i })).toBeInTheDocument();
     });
+  });
+
+  it("resend failure should use generic message for non-Error failures", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
+    vi.mocked(services.forgotPassword)
+      .mockResolvedValueOnce({ success: true })
+      .mockRejectedValueOnce({} as any);
+
+    renderResetPasswordForm({ email: "nonerror-resend@example.com" });
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(ERROR_MESSAGES.RESET_LINK_FAILED)).toBeInTheDocument();
+    });
+  });
+
+  it("shows checking-email spinner while validation request is in progress", async () => {
+    const user = userEvent.setup();
+
+    let resolveCheck: ((value: any) => void) | undefined;
+    vi.mocked(services.checkEmail).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCheck = resolve;
+        }) as any
+    );
+
+    renderResetPasswordForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "pending@example.com");
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/checking email/i)).toBeInTheDocument();
+    });
+
+    resolveCheck?.({ exists: true });
   });
 
   it("should show required email error when form is submitted empty", () => {

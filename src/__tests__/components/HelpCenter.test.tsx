@@ -47,6 +47,14 @@ describe("HelpCenter Component", () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
+  it("does not call handleClose for non-escape keys", () => {
+    renderHelpCenter();
+
+    fireEvent.keyDown(document, { key: "Enter" });
+
+    expect(handleClose).not.toHaveBeenCalled();
+  });
+
   it("calls handleClose on overlay click but not on modal content click", () => {
     renderHelpCenter();
 
