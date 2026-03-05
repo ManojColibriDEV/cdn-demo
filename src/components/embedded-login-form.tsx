@@ -201,15 +201,6 @@ const EmbeddedLoginForm = ({
 
     setCapsLockOn(isCapsLockEnabled(event));
   };
-
-  const handlePasswordFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-    setCapsLockOn(isCapsLockEnabled(event));
-  };
-
-  const handlePasswordBlur = () => {
-    setCapsLockOn(false);
-  };
-
   // If showing reset password form, render that instead
   if (showResetPassword) {
     return (
@@ -446,8 +437,6 @@ const EmbeddedLoginForm = ({
                 }}
                 onKeyDown={handlePasswordCapsLock}
                 onKeyUp={handlePasswordCapsLock}
-                onFocus={handlePasswordFocus}
-                onBlur={handlePasswordBlur}
                 placeholder="Enter Password..."
                 disabled={loading}
                 className="w-full!"
