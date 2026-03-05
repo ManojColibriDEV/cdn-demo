@@ -425,6 +425,21 @@ describe("Authentication Service", () => {
 
       expect(subsidiaryId).toBeUndefined();
     });
+
+    it("should return undefined when subsidiary lookup throws", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const findSpy = vi.spyOn(mockGetSubsidariesResponse, "find").mockImplementation(() => {
+        throw new Error("find-failure");
+      });
+
+      const subsidiary = await fetchSubsidiaries("any-domain.com");
+
+      expect(subsidiary).toBeUndefined();
+      expect(errorSpy).toHaveBeenCalled();
+
+      findSpy.mockRestore();
+      errorSpy.mockRestore();
+    });
   });
 
   describe("getBrandHeaders", () => {
@@ -526,6 +541,25 @@ describe("Authentication Service", () => {
         await svc.checkEmail("user@example.com");
         localMock.restore();
       }
+    });
+
+    it("uses relative API URLs in TEST mode", async () => {
+      vi.resetModules();
+      vi.stubEnv("VITE_RENDER_MODE", "TEST");
+
+      const axiosModule = await import("axios");
+      const localMock = new MockAdapter(axiosModule.default);
+      const svc = await import("../../services");
+
+      localMock.onPost(/\/api\/check-email$/).reply((config) => {
+        expect(config.url).toMatch(/\/api\/check-email$/);
+        return [200, { exists: true }];
+      });
+
+      const response = await svc.checkEmail("test-mode@example.com");
+      expect(response.exists).toBe(true);
+
+      localMock.restore();
     });
 
     it("handles invalid authority override by falling back to hostname", async () => {

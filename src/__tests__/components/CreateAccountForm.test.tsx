@@ -121,6 +121,15 @@ describe("CreateAccountForm Component", () => {
     expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
   });
 
+  it("should ignore CapsLock keyup without toggling indicator", () => {
+    renderCreateAccountForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyUp(passwordInput, { key: "CapsLock" });
+
+    expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
+  });
+
   it("should show password requirements", async () => {
     const user = userEvent.setup();
     renderCreateAccountForm();
@@ -452,6 +461,70 @@ describe("CreateAccountForm Component", () => {
     await waitFor(() => {
       expect(screen.queryByText("Email API down")).not.toBeInTheDocument();
     });
+  });
+
+  it("should use fallback banner message when email check throws non-Error", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockRejectedValue({} as any);
+
+    renderCreateAccountForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "fallback-check@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to verify email. You can still proceed with registration.")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show loader while email availability check is pending", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(services.checkEmail).mockImplementation(
+      () =>
+        new Promise(() => {
+          return;
+        }) as any
+    );
+
+    renderCreateAccountForm();
+    await user.type(screen.getByPlaceholderText(/email/i), "pending-check@example.com");
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(document.querySelector('[part="identity-widget-loader"]')).toBeInTheDocument();
+    });
+  });
+
+  it("clears pending email-check timeout when unmounted", async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    const view = renderCreateAccountForm();
+    fireEvent.change(screen.getByPlaceholderText(/email/i), {
+      target: { value: "cleanup@example.com" },
+    });
+
+    view.unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("unmounts cleanly when no email-check timeout is pending", () => {
+    const view = renderCreateAccountForm();
+    expect(() => view.unmount()).not.toThrow();
+  });
+
+  it("shows required email error once form is touched and email is empty", () => {
+    const onError = vi.fn();
+    renderCreateAccountForm({ onError });
+
+    fireEvent.submit(screen.getByRole("form", { name: /create account form/i }));
+
+    expect(screen.getAllByText("Required").length).toBeGreaterThan(0);
   });
 
   it("should call onError when required fields are missing", async () => {

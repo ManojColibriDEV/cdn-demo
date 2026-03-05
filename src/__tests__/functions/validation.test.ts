@@ -345,6 +345,15 @@ describe("Validation and Authentication Functions", () => {
       expect(isRefreshTokenExpiredFromCookie()).toBe(false);
     });
 
+    it("isRefreshTokenExpiredFromCookie returns true when decode throws", () => {
+      document.cookie = `${COOKIE_NAMES.REFRESH_TOKEN}=invalid.refresh.token; path=/`;
+      vi.mocked(jwtDecode).mockImplementation(() => {
+        throw new Error("decode-failure");
+      });
+
+      expect(isRefreshTokenExpiredFromCookie()).toBe(true);
+    });
+
     it("refreshAuthenticationState returns false when no refresh token exists", async () => {
       await expect(refreshAuthenticationState()).resolves.toBe(false);
     });
@@ -421,6 +430,25 @@ describe("Validation and Authentication Functions", () => {
       vi.mocked(jwtDecode).mockImplementation((token: any) => {
         if (token === "access-expired") {
           return { exp: Math.floor(Date.now() / 1000) - 10 };
+        }
+        return { exp: Math.floor(Date.now() / 1000) + 3600 };
+      });
+
+      await expect(refreshAuthenticationState()).resolves.toBe(false);
+    });
+
+    it("refreshAuthenticationState returns false when refreshed token has no exp", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "access-no-exp",
+          refresh_token: "refresh-new",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation((token: any) => {
+        if (token === "access-no-exp") {
+          return {} as any;
         }
         return { exp: Math.floor(Date.now() / 1000) + 3600 };
       });
@@ -556,9 +584,19 @@ describe("Validation and Authentication Functions", () => {
     });
 
     it("silentTokenRefresh returns true when no usable refresh token exists", async () => {
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-present");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "bad-refresh-token");
+
       vi.mocked(jwtDecode).mockImplementation(() => {
         throw new Error("bad-refresh-token");
       });
+
+      await expect(silentTokenRefresh()).resolves.toBe(true);
+    });
+
+    it("silentTokenRefresh returns true when access token is missing", async () => {
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-present");
 
       await expect(silentTokenRefresh()).resolves.toBe(true);
     });
@@ -599,9 +637,78 @@ describe("Validation and Authentication Functions", () => {
       vi.useRealTimers();
     });
 
+    it("silentTokenRefresh stops interval when access token disappears during tick", async () => {
+      vi.useFakeTimers();
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-interval");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-interval");
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "unused",
+          refresh_token: "unused",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation(() => ({
+        exp: Math.floor(Date.now() / 1000) + 7200,
+      }));
+
+      const cleanup = await silentTokenRefresh();
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+      await vi.advanceTimersByTimeAsync(SILENT_REFRESH_INTERVAL_MS);
+      expect(serviceModule.authRefresh).not.toHaveBeenCalled();
+
+      if (typeof cleanup === "function") {
+        cleanup();
+      }
+      vi.useRealTimers();
+    });
+
+    it("silentTokenRefresh stops interval when refresh token becomes unusable during tick", async () => {
+      vi.useFakeTimers();
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-will-disappear");
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-still-there");
+
+      vi.spyOn(serviceModule, "authRefresh").mockResolvedValue({
+        tokens: {
+          access_token: "unused",
+          refresh_token: "unused",
+        },
+      } as any);
+
+      vi.mocked(jwtDecode).mockImplementation(() => ({
+        exp: Math.floor(Date.now() / 1000) + 7200,
+      }));
+
+      const cleanup = await silentTokenRefresh();
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+
+      await vi.advanceTimersByTimeAsync(SILENT_REFRESH_INTERVAL_MS);
+      expect(serviceModule.authRefresh).not.toHaveBeenCalled();
+
+      if (typeof cleanup === "function") {
+        cleanup();
+      }
+      vi.useRealTimers();
+    });
+
     it("checkTokenAndRedirectWithRefresh returns false when remember-me is not enabled", async () => {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
       await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns true immediately when token is already valid", async () => {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=valid-token; path=/`;
+      document.cookie = `${COOKIE_NAMES.X_CREDENTIAL}=valid-xcred; path=/`;
+
+      vi.mocked(jwtDecode).mockReturnValue({
+        exp: Math.floor(Date.now() / 1000) + 3600,
+      });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(true);
     });
 
     it("checkTokenAndRedirectWithRefresh returns false when refresh token is not available", async () => {
@@ -682,9 +789,32 @@ describe("Validation and Authentication Functions", () => {
 
       await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
     });
+
+    it("checkTokenAndRedirectWithRefresh returns false when an unexpected error occurs", async () => {
+      const storageSpy = vi
+        .spyOn(Storage.prototype, "getItem")
+        .mockImplementation((key: string) => {
+          if (key === STORAGE_KEYS.REFRESH_TOKEN_TIME) {
+            throw new Error("storage-explosion");
+          }
+          return null;
+        });
+
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+      storageSpy.mockRestore();
+    });
   });
 
   describe("remaining auth helpers", () => {
+    it("validatePassword handles undefined email safely", () => {
+      const checks = validatePassword("StrongPass123$", {
+        displayName: "User Name",
+        email: undefined as any,
+      });
+
+      expect(checks.noEmailParts).toBe(true);
+    });
+
     it("isRefreshTokenValid should return false when timestamp missing", () => {
       expect(isRefreshTokenValid()).toBe(false);
     });
@@ -789,6 +919,37 @@ describe("Validation and Authentication Functions", () => {
         handleAuthentication("user@example.com", "Password123$", false)
       ).resolves.toBeDefined();
       expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe("access-token-3");
+    });
+
+    it("handleAuthentication returns tokens unchanged when access token is missing", async () => {
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          refresh_token: "refresh-only-token",
+        },
+      });
+
+      const result = await handleAuthentication("user@example.com", "Password123$", true);
+
+      expect(result).toEqual({ refresh_token: "refresh-only-token" });
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+    });
+
+    it("handleAuthentication handles decoded tokens without exp claim", async () => {
+      vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
+        tokens: {
+          access_token: "access-no-exp",
+          refresh_token: "refresh-no-exp",
+        },
+      });
+
+      vi.mocked(jwtDecode).mockReturnValue({
+        x_credentials: "xcred-no-exp",
+      } as any);
+
+      await expect(
+        handleAuthentication("user@example.com", "Password123$", false)
+      ).resolves.toBeDefined();
+      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe("access-no-exp");
     });
 
     it("handleAuthentication should hit no-x_credential warning branch", async () => {

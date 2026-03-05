@@ -8,11 +8,6 @@ interface HelpCenterProps {
   handleClose: () => void;
 }
 
-interface HelpCenterArrowProps {
-  className: string;
-  direction?: "left" | "right";
-}
-
 interface HelpCenterHighlightProps {
   children: ReactNode;
 }
@@ -20,34 +15,6 @@ interface HelpCenterHighlightProps {
 interface HelpCenterStepTagProps {
   label: string;
 }
-
-const HelpCenterArrow = ({ className, direction = "right" }: HelpCenterArrowProps) => (
-  <span aria-hidden="true" className={`absolute! pointer-events-none! ${className}`}>
-    <svg
-      viewBox="0 0 72 28"
-      className={`w-20! h-10! text-[var(--button-primary-bg-hover)]! drop-shadow-[0_0_0.5px_rgba(255,255,255,0.9)]! animate-pulse! ${direction === "left" ? "scale-x-[-1]!" : ""}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="8" cy="14" r="6" fill="currentColor" fillOpacity="0.22" />
-      <circle cx="8" cy="14" r="2.5" fill="currentColor" />
-      <path
-        d="M14 14H62"
-        stroke="currentColor"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M53 6L63.5 14L53 22"
-        stroke="currentColor"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </span>
-);
 
 const HelpCenterHighlight = ({ children }: HelpCenterHighlightProps) => (
   <span
@@ -228,10 +195,6 @@ const HelpCenter = ({ onBack, handleClose }: HelpCenterProps) => {
                     className="relative! inline-flex! items-center!"
                     style={{ animation: "helpCenterClick 1.3s ease-in-out infinite" }}
                   >
-                    <HelpCenterArrow
-                      className="right-[100%]! mr-1! top-1/2! -translate-y-1/2!"
-                      direction="right"
-                    />
                     <Button type={ButtonType.BUTTON} variant={ButtonVariant.LINK} disabled>
                       Forgot Password?
                     </Button>
@@ -268,10 +231,6 @@ const HelpCenter = ({ onBack, handleClose }: HelpCenterProps) => {
                   endIcon={<span className="text-gray-500! animate-pulse!">|</span>}
                 />
               </div>
-              <HelpCenterArrow
-                className="left-[50%]! -translate-x-1/2! top-[69%]!"
-                direction="left"
-              />
             </div>
 
             <p className="text-sm! text-gray-700!">
