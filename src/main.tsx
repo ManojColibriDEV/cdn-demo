@@ -93,6 +93,9 @@ if (renderMode === "TEST") {
         "autoRedirection",
         "google-client-id",
         "googleClientId",
+        "redirect-url",
+        "login-title",
+        "login-subtitle",
       ];
     }
 
@@ -357,9 +360,12 @@ if (renderMode === "TEST") {
       return {
         authority: detectedAuthority,
         subsidiary: this.getAttribute("subsidiary") || undefined,
-        redirectUrl: this.getAttribute("redirectUrl") || undefined,
-        loginTitle: this.getAttribute("loginTitle") || undefined,
-        loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
+        redirectUrl:
+          this.getAttribute("redirect-url") || this.getAttribute("redirectUrl") || undefined,
+        loginTitle:
+          this.getAttribute("login-title") || this.getAttribute("loginTitle") || undefined,
+        loginSubtitle:
+          this.getAttribute("login-subtitle") || this.getAttribute("loginSubtitle") || undefined,
         showLogin: this.getAttribute("show-login") === "true",
         customPrimaryColor:
           this.getAttribute("custom-primary-color") ||
