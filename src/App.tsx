@@ -160,6 +160,7 @@ const App = (props: AppProps) => {
       if (accessToken) {
         const userSession = createUserSessionFromToken(accessToken);
         if (userSession) {
+          console.log("userSession", userSession);
           onRedirect(targetUrl, userSession);
         }
       }
