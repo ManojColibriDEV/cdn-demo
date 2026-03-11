@@ -17675,7 +17675,7 @@ const bl = () => {
       const R = localStorage.getItem(be.ACCESS_TOKEN);
       if (R) {
         const C = gu(R);
-        C && (console.log("userSession", C), o(v, C));
+        C && o(v, C);
       }
     }
     l.autoRedirection && setTimeout(() => {
