@@ -16882,7 +16882,7 @@ const bl = () => {
                 /* @__PURE__ */ g.jsx("h3", { className: "text-base! font-bold! text-gray-800!", children: "Common reasons sign in fails" }),
                 /* @__PURE__ */ g.jsx("p", { className: "text-sm! text-gray-700!", children: "Whether you're a member, guest, or viewer, there are a few things that might be happening when sign in fails:" }),
                 /* @__PURE__ */ g.jsxs("ul", { className: "list-disc! pl-6! text-sm! text-gray-700! space-y-1!", children: [
-                  /* @__PURE__ */ g.jsx("li", { children: "You have multiple accounts or account URLs" }),
+                  /* @__PURE__ */ g.jsx("li", { children: "You have multiple accounts" }),
                   /* @__PURE__ */ g.jsx("li", { children: "You're using the wrong email address or username" }),
                   /* @__PURE__ */ g.jsx("li", { children: "You forgot your password" }),
                   /* @__PURE__ */ g.jsx("li", { children: "Your account access may require additional verification" })

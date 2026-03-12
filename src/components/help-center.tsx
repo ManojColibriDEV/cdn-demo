@@ -139,7 +139,7 @@ const HelpCenter = ({ onBack, handleClose }: HelpCenterProps) => {
               happening when sign in fails:
             </p>
             <ul className="list-disc! pl-6! text-sm! text-gray-700! space-y-1!">
-              <li>You have multiple accounts or account URLs</li>
+              <li>You have multiple accounts</li>
               <li>You're using the wrong email address or username</li>
               <li>You forgot your password</li>
               <li>Your account access may require additional verification</li>
