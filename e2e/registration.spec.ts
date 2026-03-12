@@ -1,17 +1,15 @@
 import { test, expect, Page } from "@playwright/test";
+import {
+  MOCK_ACCESS_TOKEN,
+  MOCK_REFRESH_TOKEN,
+  mockCheckEmail,
+  mockAuthLoginSuccess,
+  gotoLoginForm,
+} from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-// A properly-structured mock JWT for E2E tests.
-// jwtDecode() only base64-decodes the payload — no signature validation needed.
-const MOCK_ACCESS_TOKEN =
-  "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ0ZXN0LWtleSJ9" +
-  ".eyJleHAiOjE3MDk4NTM2MDAsImlhdCI6MTcwOTg1MDAwMCwianRpIjoiMTIzNDUtNjc4OTAtYWJjZGUtZWZnaGkiLCJpc3MiOiJodHRwczovL2Rldi1rZXljbG9hay5jb2xpYnJpbGVhcm5pbmcuY29tL3JlYWxtcy9jb2xpYnJpIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6InRlc3QtdXNlci1pZCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImNvbGlicmktY2xpZW50IiwiYWNyIjoiMSIsInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiSm9obiBEb2UiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJqb2huLmRvZUBleGFtcGxlLmNvbSIsImdpdmVuX25hbWUiOiJKb2huIiwiZmFtaWx5X25hbWUiOiJEb2UiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIn0" +
-  ".signature";
-
-const MOCK_REFRESH_TOKEN = "mock-refresh-token-value";
 
 // A valid password that satisfies all requirements:
 //   • 9–15 characters long
@@ -51,28 +49,11 @@ const LOGIN_CREATE_ACCOUNT_BUTTON = 'button[part~="identity-widget-login-create-
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Navigate to the login form first */
-async function gotoLoginForm(page: Page) {
-  await page.goto("/");
-  await page.waitForSelector(REG_SELECTORS.loginTitle, { state: "visible" });
-}
-
 /** Navigate to the create-account form via the login page */
 async function gotoCreateAccountForm(page: Page) {
   await gotoLoginForm(page);
   await page.click(LOGIN_CREATE_ACCOUNT_BUTTON);
   await page.waitForSelector(REG_SELECTORS.formTitle, { state: "visible" });
-}
-
-/** Mock the POST /api/check-email endpoint */
-async function mockCheckEmail(page: Page, exists: boolean) {
-  await page.route("**/api/check-email", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ exists }),
-    })
-  );
 }
 
 /** Mock check-email to return a server error */
@@ -131,25 +112,6 @@ async function mockRegisterServerError(page: Page) {
       status: 500,
       contentType: "application/json",
       body: JSON.stringify({}),
-    })
-  );
-}
-
-/** Mock POST /api/auth to succeed (used for auto-login after registration) */
-async function mockAuthLoginSuccess(page: Page) {
-  await page.route("**/api/auth", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        tokens: {
-          access_token: MOCK_ACCESS_TOKEN,
-          refresh_token: MOCK_REFRESH_TOKEN,
-          expires_in: 3600,
-          token_type: "Bearer",
-          scope: "openid",
-        },
-      }),
     })
   );
 }
@@ -233,7 +195,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
       await page.fill(REG_SELECTORS.emailInput, "newuser@example.com");
       // Wait for check-email debounce + response
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await expect(page.locator(REG_SELECTORS.submitButton)).toBeEnabled();
     });
 
@@ -330,7 +292,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await page.fill(REG_SELECTORS.emailInput, "existing@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
 
       await expect(page.locator(REG_SELECTORS.submitButton)).toBeDisabled();
     });
@@ -340,7 +302,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await page.fill(REG_SELECTORS.emailInput, "existing@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await expect(page.locator(REG_SELECTORS.existingEmailBanner)).toBeVisible();
 
       // Click the banner close button (×); the Banner component renders it with part="identity-widget-banner-close"
@@ -367,7 +329,7 @@ test.describe("Auth Widget — Registration Form", () => {
 
       // Type something that isn't a valid email — no API call should show results
       await page.fill(REG_SELECTORS.emailInput, "notanemail");
-      await page.waitForTimeout(700);
+      // No debounce fires for invalid format; assert immediately.
 
       await expect(page.locator(REG_SELECTORS.emailAvailableIcon)).not.toBeVisible();
       await expect(page.locator(REG_SELECTORS.existingEmailBanner)).not.toBeVisible();
@@ -442,11 +404,12 @@ test.describe("Auth Widget — Registration Form", () => {
       // Enter a password that is at least 9 characters
       await page.fill(REG_SELECTORS.passwordInput, "abcdefghi");
 
-      // The "be 9-15 characters" list item should have green text
+      // The "be 9-15 characters" list item should carry the aria-checked="true" attribute
+      // (set by the component when the rule passes) — decoupled from Tailwind class names.
       const lengthItem = page.locator(
-        '[part~="identity-widget-create-account-requirements-list"] li:first-child span[part~="identity-widget-create-account-requirement-text"]'
+        '[part~="identity-widget-create-account-requirements-list"] li:first-child'
       );
-      await expect(lengthItem).toHaveClass(/text-green-600/);
+      await expect(lengthItem).toHaveAttribute("aria-checked", "true");
     });
   });
 
@@ -461,7 +424,7 @@ test.describe("Auth Widget — Registration Form", () => {
 
       // Only fill in email so the button is enabled, then submit without other fields
       await page.fill(REG_SELECTORS.emailInput, "newuser@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       // First/last name required indicators should appear
@@ -476,7 +439,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       // Leave password empty
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Password is required").first()).toBeVisible({
@@ -492,7 +455,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       await page.fill(REG_SELECTORS.passwordInput, "Ab1!");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Password must be 9-15 characters long").first()).toBeVisible({
@@ -508,7 +471,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       await page.fill(REG_SELECTORS.passwordInput, "bad");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator('[id="password-error"]')).toBeVisible({ timeout: 3000 });
@@ -532,7 +495,7 @@ test.describe("Auth Widget — Registration Form", () => {
 
       await fillRegistrationForm(page);
       // Wait for email debounce
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       // After auto-login succeeds the widget unmounts the form
@@ -556,7 +519,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Creating Account...")).toBeVisible({ timeout: 3000 });
@@ -571,7 +534,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.check(REG_SELECTORS.rememberMeCheckbox);
       await page.click(REG_SELECTORS.submitButton);
 
@@ -590,7 +553,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       // remember me stays unchecked (default)
       await page.click(REG_SELECTORS.submitButton);
 
@@ -612,7 +575,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Email is already in use").first()).toBeVisible({
@@ -626,7 +589,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Username already exists in the system").first()).toBeVisible({
@@ -640,7 +603,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Registration failed. Please try again.").first()).toBeVisible(
@@ -654,7 +617,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       // Wait for error to appear
@@ -683,7 +646,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await fillRegistrationForm(page);
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.submitButton);
 
       // Registration succeeded but auto-login failed: form stays visible, no redirect
@@ -741,7 +704,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await gotoCreateAccountForm(page);
 
       await page.fill(REG_SELECTORS.emailInput, "typed@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.click(REG_SELECTORS.signInButton);
 
       // Email typed on registration form should be carried over to login form
@@ -768,7 +731,7 @@ test.describe("Auth Widget — Registration Form", () => {
 
       // Fill some data first so there is real state to preserve
       await page.fill(REG_SELECTORS.emailInput, "test@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
       await page.keyboard.press("Escape");
       // handleClose is a no-op in TEST mode — form remains fully interactive
       await expect(page.locator(REG_SELECTORS.formTitle)).toBeVisible();

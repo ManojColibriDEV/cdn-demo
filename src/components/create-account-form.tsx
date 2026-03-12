@@ -663,6 +663,7 @@ const CreateAccountForm = ({
                   >
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.length ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.length ? (
@@ -701,6 +702,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasNumber ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasNumber ? (
@@ -739,6 +741,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasUppercase ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasUppercase ? (
@@ -779,6 +782,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasSpecialChar ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasSpecialChar ? (
@@ -819,6 +823,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.onlyAllowedChars ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.onlyAllowedChars ? (
@@ -859,6 +864,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.differentFromUsername ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.differentFromUsername ? (

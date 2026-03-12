@@ -18,11 +18,9 @@ export default defineConfig({
   use: {
     // Dedicated test port — separate from the normal `npm run dev` server
     baseURL: "http://localhost:5174",
-    // Always collect traces, screenshots and video so the Playwright UI
-    // preview pane shows the actual page state for every passing test.
-    trace: "on",
-    screenshot: "on",
-    video: "on",
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
 
   projects: [

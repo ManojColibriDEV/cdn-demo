@@ -1,22 +1,14 @@
 import { test, expect, Page } from "@playwright/test";
+import {
+  MOCK_ACCESS_TOKEN,
+  MOCK_REFRESH_TOKEN,
+  mockCheckEmail,
+  mockAuthLoginSuccess,
+  gotoLoginForm,
+} from "./helpers";
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-// A properly-structured mock JWT used for E2E tests.
-// jwtDecode() only base64-decodes the payload — no signature validation needed.
-// This token has exp: 1709853600 (past) which is fine: handleAuthentication stores
-// tokens in localStorage regardless of expiry.
-const MOCK_ACCESS_TOKEN =
-  "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJ0ZXN0LWtleSJ9" +
-  ".eyJleHAiOjE3MDk4NTM2MDAsImlhdCI6MTcwOTg1MDAwMCwianRpIjoiMTIzNDUtNjc4OTAtYWJjZGUtZWZnaGkiLCJpc3MiOiJodHRwczovL2Rldi1rZXljbG9hay5jb2xpYnJpbGVhcm5pbmcuY29tL3JlYWxtcy9jb2xpYnJpIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6InRlc3QtdXNlci1pZCIsInR5cCI6IkJlYXJlciIsImF6cCI6ImNvbGlicmktY2xpZW50IiwiYWNyIjoiMSIsInNjb3BlIjoiZW1haWwgcHJvZmlsZSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJuYW1lIjoiSm9obiBEb2UiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJqb2huLmRvZUBleGFtcGxlLmNvbSIsImdpdmVuX25hbWUiOiJKb2huIiwiZmFtaWx5X25hbWUiOiJEb2UiLCJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIn0" +
-  ".signature";
-
-const MOCK_REFRESH_TOKEN = "mock-refresh-token-value";
-
-// ---------------------------------------------------------------------------
-// Helpers
+// Helpers (login-specific)
 // ---------------------------------------------------------------------------
 
 const SELECTORS = {
@@ -34,28 +26,6 @@ const SELECTORS = {
   loginTitle: "#login-dialog-title",
 };
 
-/** Mock the auth login endpoint to return a success response.
- * NOTE: handleAuthentication() expects { tokens: {...} } nested structure
- * because authLogin() spreads response.data which the real API returns as { tokens: {...} }.
- */
-async function mockAuthLoginSuccess(page: Page) {
-  await page.route("**/api/auth", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        tokens: {
-          access_token: MOCK_ACCESS_TOKEN,
-          refresh_token: MOCK_REFRESH_TOKEN,
-          expires_in: 3600,
-          token_type: "Bearer",
-          scope: "openid",
-        },
-      }),
-    })
-  );
-}
-
 /** Mock the auth login endpoint to return a 401 error */
 async function mockAuthLoginFailure(page: Page, message = "Invalid credentials") {
   await page.route("**/api/auth", (route) =>
@@ -63,17 +33,6 @@ async function mockAuthLoginFailure(page: Page, message = "Invalid credentials")
       status: 401,
       contentType: "application/json",
       body: JSON.stringify({ error: message }),
-    })
-  );
-}
-
-/** Mock the check-email endpoint */
-async function mockCheckEmail(page: Page, exists: boolean) {
-  await page.route("**/api/check-email", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ exists }),
     })
   );
 }
@@ -98,12 +57,6 @@ async function mockForgotPasswordNotFound(page: Page) {
       body: JSON.stringify({ error: "We couldn't find an account with that email." }),
     })
   );
-}
-
-/** Navigate to the app and wait for the login form to load */
-async function gotoLoginForm(page: Page) {
-  await page.goto("/");
-  await page.waitForSelector(SELECTORS.loginTitle, { state: "visible" });
 }
 
 // ---------------------------------------------------------------------------
@@ -414,7 +367,7 @@ test.describe("Auth Widget — Login Form", () => {
       await resetEmailInput.fill("user@example.com");
 
       // Wait for email check debounce (500ms)
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
 
       const sendLinkButton = page.locator(
         'button[part~="identity-widget-reset-password-submit-button"]'
@@ -434,7 +387,7 @@ test.describe("Auth Widget — Login Form", () => {
 
       const resetEmailInput = page.locator('input[id="reset-email"]');
       await resetEmailInput.fill("notfound@example.com");
-      await page.waitForTimeout(700);
+      await page.waitForResponse("**/api/check-email");
 
       const sendLinkButton = page.locator(
         'button[part~="identity-widget-reset-password-submit-button"]'
