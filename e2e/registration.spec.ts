@@ -404,12 +404,12 @@ test.describe("Auth Widget — Registration Form", () => {
       // Enter a password that is at least 9 characters
       await page.fill(REG_SELECTORS.passwordInput, "abcdefghi");
 
-      // The "be 9-15 characters" list item should carry the aria-checked="true" attribute
+      // The "be 9-15 characters" list item should carry the data-satisfied="true" attribute
       // (set by the component when the rule passes) — decoupled from Tailwind class names.
       const lengthItem = page.locator(
         '[part~="identity-widget-create-account-requirements-list"] li:first-child'
       );
-      await expect(lengthItem).toHaveAttribute("aria-checked", "true");
+      await expect(lengthItem).toHaveAttribute("data-satisfied", "true");
     });
   });
 
