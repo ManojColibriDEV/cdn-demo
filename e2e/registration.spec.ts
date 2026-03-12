@@ -1,11 +1,5 @@
 import { test, expect, Page } from "@playwright/test";
-import {
-  MOCK_ACCESS_TOKEN,
-  MOCK_REFRESH_TOKEN,
-  mockCheckEmail,
-  mockAuthLoginSuccess,
-  gotoLoginForm,
-} from "./helpers";
+import { mockCheckEmail, mockAuthLoginSuccess, gotoLoginForm } from "./helpers";
 
 // ---------------------------------------------------------------------------
 // Constants
