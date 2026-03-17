@@ -28,6 +28,7 @@ export interface ResetPasswordFormProps {
   email: string;
   onBack: () => void;
   handleClose: () => void;
+  onCreateAccount?: () => void;
 }
 
 export interface ResetPasswordSuccessProps {

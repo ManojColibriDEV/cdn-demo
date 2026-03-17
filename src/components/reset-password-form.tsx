@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
-import { forgotPassword, checkEmail } from "../services";
+import { forgotPassword, checkEmail, getBrandHeaders } from "../services";
 import type { ResetPasswordFormProps } from "../types";
 import ResetPasswordSuccess from "./reset-password-success";
 import checkSuccessImg from "../icons/badge-check.svg";
@@ -11,6 +11,8 @@ import {
   EMAIL_REGEX,
   TIMING,
   ERROR_MESSAGES,
+  INFO_MESSAGES,
+  HTTP_HEADERS,
   ButtonType,
   ButtonVariant,
 } from "../constants";
@@ -19,6 +21,7 @@ const ResetPasswordForm = ({
   email: initialEmail,
   onBack,
   handleClose,
+  onCreateAccount,
 }: ResetPasswordFormProps) => {
   const [email, setEmail] = useState(initialEmail || "");
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,22 @@ const ResetPasswordForm = ({
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
+  const [showBanner, setShowBanner] = useState(false);
+  const [brandConfigError, setBrandConfigError] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Check brand configuration on mount
+  useEffect(() => {
+    getBrandHeaders()
+      .then((headers) => {
+        if (!headers[HTTP_HEADERS.X_BRAND_ID]) {
+          setBrandConfigError(true);
+        }
+      })
+      .catch(() => {
+        setBrandConfigError(true);
+      });
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,6 +59,9 @@ const ResetPasswordForm = ({
 
   // Email validation effect
   useEffect(() => {
+    // Don't make any API calls when brand isn't configured
+    if (brandConfigError) return;
+
     const valid = EMAIL_REGEX.test(email);
     setIsEmailValid(valid);
 
@@ -48,6 +69,7 @@ const ResetPasswordForm = ({
       setEmailExists(false);
       setEmailCheckError(false);
       setEmailCheckErrorMessage("");
+      setShowBanner(false);
       return;
     }
 
@@ -57,7 +79,13 @@ const ResetPasswordForm = ({
       try {
         const response = await checkEmail(email);
         console.log("[ResetPassword] Email check response:", response);
-        setEmailExists(response.exists);
+        if (response.exists) {
+          setEmailExists(true);
+          setShowBanner(false);
+        } else {
+          setEmailExists(false);
+          setShowBanner(true);
+        }
         console.log("[ResetPassword] Email exists:", response.exists);
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
@@ -66,6 +94,7 @@ const ResetPasswordForm = ({
           error instanceof Error ? error.message : "Unable to verify email. Please try again.";
         setEmailCheckError(true);
         setEmailCheckErrorMessage(errorMsg);
+        setShowBanner(true);
         setEmailExists(false);
       } finally {
         setCheckingEmail(false);
@@ -73,7 +102,7 @@ const ResetPasswordForm = ({
     }, TIMING.EMAIL_CHECK_DEBOUNCE);
 
     return () => clearTimeout(timer);
-  }, [email]);
+  }, [email, brandConfigError]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
@@ -83,6 +112,8 @@ const ResetPasswordForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (brandConfigError) return;
 
     if (!email) {
       setErrorMessage(ERROR_MESSAGES.EMAIL_REQUIRED);
@@ -246,12 +277,35 @@ const ResetPasswordForm = ({
             />
           </div>
 
-          {/* Error Banner for check-email API failure */}
-          {emailCheckError && (
+          {/* Brand configuration error banner */}
+          {brandConfigError && (
+            <Banner
+              type={MessageType.ERROR}
+              title="We're having trouble signing you in"
+              message="It looks like this sign-in form isn't set up correctly for this site. Our team has been notified."
+              className="identity-widget-reset-password-brand-error-banner mb-4!"
+            />
+          )}
+
+          {/* Banner for non-existing email */}
+          {!brandConfigError && showBanner && !emailExists && isEmailValid && !emailCheckError && (
+            <Banner
+              type={MessageType.INFO}
+              message={INFO_MESSAGES.EMAIL_NOT_FOUND}
+              actionText={onCreateAccount ? "Let's create one to continue?" : undefined}
+              onActionClick={onCreateAccount ? () => { setShowBanner(false); onCreateAccount(); } : undefined}
+              onClose={() => setShowBanner(false)}
+              className="identity-widget-reset-password-email-not-found-banner mb-4!"
+            />
+          )}
+
+          {/* Banner for check-email API failure */}
+          {!brandConfigError && showBanner && emailCheckError && (
             <Banner
               type={MessageType.ERROR}
               message={emailCheckErrorMessage}
               onClose={() => {
+                setShowBanner(false);
                 setEmailCheckError(false);
                 setEmailCheckErrorMessage("");
               }}
@@ -275,7 +329,7 @@ const ResetPasswordForm = ({
           <Button
             type={ButtonType.SUBMIT}
             part="identity-widget-submit-button identity-widget-reset-password-submit-button"
-            disabled={loading || !email || !isEmailValid || !emailExists}
+            disabled={loading || !email || !isEmailValid || !emailExists || brandConfigError}
             className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
               console.log("[ResetPassword] Button state:", {

@@ -21,6 +21,7 @@ vi.mock("../../services", () => ({
   authRefresh: vi.fn(),
   setAuthorityOverride: vi.fn(),
   clearAuthorityOverride: vi.fn(),
+  getBrandHeaders: vi.fn(),
 }));
 
 // Mock functions
@@ -68,6 +69,12 @@ describe("EmbeddedLoginForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default: brand is properly configured
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
   });
 
   it("should render login form with title and subtitle", () => {
@@ -1343,6 +1350,99 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(localStorage.getItem("subsidiary")).toBe("elite");
+    });
+  });
+});
+
+describe("EmbeddedLoginForm — brand configuration error", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Brand config is broken: getBrandHeaders returns empty (no X-Brand-Id)
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({});
+  });
+
+  it("should show brand error banner when X-Brand-Id is missing", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show the 'having trouble' title in the brand error banner", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/we're having trouble signing you in/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should disable the submit button when brand config error", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(getLoginSubmitButton()).toBeDisabled();
+    });
+  });
+
+  it("should keep the 'Create an Account' button enabled when brand config error", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const createBtn = document.querySelector(
+      'button[part~="identity-widget-login-create-account-button"]'
+    ) as HTMLButtonElement;
+    expect(createBtn).not.toBeNull();
+    expect(createBtn).not.toBeDisabled();
+  });
+
+  it("should not call checkEmail when brand config error and a valid email is typed", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.type(emailInput, "test@example.com");
+
+    // Wait past debounce window
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should not call handleAuthentication when form is submitted with brand config error", async () => {
+    renderLoginForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "Password1!" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(functions.handleAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("should show brand error banner when getBrandHeaders rejects", async () => {
+    vi.mocked(services.getBrandHeaders).mockRejectedValue(new Error("Network error"));
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
     });
   });
 });

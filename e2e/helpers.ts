@@ -55,6 +55,9 @@ export async function mockAuthLoginSuccess(page: Page) {
 
 /** Navigate to the app root and wait for the login form to be visible */
 export async function gotoLoginForm(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem("brand_data", JSON.stringify({ domain: "elitelearning.com" }));
+  });
   await page.goto("/");
   await page.waitForSelector("#login-dialog-title", { state: "visible" });
 }

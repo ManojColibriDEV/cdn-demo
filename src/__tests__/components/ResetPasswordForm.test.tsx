@@ -14,6 +14,7 @@ import { ERROR_MESSAGES } from "../../constants";
 vi.mock("../../services", () => ({
   forgotPassword: vi.fn(),
   checkEmail: vi.fn(),
+  getBrandHeaders: vi.fn(),
 }));
 
 const renderResetPasswordForm = (props = {}) => {
@@ -34,6 +35,12 @@ describe("ResetPasswordForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default: brand is properly configured
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
   });
 
   it("should render reset password form", () => {
@@ -516,5 +523,96 @@ describe("ResetPasswordForm Component", () => {
 
     await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
     expect(screen.getByText(/Sending.../i)).toBeInTheDocument();
+  });
+});
+
+describe("ResetPasswordForm — brand configuration error", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Brand config is broken: getBrandHeaders returns empty (no X-Brand-Id)
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({});
+  });
+
+  it("should show brand error banner when X-Brand-Id is missing", async () => {
+    renderResetPasswordForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show the 'having trouble' title in the brand error banner", async () => {
+    renderResetPasswordForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/we're having trouble signing you in/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should disable the Send reset link button when brand config error", async () => {
+    renderResetPasswordForm();
+
+    await waitFor(() => {
+      const submitBtn = document.querySelector(
+        'button[part~="identity-widget-reset-password-submit-button"]'
+      ) as HTMLButtonElement;
+      expect(submitBtn).not.toBeNull();
+      expect(submitBtn).toBeDisabled();
+    });
+  });
+
+  it("should keep the Back to sign in button enabled when brand config error", async () => {
+    renderResetPasswordForm();
+
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const backBtn = document.querySelector(
+      'button[part~="identity-widget-reset-password-back-button"]'
+    ) as HTMLButtonElement;
+    expect(backBtn).not.toBeNull();
+    expect(backBtn).not.toBeDisabled();
+  });
+
+  it("should not call checkEmail when brand config error and a valid email is typed", async () => {
+    const user = userEvent.setup();
+    renderResetPasswordForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
+
+    // Wait past debounce window
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should not call forgotPassword when form is submitted with brand config error", async () => {
+    renderResetPasswordForm({ email: "user@example.com" });
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    fireEvent.submit(screen.getByRole("form", { name: /reset password form/i }));
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(services.forgotPassword).not.toHaveBeenCalled();
+  });
+
+  it("should show brand error banner when getBrandHeaders rejects", async () => {
+    vi.mocked(services.getBrandHeaders).mockRejectedValue(new Error("Network error"));
+    renderResetPasswordForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
   });
 });

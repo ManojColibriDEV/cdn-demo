@@ -6,7 +6,7 @@ import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
-import { authRegister, checkEmail } from "../services";
+import { authRegister, checkEmail, getBrandHeaders } from "../services";
 import type { CreateAccountFormProps } from "../types";
 import checkSuccessImg from "../icons/badge-check.svg";
 import {
@@ -23,6 +23,7 @@ import {
   LOG_PREFIX,
   ERROR_MESSAGES,
   INFO_MESSAGES,
+  HTTP_HEADERS,
   ButtonType,
   ButtonVariant,
 } from "../constants";
@@ -59,6 +60,21 @@ const CreateAccountForm = ({
   >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [brandConfigError, setBrandConfigError] = useState(false);
+
+  // Check brand configuration on mount
+  useEffect(() => {
+    getBrandHeaders()
+      .then((headers) => {
+        if (!headers[HTTP_HEADERS.X_BRAND_ID]) {
+          setBrandConfigError(true);
+        }
+      })
+      .catch(() => {
+        setBrandConfigError(true);
+      });
+  }, []);
 
   // Individual password validation checks
   const passwordChecks = {
@@ -171,6 +187,9 @@ const CreateAccountForm = ({
 
   // Check email existence when user types
   useEffect(() => {
+    // Don't make any API calls when brand isn't configured
+    if (brandConfigError) return;
+
     // Clear previous timeout
     if (emailCheckTimeoutRef.current) {
       clearTimeout(emailCheckTimeoutRef.current);
@@ -226,7 +245,7 @@ const CreateAccountForm = ({
         clearTimeout(emailCheckTimeoutRef.current);
       }
     };
-  }, [email]);
+  }, [email, brandConfigError]);
 
   // Check if email is valid
   const isEmailValid = email && EMAIL_REGEX.test(email);
@@ -247,6 +266,8 @@ const CreateAccountForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (brandConfigError) return;
 
     // Mark form as touched to show validation errors
     setTouched(true);
@@ -465,8 +486,18 @@ const CreateAccountForm = ({
               />
             </div>
 
+            {/* Brand configuration error banner */}
+            {brandConfigError && (
+              <Banner
+                type={MessageType.ERROR}
+                title="We're having trouble signing you in!"
+                message="It looks like this sign-in form isn't set up correctly for this site. Our team has been notified."
+                className="identity-widget-create-account-brand-error-banner mb-4!"
+              />
+            )}
+
             {/* Banner for existing user or API error - appears after email field */}
-            {showBanner && emailExists && !emailCheckError && (
+            {!brandConfigError && showBanner && emailExists && !emailCheckError && (
               <Banner
                 type={MessageType.INFO}
                 message="We found an existing account."
@@ -479,7 +510,7 @@ const CreateAccountForm = ({
                 className="identity-widget-create-account-existing-banner mb-4!"
               />
             )}
-            {showBanner && emailCheckError && (
+            {!brandConfigError && showBanner && emailCheckError && (
               <Banner
                 type={MessageType.ERROR}
                 message={emailCheckErrorMessage}
@@ -943,7 +974,7 @@ const CreateAccountForm = ({
             {/* Create Account Button */}
             <Button
               type={ButtonType.SUBMIT}
-              disabled={loading || emailExists || !isEmailValid}
+              disabled={loading || emailExists || !isEmailValid || brandConfigError}
               part="identity-widget-submit-button identity-widget-create-account-submit-button"
               className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
             >
