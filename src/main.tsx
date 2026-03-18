@@ -43,6 +43,7 @@ if (renderMode === "TEST") {
     root.style.setProperty("--button-primary-bg", colorValue);
     root.style.setProperty("--button-primary-bg-hover", colorValue);
     root.style.setProperty("--color-border-focus", colorValue);
+    root.style.setProperty("--button-primary-bg-disabled", colorValue);
   }
 
   createThemeWidget({
@@ -163,6 +164,7 @@ if (renderMode === "TEST") {
             --button-primary-bg: ${colorValue};
             --button-primary-bg-hover: ${colorValue};
             --color-border-focus: ${colorValue};
+            --button-primary-bg-disabled: ${colorValue};
           }
         `;
 

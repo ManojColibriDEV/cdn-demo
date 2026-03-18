@@ -306,7 +306,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     const helpCenterCta = screen.getByText(/visit our help center/i);
     expect(helpCenterCta).toBeInTheDocument();
-    expect(helpCenterCta).toHaveClass("text-base!");
     expect(helpCenterCta).toHaveClass("font-bold!");
   });
 

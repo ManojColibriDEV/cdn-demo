@@ -33,8 +33,21 @@ const ResetPasswordForm = ({
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [showBanner, setShowBanner] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    cooldownRef.current = setTimeout(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => {
+      if (cooldownRef.current) clearTimeout(cooldownRef.current);
+    };
+  }, [cooldown]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -113,6 +126,7 @@ const ResetPasswordForm = ({
     try {
       await forgotPassword(email);
       console.log("[ResetPassword] Reset link sent to:", email);
+      setCooldown(TIMING.RESEND_COOLDOWN_SECONDS);
       setSuccessSent(true);
     } catch (error) {
       console.error("[ResetPassword] Failed to send reset link:", error);
@@ -124,12 +138,14 @@ const ResetPasswordForm = ({
   };
 
   const handleResendLink = async () => {
+    if (cooldown > 0) return;
     setLoading(true);
     setErrorMessage("");
 
     try {
       await forgotPassword(email);
       console.log("[ResetPassword] Reset link resent to:", email);
+      setCooldown(TIMING.RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       console.error("[ResetPassword] Failed to resend reset link:", error);
       setSuccessSent(false);
@@ -146,6 +162,7 @@ const ResetPasswordForm = ({
       <ResetPasswordSuccess
         email={email}
         loading={loading}
+        cooldown={cooldown}
         onResendLink={handleResendLink}
         onBack={onBack}
         onClose={handleClose}
@@ -319,12 +336,26 @@ const ResetPasswordForm = ({
             />
           )}
 
+          {/* Cooldown message */}
+          {cooldown > 0 && (
+            <p
+              part="identity-widget-reset-password-cooldown-message"
+              className="identity-widget-reset-password-cooldown-message text-sm! text-amber-600! text-center! mb-2!"
+              role="status"
+              aria-live="polite"
+            >
+              We've already sent a reset link. Try again in {cooldown}s
+            </p>
+          )}
+
           {/* Send Reset Link Button */}
           <Button
             type={ButtonType.SUBMIT}
             part="identity-widget-submit-button identity-widget-reset-password-submit-button"
-            disabled={loading || !email || !isEmailValid || !emailExists || brandConfigError}
-            className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            disabled={
+              loading || !email || !isEmailValid || !emailExists || brandConfigError || cooldown > 0
+            }
+            className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
               console.log("[ResetPassword] Button state:", {
                 loading,

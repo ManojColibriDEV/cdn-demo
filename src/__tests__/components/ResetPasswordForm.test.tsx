@@ -17,6 +17,17 @@ vi.mock("../../services", () => ({
   getBrandHeaders: vi.fn(),
 }));
 
+vi.mock("../../constants", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../constants")>();
+  return {
+    ...actual,
+    TIMING: {
+      ...actual.TIMING,
+      RESEND_COOLDOWN_SECONDS: 0,
+    },
+  };
+});
+
 const renderResetPasswordForm = (props = {}) => {
   const defaultProps = {
     email: "",

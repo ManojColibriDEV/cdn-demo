@@ -963,7 +963,7 @@ const CreateAccountForm = ({
               type={ButtonType.SUBMIT}
               disabled={loading || emailExists || !isEmailValid || brandConfigError}
               part="identity-widget-submit-button identity-widget-create-account-submit-button"
-              className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+              className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! m-0!"
             >
               {loading ? (
                 <span

@@ -195,9 +195,7 @@ const HelpCenter = ({ onBack, handleClose }: HelpCenterProps) => {
                     className="relative! inline-flex! items-center!"
                     style={{ animation: "helpCenterClick 1.3s ease-in-out infinite" }}
                   >
-                    <Button type={ButtonType.BUTTON} variant={ButtonVariant.LINK} disabled>
-                      Forgot Password?
-                    </Button>
+                    <span className="text-sm! font-medium! cursor-default!">Forgot Password?</span>
                   </span>
                 </div>
                 <Button type={ButtonType.BUTTON} disabled className="w-full!">

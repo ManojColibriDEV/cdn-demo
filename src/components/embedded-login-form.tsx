@@ -667,8 +667,8 @@ const EmbeddedLoginForm = ({
               className="identity-widget-login-help-center-button group bg-transparent! border-none! p-0! text-sm! font-normal! cursor-pointer!"
               onClick={() => setShowHelpCenter(true)}
             >
-              <span className="text-gray-800!">Can&apos;t log in? </span>
-              <span className="text-blue-400! text-base! font-bold! transition-all! duration-150! group-hover:underline!">
+              <span className="font-bold!">Can&apos;t log in? </span>
+              <span className="text-[var(--button-primary-bg)]! font-bold! transition-all! duration-150! group-hover:underline!">
                 Visit our help center
               </span>
             </button>

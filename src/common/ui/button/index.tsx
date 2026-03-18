@@ -32,7 +32,7 @@ const Button: FC<ButtonProps> = ({
 }) => {
   // Base classes shared by all variants
   const baseClasses =
-    "py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! transition-all! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed!";
+    "py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! transition-all! duration-300! active:scale-[0.98]! disabled:opacity-30! disabled:cursor-not-allowed!";
 
   // Variant-specific classes
   const variantClasses = {

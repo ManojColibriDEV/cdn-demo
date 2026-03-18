@@ -34,6 +34,7 @@ export interface ResetPasswordFormProps {
 export interface ResetPasswordSuccessProps {
   email: string;
   loading: boolean;
+  cooldown: number;
   onResendLink: () => void;
   onBack: () => void;
   onClose: () => void;
