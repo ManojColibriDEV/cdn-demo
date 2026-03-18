@@ -287,6 +287,11 @@ export const ERROR_MESSAGES = {
   // Reset Password Errors
   RESET_LINK_FAILED: "Failed to send reset link. Please try again.",
 
+  // Brand Configuration Errors
+  BRAND_CONFIG_TITLE: "We're having trouble signing you in",
+  BRAND_CONFIG_MESSAGE:
+    "It looks like this sign-in form isn't set up correctly for this site. Please contact support if this issue persists.",
+
   // Generic Errors
   SOMETHING_WENT_WRONG: "Something went wrong. Please try again.",
 } as const;
@@ -325,6 +330,7 @@ export const LOG_PREFIX = {
   CREATE_ACCOUNT: "[CreateAccount]",
   COOKIE: "[Cookie]",
   CHECK_TOKEN_AND_REDIRECT: "[checkTokenAndRedirect]",
+  BRAND_CONFIG: "[BrandConfig]",
 } as const;
 
 // ==================== UI CONSTANTS ====================

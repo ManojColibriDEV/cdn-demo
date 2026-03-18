@@ -6,8 +6,9 @@ import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
-import { authRegister, checkEmail, getBrandHeaders } from "../services";
+import { authRegister, checkEmail } from "../services";
 import type { CreateAccountFormProps } from "../types";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import checkSuccessImg from "../icons/badge-check.svg";
 import {
   MessageType,
@@ -23,7 +24,6 @@ import {
   LOG_PREFIX,
   ERROR_MESSAGES,
   INFO_MESSAGES,
-  HTTP_HEADERS,
   ButtonType,
   ButtonVariant,
 } from "../constants";
@@ -61,20 +61,7 @@ const CreateAccountForm = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [brandConfigError, setBrandConfigError] = useState(false);
-
-  // Check brand configuration on mount
-  useEffect(() => {
-    getBrandHeaders()
-      .then((headers) => {
-        if (!headers[HTTP_HEADERS.X_BRAND_ID]) {
-          setBrandConfigError(true);
-        }
-      })
-      .catch(() => {
-        setBrandConfigError(true);
-      });
-  }, []);
+  const brandConfigError = useBrandConfigError();
 
   // Individual password validation checks
   const passwordChecks = {
@@ -490,8 +477,8 @@ const CreateAccountForm = ({
             {brandConfigError && (
               <Banner
                 type={MessageType.ERROR}
-                title="We're having trouble signing you in!"
-                message="It looks like this sign-in form isn't set up correctly for this site. Our team has been notified."
+                title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+                message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
                 className="identity-widget-create-account-brand-error-banner mb-4!"
               />
             )}

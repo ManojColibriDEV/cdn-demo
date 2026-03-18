@@ -877,10 +877,14 @@ describe("CreateAccountForm — brand configuration error", () => {
       expect(services.getBrandHeaders).toHaveBeenCalled();
     });
 
-    fireEvent.change(screen.getByPlaceholderText(/email/i), { target: { value: "user@example.com" } });
+    fireEvent.change(screen.getByPlaceholderText(/email/i), {
+      target: { value: "user@example.com" },
+    });
     fireEvent.change(screen.getByPlaceholderText(/first name/i), { target: { value: "John" } });
     fireEvent.change(screen.getByPlaceholderText(/last name/i), { target: { value: "Doe" } });
-    fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: "ValidPass9$" } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), {
+      target: { value: "ValidPass9$" },
+    });
     fireEvent.submit(screen.getByRole("form", { name: /create account form/i }));
 
     await new Promise((resolve) => setTimeout(resolve, 100));

@@ -101,7 +101,9 @@ describe("Banner Component", () => {
 
 describe("Banner title prop", () => {
   it("should render title when provided", () => {
-    render(<Banner type={MessageType.ERROR} title="Something went wrong" message="Please try again." />);
+    render(
+      <Banner type={MessageType.ERROR} title="Something went wrong" message="Please try again." />
+    );
 
     expect(screen.getByText("Something went wrong")).toBeInTheDocument();
     expect(screen.getByText("Please try again.")).toBeInTheDocument();
@@ -123,13 +125,19 @@ describe("Banner title prop", () => {
   });
 
   it("should render title before message in the DOM", () => {
-    render(<Banner type={MessageType.WARNING} title="Heads up" message="Something might be off." />);
+    render(
+      <Banner type={MessageType.WARNING} title="Heads up" message="Something might be off." />
+    );
 
     const content = document.querySelector('[part="identity-widget-banner-content"]');
     expect(content).toBeInTheDocument();
     const children = Array.from(content!.children);
-    const titleIndex = children.findIndex((el) => el.getAttribute("part") === "identity-widget-banner-title");
-    const msgRowIndex = children.findIndex((el) => el.getAttribute("part") === "identity-widget-banner-message-row");
+    const titleIndex = children.findIndex(
+      (el) => el.getAttribute("part") === "identity-widget-banner-title"
+    );
+    const msgRowIndex = children.findIndex(
+      (el) => el.getAttribute("part") === "identity-widget-banner-message-row"
+    );
     expect(titleIndex).toBeLessThan(msgRowIndex);
   });
 
@@ -200,7 +208,9 @@ describe("Banner actionText without onActionClick", () => {
   it("should not render any action element when actionText is not provided", () => {
     render(<Banner type={MessageType.INFO} message="Just a message" />);
 
-    expect(document.querySelector('[part="identity-widget-banner-action"]')).not.toBeInTheDocument();
+    expect(
+      document.querySelector('[part="identity-widget-banner-action"]')
+    ).not.toBeInTheDocument();
   });
 });
 

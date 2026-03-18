@@ -6,8 +6,9 @@ import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
-import { checkEmail, getBrandHeaders } from "../services";
+import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
 import HelpCenter from "./help-center";
@@ -19,7 +20,7 @@ import {
   ButtonType,
   ButtonVariant,
   INFO_MESSAGES,
-  HTTP_HEADERS,
+  ERROR_MESSAGES,
 } from "../constants";
 import { isCapsLockEnabled } from "../utils/keyboard";
 
@@ -52,7 +53,7 @@ const EmbeddedLoginForm = ({
   const [toastType, setToastType] = useState<
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
-  const [brandConfigError, setBrandConfigError] = useState(false);
+  const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,19 +81,6 @@ const EmbeddedLoginForm = ({
       onError(googleError);
     },
   });
-
-  // Check brand configuration on mount
-  useEffect(() => {
-    getBrandHeaders()
-      .then((headers) => {
-        if (!headers[HTTP_HEADERS.X_BRAND_ID]) {
-          setBrandConfigError(true);
-        }
-      })
-      .catch(() => {
-        setBrandConfigError(true);
-      });
-  }, []);
 
   // Check email existence when user types
   useEffect(() => {
@@ -423,8 +411,8 @@ const EmbeddedLoginForm = ({
           {brandConfigError && (
             <Banner
               type={MessageType.ERROR}
-              title="We're having trouble signing you in!"
-              message="It looks like this sign-in form isn't set up correctly for this site. Our team has been notified."
+              title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+              message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
               className="mb-4!"
             />
           )}

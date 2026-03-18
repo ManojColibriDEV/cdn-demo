@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
-import { forgotPassword, checkEmail, getBrandHeaders } from "../services";
+import { forgotPassword, checkEmail } from "../services";
 import type { ResetPasswordFormProps } from "../types";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import ResetPasswordSuccess from "./reset-password-success";
 import checkSuccessImg from "../icons/badge-check.svg";
 import {
@@ -12,7 +13,6 @@ import {
   TIMING,
   ERROR_MESSAGES,
   INFO_MESSAGES,
-  HTTP_HEADERS,
   ButtonType,
   ButtonVariant,
 } from "../constants";
@@ -33,21 +33,8 @@ const ResetPasswordForm = ({
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [showBanner, setShowBanner] = useState(false);
-  const [brandConfigError, setBrandConfigError] = useState(false);
+  const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
-
-  // Check brand configuration on mount
-  useEffect(() => {
-    getBrandHeaders()
-      .then((headers) => {
-        if (!headers[HTTP_HEADERS.X_BRAND_ID]) {
-          setBrandConfigError(true);
-        }
-      })
-      .catch(() => {
-        setBrandConfigError(true);
-      });
-  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -281,8 +268,8 @@ const ResetPasswordForm = ({
           {brandConfigError && (
             <Banner
               type={MessageType.ERROR}
-              title="We're having trouble signing you in"
-              message="It looks like this sign-in form isn't set up correctly for this site. Our team has been notified."
+              title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+              message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
               className="identity-widget-reset-password-brand-error-banner mb-4!"
             />
           )}
@@ -293,7 +280,14 @@ const ResetPasswordForm = ({
               type={MessageType.INFO}
               message={INFO_MESSAGES.EMAIL_NOT_FOUND}
               actionText={onCreateAccount ? "Let's create one to continue?" : undefined}
-              onActionClick={onCreateAccount ? () => { setShowBanner(false); onCreateAccount(); } : undefined}
+              onActionClick={
+                onCreateAccount
+                  ? () => {
+                      setShowBanner(false);
+                      onCreateAccount();
+                    }
+                  : undefined
+              }
               onClose={() => setShowBanner(false)}
               className="identity-widget-reset-password-email-not-found-banner mb-4!"
             />

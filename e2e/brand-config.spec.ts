@@ -3,7 +3,7 @@
  *
  * Covers the behaviour introduced when getBrandHeaders() returns no X-Brand-Id:
  *   - Error banner appears in Login, Registration, and Reset Password forms
- *   - All action buttons are disabled
+ *   - Submit buttons are disabled (navigation buttons like Create Account and Back stay enabled)
  *   - No check-email API calls are made
  *
  * Strategy: localStorage is empty by default in Playwright, so brand_data is
@@ -49,17 +49,19 @@ const RESET = {
 // ---------------------------------------------------------------------------
 
 /** Block every check-email request so we can assert it was never called */
-async function interceptCheckEmail(page: Page): Promise<{ called: () => boolean }> {
-  let called = false;
+async function interceptCheckEmail(
+  page: Page
+): Promise<{ called: () => boolean; count: () => number }> {
+  let callCount = 0;
   await page.route("**/api/check-email", (route) => {
-    called = true;
+    callCount++;
     return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ exists: false }),
     });
   });
-  return { called: () => called };
+  return { called: () => callCount > 0, count: () => callCount };
 }
 
 /** Navigate to the login form WITHOUT brand data (triggers brandConfigError) */
@@ -91,11 +93,10 @@ async function gotoRegistrationNoBrand(page: Page) {
   await page.goto("/");
   await page.waitForSelector("#login-dialog-title", { state: "visible" });
 
-  // With no brand data the login Create Account button is also disabled.
-  // Navigate directly to the create-account view via URL hash for isolation.
+  // With no brand data the login Create Account button stays enabled
+  // (only the submit button is disabled). Navigate to registration via click.
   await page.evaluate(() => {
-    // Trigger a click through JS to bypass the disabled-button guard since
-    // we only want to test the registration component's own brand check.
+    // Trigger a click to navigate to the registration component's own brand check.
     const btn = document.querySelector(
       'button[part~="identity-widget-login-create-account-button"]'
     ) as HTMLButtonElement | null;
@@ -121,9 +122,7 @@ async function gotoResetPasswordNoBrand(page: Page) {
 // ---------------------------------------------------------------------------
 
 test.describe("Brand Configuration Error — Login Form", () => {
-  test("shows brand error banner when brand_data is not set in localStorage", async ({
-    page,
-  }) => {
+  test("shows brand error banner when brand_data is not set in localStorage", async ({ page }) => {
     await gotoLoginNoBrand(page);
 
     await expect(
@@ -134,9 +133,9 @@ test.describe("Brand Configuration Error — Login Form", () => {
   test("shows 'having trouble' title in the brand error banner", async ({ page }) => {
     await gotoLoginNoBrand(page);
 
-    await expect(
-      page.locator("text=We're having trouble signing you in")
-    ).toBeVisible({ timeout: 3000 });
+    await expect(page.locator("text=We're having trouble signing you in")).toBeVisible({
+      timeout: 3000,
+    });
   });
 
   test("submit button is disabled when brand config error", async ({ page }) => {
@@ -180,7 +179,11 @@ test.describe("Brand Configuration Error — Login Form", () => {
     page,
   }) => {
     await page.route("**/api/check-email", (route) =>
-      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ exists: true }) })
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ exists: true }),
+      })
     );
     await gotoLoginWithBrand(page);
 
@@ -213,9 +216,7 @@ test.describe("Brand Configuration Error — Registration Form", () => {
    * brand data by NOT setting it at all and using URL navigation directly.
    */
 
-  test("shows brand error banner in registration when no brand_data is set", async ({
-    page,
-  }) => {
+  test("shows brand error banner in registration when no brand_data is set", async ({ page }) => {
     // Navigation buttons (Create an Account) stay enabled even without brand
     // data, so we can navigate directly to the registration form. The
     // registration form's own mount effect calls getBrandHeaders() and shows
@@ -230,9 +231,7 @@ test.describe("Brand Configuration Error — Registration Form", () => {
     ).toBeVisible({ timeout: 3000 });
   });
 
-  test("registration submit button is disabled when no brand_data", async ({
-    page,
-  }) => {
+  test("registration submit button is disabled when no brand_data", async ({ page }) => {
     // Navigate to registration without brand data — the Create an Account
     // navigation button stays enabled so users can always reach the form,
     // but the registration form enforces its own brand check on mount.
@@ -246,26 +245,17 @@ test.describe("Brand Configuration Error — Registration Form", () => {
   test("no check-email call in registration when brand config error", async ({ page }) => {
     const tracker = await interceptCheckEmail(page);
 
-    // Open registration with brand data
-    await page.addInitScript(() => {
-      localStorage.setItem("brand_data", JSON.stringify({ domain: "elitelearning.com" }));
-    });
-    await gotoLoginForm(page);
+    // Open registration without brand data — brandConfigError is true from mount
+    await gotoLoginNoBrand(page);
     await page.click(LOGIN.createAccountButton);
     await page.waitForSelector(REG.formTitle, { state: "visible" });
 
-    // Remove brand data so next component mount has no brand
-    await page.evaluate(() => localStorage.removeItem("brand_data"));
-
-    // Type email to trigger debounced check (which should be blocked)
+    // Type email to trigger debounced check (which should be blocked by brandConfigError)
     await page.fill(REG.emailInput, "test@example.com");
     await page.waitForTimeout(700);
 
-    // check-email should NOT be called because brandConfigError is already set
-    // (the component detected the missing brand on mount)
-    // Note: the initial call already happened with valid brand, so we check
-    // that no additional call was made after clearing brand data
-    expect(tracker.called()).toBeDefined(); // route was set up correctly
+    // check-email should NOT be called because brandConfigError blocked it
+    expect(tracker.called()).toBe(false);
   });
 });
 
