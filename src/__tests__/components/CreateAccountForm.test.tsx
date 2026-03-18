@@ -14,6 +14,7 @@ import * as functions from "../../functions";
 vi.mock("../../services", () => ({
   authRegister: vi.fn(),
   checkEmail: vi.fn(),
+  getBrandHeaders: vi.fn(),
 }));
 
 const renderCreateAccountForm = (props = {}) => {
@@ -36,6 +37,12 @@ describe("CreateAccountForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default: brand is properly configured
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
   });
 
   it("should render create account form", () => {
@@ -794,5 +801,105 @@ describe("CreateAccountForm Component", () => {
     ) as HTMLButtonElement;
     fireEvent.click(hideButton);
     expect(passwordInput).toHaveAttribute("type", "password");
+  });
+});
+
+describe("CreateAccountForm — brand configuration error", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Brand config is broken: getBrandHeaders returns empty (no X-Brand-Id)
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({});
+  });
+
+  it("should show brand error banner when X-Brand-Id is missing", async () => {
+    renderCreateAccountForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show the 'having trouble' title in the brand error banner", async () => {
+    renderCreateAccountForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/we're having trouble signing you in/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should disable the Create Account submit button when brand config error", async () => {
+    renderCreateAccountForm();
+
+    await waitFor(() => {
+      const submitBtn = document.querySelector(
+        'button[part~="identity-widget-create-account-submit-button"]'
+      ) as HTMLButtonElement;
+      expect(submitBtn).not.toBeNull();
+      expect(submitBtn).toBeDisabled();
+    });
+  });
+
+  it("should keep the Sign In button enabled when brand config error", async () => {
+    renderCreateAccountForm();
+
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const signInBtn = document.querySelector(
+      'button[part~="identity-widget-create-account-signin-button"]'
+    ) as HTMLButtonElement;
+    expect(signInBtn).not.toBeNull();
+    expect(signInBtn).not.toBeDisabled();
+  });
+
+  it("should not call checkEmail when brand config error and a valid email is typed", async () => {
+    const user = userEvent.setup();
+    renderCreateAccountForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
+
+    // Wait past debounce window
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should not call authRegister when form is submitted with brand config error", async () => {
+    renderCreateAccountForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText(/email/i), {
+      target: { value: "user@example.com" },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/first name/i), { target: { value: "John" } });
+    fireEvent.change(screen.getByPlaceholderText(/last name/i), { target: { value: "Doe" } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), {
+      target: { value: "ValidPass9$" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: /create account form/i }));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(services.authRegister).not.toHaveBeenCalled();
+  });
+
+  it("should show brand error banner when getBrandHeaders rejects", async () => {
+    vi.mocked(services.getBrandHeaders).mockRejectedValue(new Error("Network error"));
+    renderCreateAccountForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
   });
 });

@@ -4,6 +4,7 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import { forgotPassword, checkEmail } from "../services";
 import type { ResetPasswordFormProps } from "../types";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import ResetPasswordSuccess from "./reset-password-success";
 import checkSuccessImg from "../icons/badge-check.svg";
 import {
@@ -11,6 +12,7 @@ import {
   EMAIL_REGEX,
   TIMING,
   ERROR_MESSAGES,
+  INFO_MESSAGES,
   ButtonType,
   ButtonVariant,
 } from "../constants";
@@ -19,6 +21,7 @@ const ResetPasswordForm = ({
   email: initialEmail,
   onBack,
   handleClose,
+  onCreateAccount,
 }: ResetPasswordFormProps) => {
   const [email, setEmail] = useState(initialEmail || "");
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,22 @@ const ResetPasswordForm = ({
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
+  const [showBanner, setShowBanner] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    cooldownRef.current = setTimeout(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => {
+      if (cooldownRef.current) clearTimeout(cooldownRef.current);
+    };
+  }, [cooldown]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -41,6 +59,9 @@ const ResetPasswordForm = ({
 
   // Email validation effect
   useEffect(() => {
+    // Don't make any API calls when brand isn't configured
+    if (brandConfigError) return;
+
     const valid = EMAIL_REGEX.test(email);
     setIsEmailValid(valid);
 
@@ -48,6 +69,7 @@ const ResetPasswordForm = ({
       setEmailExists(false);
       setEmailCheckError(false);
       setEmailCheckErrorMessage("");
+      setShowBanner(false);
       return;
     }
 
@@ -57,7 +79,13 @@ const ResetPasswordForm = ({
       try {
         const response = await checkEmail(email);
         console.log("[ResetPassword] Email check response:", response);
-        setEmailExists(response.exists);
+        if (response.exists) {
+          setEmailExists(true);
+          setShowBanner(false);
+        } else {
+          setEmailExists(false);
+          setShowBanner(true);
+        }
         console.log("[ResetPassword] Email exists:", response.exists);
       } catch (error) {
         console.error("[ResetPassword] Error checking email:", error);
@@ -66,6 +94,7 @@ const ResetPasswordForm = ({
           error instanceof Error ? error.message : "Unable to verify email. Please try again.";
         setEmailCheckError(true);
         setEmailCheckErrorMessage(errorMsg);
+        setShowBanner(true);
         setEmailExists(false);
       } finally {
         setCheckingEmail(false);
@@ -73,7 +102,7 @@ const ResetPasswordForm = ({
     }, TIMING.EMAIL_CHECK_DEBOUNCE);
 
     return () => clearTimeout(timer);
-  }, [email]);
+  }, [email, brandConfigError]);
 
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === overlayRef.current) {
@@ -83,6 +112,8 @@ const ResetPasswordForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (brandConfigError) return;
 
     if (!email) {
       setErrorMessage(ERROR_MESSAGES.EMAIL_REQUIRED);
@@ -95,6 +126,7 @@ const ResetPasswordForm = ({
     try {
       await forgotPassword(email);
       console.log("[ResetPassword] Reset link sent to:", email);
+      setCooldown(TIMING.RESEND_COOLDOWN_SECONDS);
       setSuccessSent(true);
     } catch (error) {
       console.error("[ResetPassword] Failed to send reset link:", error);
@@ -106,12 +138,14 @@ const ResetPasswordForm = ({
   };
 
   const handleResendLink = async () => {
+    if (cooldown > 0) return;
     setLoading(true);
     setErrorMessage("");
 
     try {
       await forgotPassword(email);
       console.log("[ResetPassword] Reset link resent to:", email);
+      setCooldown(TIMING.RESEND_COOLDOWN_SECONDS);
     } catch (error) {
       console.error("[ResetPassword] Failed to resend reset link:", error);
       setSuccessSent(false);
@@ -128,6 +162,7 @@ const ResetPasswordForm = ({
       <ResetPasswordSuccess
         email={email}
         loading={loading}
+        cooldown={cooldown}
         onResendLink={handleResendLink}
         onBack={onBack}
         onClose={handleClose}
@@ -246,12 +281,42 @@ const ResetPasswordForm = ({
             />
           </div>
 
-          {/* Error Banner for check-email API failure */}
-          {emailCheckError && (
+          {/* Brand configuration error banner */}
+          {brandConfigError && (
+            <Banner
+              type={MessageType.ERROR}
+              title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+              message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
+              className="identity-widget-reset-password-brand-error-banner mb-4!"
+            />
+          )}
+
+          {/* Banner for non-existing email */}
+          {!brandConfigError && showBanner && !emailExists && isEmailValid && !emailCheckError && (
+            <Banner
+              type={MessageType.INFO}
+              message={INFO_MESSAGES.EMAIL_NOT_FOUND}
+              actionText={onCreateAccount ? "Let's create one to continue?" : undefined}
+              onActionClick={
+                onCreateAccount
+                  ? () => {
+                      setShowBanner(false);
+                      onCreateAccount();
+                    }
+                  : undefined
+              }
+              onClose={() => setShowBanner(false)}
+              className="identity-widget-reset-password-email-not-found-banner mb-4!"
+            />
+          )}
+
+          {/* Banner for check-email API failure */}
+          {!brandConfigError && showBanner && emailCheckError && (
             <Banner
               type={MessageType.ERROR}
               message={emailCheckErrorMessage}
               onClose={() => {
+                setShowBanner(false);
                 setEmailCheckError(false);
                 setEmailCheckErrorMessage("");
               }}
@@ -271,12 +336,26 @@ const ResetPasswordForm = ({
             />
           )}
 
+          {/* Cooldown message */}
+          {cooldown > 0 && (
+            <p
+              part="identity-widget-reset-password-cooldown-message"
+              className="identity-widget-reset-password-cooldown-message text-sm! text-amber-600! text-center! mb-2!"
+              role="status"
+              aria-live="polite"
+            >
+              We've already sent a reset link. Try again in {cooldown}s
+            </p>
+          )}
+
           {/* Send Reset Link Button */}
           <Button
             type={ButtonType.SUBMIT}
             part="identity-widget-submit-button identity-widget-reset-password-submit-button"
-            disabled={loading || !email || !isEmailValid || !emailExists}
-            className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+            disabled={
+              loading || !email || !isEmailValid || !emailExists || brandConfigError || cooldown > 0
+            }
+            className="identity-widget-submit-button identity-widget-reset-password-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:cursor-not-allowed! m-0!"
             onClick={() => {
               console.log("[ResetPassword] Button state:", {
                 loading,

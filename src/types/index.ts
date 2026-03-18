@@ -28,11 +28,13 @@ export interface ResetPasswordFormProps {
   email: string;
   onBack: () => void;
   handleClose: () => void;
+  onCreateAccount?: () => void;
 }
 
 export interface ResetPasswordSuccessProps {
   email: string;
   loading: boolean;
+  cooldown: number;
   onResendLink: () => void;
   onBack: () => void;
   onClose: () => void;

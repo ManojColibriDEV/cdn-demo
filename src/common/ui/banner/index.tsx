@@ -6,6 +6,7 @@ type BannerType = MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR 
 
 interface BannerProps {
   type: BannerType;
+  title?: string;
   message: string;
   actionText?: string;
   onActionClick?: () => void;
@@ -16,6 +17,7 @@ interface BannerProps {
 
 const Banner: FC<BannerProps> = ({
   type,
+  title,
   message,
   actionText,
   onActionClick,
@@ -28,8 +30,9 @@ const Banner: FC<BannerProps> = ({
       case MessageType.SUCCESS:
         return {
           bg: "bg-green-50!",
-          border: "border-green-200!",
-          text: "text-green-800!",
+          border: "border-l-4! border-l-green-500!",
+          titleText: "text-green-900!",
+          text: "text-green-700!",
           iconBg: "bg-green-100!",
           iconColor: "text-green-600!",
           actionColor: "text-green-700!",
@@ -39,8 +42,9 @@ const Banner: FC<BannerProps> = ({
       case MessageType.WARNING:
         return {
           bg: "bg-yellow-50!",
-          border: "border-yellow-200!",
-          text: "text-yellow-800!",
+          border: "border-l-4! border-l-yellow-500!",
+          titleText: "text-yellow-900!",
+          text: "text-yellow-700!",
           iconBg: "bg-yellow-100!",
           iconColor: "text-yellow-600!",
           actionColor: "text-yellow-700!",
@@ -50,8 +54,9 @@ const Banner: FC<BannerProps> = ({
       case MessageType.ERROR:
         return {
           bg: "bg-red-50!",
-          border: "border-red-200!",
-          text: "text-red-800!",
+          border: "border-l-4! border-l-red-500!",
+          titleText: "text-red-900!",
+          text: "text-red-700!",
           iconBg: "bg-red-100!",
           iconColor: "text-red-600!",
           actionColor: "text-red-700!",
@@ -63,7 +68,8 @@ const Banner: FC<BannerProps> = ({
         return {
           bg: "bg-cyan-50!",
           border: "border-l-4! border-l-cyan-500!",
-          text: "text-gray-700!",
+          titleText: "text-gray-900!",
+          text: "text-gray-600!",
           iconBg: "bg-cyan-100!",
           iconColor: "text-cyan-600!",
           actionColor: "text-cyan-600!",
@@ -156,37 +162,58 @@ const Banner: FC<BannerProps> = ({
       role={getAriaRole()}
       aria-live={type === MessageType.ERROR ? AriaLive.ASSERTIVE : AriaLive.POLITE}
       aria-atomic="true"
-      className={`identity-widget-banner flex! items-center! max-[500px]:items-start! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}
+      className={`identity-widget-banner flex! ${title ? "items-start!" : "items-center!"} max-[500px]:items-start! py-3! px-4! rounded! ${styles.bg} ${styles.border} ${className}`}
     >
       <div
         part="identity-widget-banner-icon"
-        className={`identity-widget-banner-icon flex-shrink-0! ${styles.iconColor}!`}
+        className={`identity-widget-banner-icon flex-shrink-0! ${title ? "mt-0.5!" : ""} ${styles.iconColor}!`}
         aria-hidden="true"
       >
         {getIcon()}
       </div>
       <div
         part="identity-widget-banner-content"
-        className="identity-widget-banner-content ml-3! flex-1! flex! items-center! gap-2! max-[500px]:items-start! max-[500px]:flex-col!"
+        className="identity-widget-banner-content ml-3! flex-1! flex! flex-col! gap-0.5!"
       >
-        <span
-          part="identity-widget-banner-message"
-          className={`identity-widget-banner-message text-sm! font-medium! ${styles.text}`}
-        >
-          {message}
-        </span>
-        {actionText && onActionClick && (
-          <button
-            part="identity-widget-banner-action"
-            type="button"
-            onClick={onActionClick}
-            aria-label={actionText}
-            className={`identity-widget-banner-action text-sm! font-medium! ${styles.actionColor} ${styles.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! max-[500px]:whitespace-normal! max-[500px]:self-start! shadow-none!`}
+        {title && (
+          <span
+            part="identity-widget-banner-title"
+            className={`identity-widget-banner-title text-sm! font-bold! ${styles.titleText}`}
           >
-            {actionText}
-          </button>
+            {title}
+          </span>
         )}
-        {children}
+        <div
+          part="identity-widget-banner-message-row"
+          className="identity-widget-banner-message-row flex! items-center! gap-2! flex-wrap!"
+        >
+          <span
+            part="identity-widget-banner-message"
+            className={`identity-widget-banner-message text-sm! font-medium! ${styles.text}`}
+          >
+            {message}
+          </span>
+          {actionText && onActionClick && (
+            <button
+              part="identity-widget-banner-action"
+              type="button"
+              onClick={onActionClick}
+              aria-label={actionText}
+              className={`identity-widget-banner-action text-sm! font-medium! ${styles.actionColor} ${styles.actionHover} underline! bg-transparent! border-none! cursor-pointer! p-0! whitespace-nowrap! max-[500px]:whitespace-normal! shadow-none!`}
+            >
+              {actionText}
+            </button>
+          )}
+          {actionText && !onActionClick && (
+            <span
+              part="identity-widget-banner-action"
+              className={`identity-widget-banner-action text-sm! font-semibold! ${styles.actionColor}`}
+            >
+              {actionText}
+            </span>
+          )}
+          {children}
+        </div>
       </div>
       {onClose && (
         <button
