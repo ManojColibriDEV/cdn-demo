@@ -332,10 +332,10 @@ describe("EmbeddedLoginForm Component", () => {
 
     await user.click(screen.getByText(/forgot password/i));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Back to sign in/i })).toBeInTheDocument();
+      expect(screen.getByText(/back to login/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Back to sign in/i }));
+    await user.click(screen.getByText(/back to login/i));
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Continue to login/i })).toBeInTheDocument();
@@ -572,7 +572,7 @@ describe("EmbeddedLoginForm Component", () => {
     renderLoginForm();
     await user.type(screen.getByPlaceholderText(/email/i), "toastloginuser");
     await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    await user.click(getLoginSubmitButton());
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /close notification/i })).toBeInTheDocument();
@@ -591,7 +591,7 @@ describe("EmbeddedLoginForm Component", () => {
     renderLoginForm();
     await user.type(screen.getByPlaceholderText(/email/i), "baduser");
     await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    await user.click(getLoginSubmitButton());
 
     await waitFor(() => {
       expect(screen.queryAllByText("Toast auth error").length).toBeGreaterThan(0);
@@ -606,7 +606,7 @@ describe("EmbeddedLoginForm Component", () => {
     renderLoginForm({ onError });
     await user.type(screen.getByPlaceholderText(/email or username/i), "fallbackuser");
     await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    await user.click(getLoginSubmitButton());
 
     await waitFor(() => {
       expect(onError).toHaveBeenCalledWith("Authentication failed");

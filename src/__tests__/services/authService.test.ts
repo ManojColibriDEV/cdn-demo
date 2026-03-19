@@ -11,6 +11,7 @@ import {
   authRegister,
   checkEmail,
   forgotPassword,
+  forgotUsername,
   authRefresh,
   authLogout,
   fetchSubsidiaries,
@@ -38,6 +39,10 @@ import {
   mockForgotPasswordSuccessResponse,
   mockForgotPasswordNotFoundResponse,
 } from "../mocks/mockPasswordResetResponses";
+import {
+  mockForgotUsernameSuccessResponse,
+  mockForgotUsernameNotFoundResponse,
+} from "../mocks/mockForgotUsernameResponses";
 import { mockSubsidiariesResponse, mockBrandData } from "../mocks/mockSubsidiaryResponses";
 
 describe("Authentication Service", () => {
@@ -328,6 +333,63 @@ describe("Authentication Service", () => {
     it("should use thrown error message when available", async () => {
       const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("direct-forgot-error"));
       await expect(forgotPassword("test@example.com")).rejects.toThrow("direct-forgot-error");
+      spy.mockRestore();
+    });
+  });
+
+  describe("forgotUsername", () => {
+    it("should successfully send verification link", async () => {
+      const email = "user@example.com";
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(200, mockForgotUsernameSuccessResponse);
+
+      const response = await forgotUsername(email);
+
+      expect(response.success).toBe(true);
+      expect(response.message).toContain("verification link");
+    });
+
+    it("should handle user not found error", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(404, mockForgotUsernameNotFoundResponse);
+
+      await expect(forgotUsername("nonexistent@example.com")).rejects.toThrow("Not found");
+    });
+
+    it("should handle general errors", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(500, {
+        error: "Server error",
+      });
+
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+    });
+
+    it("should return not-found specific message when 404 has no error body", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(404, {});
+      await expect(forgotUsername("missing@example.com")).rejects.toThrow(
+        "We couldn't find an account with that email."
+      );
+    });
+
+    it("should handle response message field", async () => {
+      mockAxios
+        .onPost(/\/api\/forgot-username$/)
+        .reply(400, { message: "forgot username message" });
+      await expect(forgotUsername("test@example.com")).rejects.toThrow("forgot username message");
+    });
+
+    it("should handle generic fallback error", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(500, {});
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+    });
+
+    it("should hit recovery-failed fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should use thrown error message when available", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("direct-username-error"));
+      await expect(forgotUsername("test@example.com")).rejects.toThrow("direct-username-error");
       spy.mockRestore();
     });
   });

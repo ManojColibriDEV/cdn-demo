@@ -11,6 +11,7 @@ import type { EmbeddedLoginFormProps } from "../types";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
+import ForgotUsernameForm from "./forgot-username-form";
 import HelpCenter from "./help-center";
 import checkSuccessImg from "../icons/badge-check.svg";
 import googleIcon from "../icons/google-icon.svg";
@@ -32,7 +33,7 @@ const EmbeddedLoginForm = ({
   title = "Continue to login",
   subtitle = "Continue by signing in.",
   initialEmail = "",
-  enableGoogleLogin = false,
+  enableGoogleLogin = true,
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -43,6 +44,7 @@ const EmbeddedLoginForm = ({
   const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showForgotUsername, setShowForgotUsername] = useState(false);
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
@@ -224,6 +226,21 @@ const EmbeddedLoginForm = ({
         handleClose={handleClose}
         onCreateAccount={() => {
           setShowResetPassword(false);
+          setShowCreateAccount(true);
+        }}
+      />
+    );
+  }
+
+  // If showing forgot username form, render that instead
+  if (showForgotUsername) {
+    return (
+      <ForgotUsernameForm
+        email={email}
+        onBack={() => setShowForgotUsername(false)}
+        handleClose={handleClose}
+        onCreateAccount={() => {
+          setShowForgotUsername(false);
           setShowCreateAccount(true);
         }}
       />
@@ -561,20 +578,45 @@ const EmbeddedLoginForm = ({
                 Remember me
               </span>
             </label>
-            <a
-              href="#"
-              part="identity-widget-login-forgot-link"
-              className="identity-widget-login-forgot-link no-underline! --button-primary-text!"
-              style={{
-                fontWeight: "500",
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                setShowResetPassword(true);
-              }}
+            <div
+              part="identity-widget-login-forgot-links"
+              className="identity-widget-login-forgot-links flex! items-center! gap-1!"
             >
-              Forgot Password?
-            </a>
+              <a
+                href="#"
+                part="identity-widget-login-forgot-password-link"
+                className="identity-widget-login-forgot-password-link no-underline! --button-primary-text!"
+                style={{
+                  fontWeight: "500",
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowResetPassword(true);
+                }}
+              >
+                Forgot Password
+              </a>
+              <span
+                part="identity-widget-login-forgot-separator"
+                className="identity-widget-login-forgot-separator text-gray-400!"
+              >
+                or
+              </span>
+              <a
+                href="#"
+                part="identity-widget-login-forgot-username-link"
+                className="identity-widget-login-forgot-username-link no-underline! --button-primary-text!"
+                style={{
+                  fontWeight: "500",
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowForgotUsername(true);
+                }}
+              >
+                Username?
+              </a>
+            </div>
           </div>
 
           <Button
