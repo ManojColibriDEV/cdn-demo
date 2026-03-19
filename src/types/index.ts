@@ -50,6 +50,7 @@ export interface AppProps {
   loginSubtitle?: string;
   showLogin?: boolean;
   handleClose?: () => void;
+  logoutCounter?: number;
   customPrimaryColor?: string;
   autoRedirection?: boolean;
   googleClientId?: string;
