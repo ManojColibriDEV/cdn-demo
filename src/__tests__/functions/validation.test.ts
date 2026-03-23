@@ -856,8 +856,10 @@ describe("Validation and Authentication Functions", () => {
       expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
       expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeNull();
       expect(localStorage.getItem("user_info")).toBeNull();
-      expect(localStorage.getItem("authority")).toBeNull();
-      expect(localStorage.getItem("subsidiary")).toBeNull();
+      // authority and subsidiary are configuration keys, not auth tokens
+      // They are preserved by clearAuthTokens and only cleared by full logout (localStorage.clear)
+      expect(localStorage.getItem("authority")).toBe("dev");
+      expect(localStorage.getItem("subsidiary")).toBe("elite");
     });
 
     it("handleAuthentication stores tokens and rememberMe timestamp", async () => {
