@@ -27,6 +27,7 @@ vi.mock("../../services", () => ({
 // Mock functions
 vi.mock("../../functions", () => ({
   handleAuthentication: vi.fn(),
+  handleGoogleAuthentication: vi.fn(),
   checkTokenAndRedirect: vi.fn(),
   checkTokenAndRedirectWithRefresh: vi.fn(),
   isRefreshTokenValid: vi.fn(),
@@ -791,26 +792,26 @@ describe("App Component", () => {
     });
   });
 
-  it("should show info toast when Google OAuth succeeds", async () => {
+  it("should call handleGoogleAuthentication and invoke onSuccess when Google OAuth succeeds", async () => {
     let googleConfig: any;
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "test-token", refresh_token: "test-refresh" };
 
     vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
       googleConfig = config;
       return vi.fn();
     });
+    vi.mocked(functions.handleGoogleAuthentication).mockResolvedValue(mockTokens as any);
 
-    renderLoginForm({ enableGoogleLogin: true, onError: vi.fn() });
+    renderLoginForm({ enableGoogleLogin: true, onSuccess, onError: vi.fn() });
 
-    act(() => {
-      googleConfig.onSuccess({ code: "google-auth-code" });
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "google-auth-code" });
     });
 
     await waitFor(() => {
-      expect(
-        screen.getByText(
-          /Google sign-in completed\. Connect this credential to your backend login flow\./i
-        )
-      ).toBeInTheDocument();
+      expect(functions.handleGoogleAuthentication).toHaveBeenCalledWith("google-auth-code", false);
+      expect(onSuccess).toHaveBeenCalledWith(mockTokens);
     });
   });
 

@@ -72,11 +72,19 @@ const EmbeddedLoginForm = ({
         setGoogleLoading(false);
       }
     },
-    onError: () => {
-      const errorMsg = "Google sign-in was cancelled or failed";
-      setToastMessage(errorMsg);
+    onError: (errorResponse: any) => {
+      const googleError =
+        errorResponse?.error_description || errorResponse?.error || "Google sign-in failed.";
+      setToastMessage(googleError);
       setToastType(MessageType.ERROR);
-      onError(errorMsg);
+      onError(googleError);
+      setGoogleLoading(false);
+    },
+    onNonOAuthError: (error: any) => {
+      const googleError = `Google sign-in failed: ${error.type}`;
+      setToastMessage(googleError);
+      setToastType(MessageType.ERROR);
+      onError(googleError);
       setGoogleLoading(false);
     },
     flow: "auth-code",
@@ -331,8 +339,8 @@ const EmbeddedLoginForm = ({
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-google-button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={loading || brandConfigError}
+                  onClick={() => { setGoogleLoading(true); googleLogin(); }}
+                  disabled={loading || googleLoading || brandConfigError}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <img
@@ -638,41 +646,6 @@ const EmbeddedLoginForm = ({
               >
                 OR
               </span>
-            </div>
-          </div>
-
-          <Button
-            type={ButtonType.BUTTON}
-            variant={ButtonVariant.OUTLINE}
-            onClick={() => {
-              setGoogleLoading(true);
-              googleLogin();
-            }}
-            disabled={loading || googleLoading}
-            className="w-full! flex! items-center! justify-center! gap-3! m-0!"
-            ariaLabel="Sign in with Google"
-          >
-            {googleLoading ? (
-              <span className="flex! items-center! justify-center! gap-2!">
-                <Loader />
-                <span>Connecting to Google...</span>
-              </span>
-            ) : (
-              <>
-                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-                  <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
-                  <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
-                  <path fill="#FBBC05" d="M4.5 10.48A4.8 4.8 0 0 1 4.5 7.5V5.43H1.83a8 8 0 0 0 0 7.14z"/>
-                  <path fill="#EA4335" d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A8 8 0 0 0 1.83 5.43L4.5 7.5a4.77 4.77 0 0 1 4.48-3.92z"/>
-                </svg>
-                <span>Sign in with Google</span>
-              </>
-            )}
-          </Button>
-
-          <div className="relative! mt-4! mb-4!">
-            <div className="absolute! inset-0! flex! items-center!">
-              <div className="w-full! border-t! border-solid! border-gray-300!"></div>
             </div>
           </div>
 
