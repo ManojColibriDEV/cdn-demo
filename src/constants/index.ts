@@ -115,6 +115,7 @@ export const HTTP_HEADERS = {
  */
 export const API_ENDPOINTS = {
   AUTH: "/api/auth",
+  GOOGLE_AUTH: "/api/auth/google",
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
   FORGOT_PASSWORD: "/api/forgot-password",

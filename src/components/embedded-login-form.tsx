@@ -5,7 +5,7 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication } from "../functions";
+import { handleAuthentication, handleGoogleAuthentication } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
@@ -54,32 +54,32 @@ const EmbeddedLoginForm = ({
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
   const brandConfigError = useBrandConfigError();
+  const [googleLoading, setGoogleLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleGoogleLogin = useGoogleLogin({
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse: { code: string }) => {
+      try {
+        const tokens = await handleGoogleAuthentication(codeResponse.code, rememberMe);
+        onSuccess(tokens);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Google sign-in failed";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    onError: () => {
+      const errorMsg = "Google sign-in was cancelled or failed";
+      setToastMessage(errorMsg);
+      setToastType(MessageType.ERROR);
+      onError(errorMsg);
+      setGoogleLoading(false);
+    },
     flow: "auth-code",
-    onSuccess: (codeResponse) => {
-      console.log("[EmbeddedLogin] Google auth-code response received", codeResponse);
-      setToastMessage(
-        "Google sign-in completed. Connect this credential to your backend login flow."
-      );
-      setToastType(MessageType.INFO);
-      setErrorMessage("");
-    },
-    onError: (errorResponse) => {
-      const googleError =
-        errorResponse.error_description || errorResponse.error || "Google sign-in failed.";
-      setToastMessage(googleError);
-      setToastType(MessageType.ERROR);
-      onError(googleError);
-    },
-    onNonOAuthError: (error) => {
-      const googleError = `Google sign-in failed: ${error.type}`;
-      setToastMessage(googleError);
-      setToastType(MessageType.ERROR);
-      onError(googleError);
-    },
   });
 
   // Check email existence when user types
@@ -644,9 +644,44 @@ const EmbeddedLoginForm = ({
           <Button
             type={ButtonType.BUTTON}
             variant={ButtonVariant.OUTLINE}
+            onClick={() => {
+              setGoogleLoading(true);
+              googleLogin();
+            }}
+            disabled={loading || googleLoading}
+            className="w-full! flex! items-center! justify-center! gap-3! m-0!"
+            ariaLabel="Sign in with Google"
+          >
+            {googleLoading ? (
+              <span className="flex! items-center! justify-center! gap-2!">
+                <Loader />
+                <span>Connecting to Google...</span>
+              </span>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+                  <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+                  <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
+                  <path fill="#FBBC05" d="M4.5 10.48A4.8 4.8 0 0 1 4.5 7.5V5.43H1.83a8 8 0 0 0 0 7.14z"/>
+                  <path fill="#EA4335" d="M8.98 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A8 8 0 0 0 1.83 5.43L4.5 7.5a4.77 4.77 0 0 1 4.48-3.92z"/>
+                </svg>
+                <span>Sign in with Google</span>
+              </>
+            )}
+          </Button>
+
+          <div className="relative! mt-4! mb-4!">
+            <div className="absolute! inset-0! flex! items-center!">
+              <div className="w-full! border-t! border-solid! border-gray-300!"></div>
+            </div>
+          </div>
+
+          <Button
+            type={ButtonType.BUTTON}
+            variant={ButtonVariant.OUTLINE}
             part="identity-widget-login-create-account-button"
             onClick={() => setShowCreateAccount(true)}
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
             <span

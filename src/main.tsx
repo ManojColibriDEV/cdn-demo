@@ -10,10 +10,9 @@ import { authLogout } from "./services";
 import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
 import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
 
+const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || "";
+
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
-const GOOGLE_CLIENT_ID =
-  (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ||
-  "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent.com";
 
 // Get widget styles from global (injected by vite plugin)
 // Following bloom-elements standard pattern
