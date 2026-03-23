@@ -483,7 +483,7 @@ describe("ResetPasswordForm Component", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/checking email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/loading/i)).toBeInTheDocument();
     });
 
     resolveCheck?.({ exists: true });

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
+import Loader from "../common/ui/loader";
 import { forgotPassword, checkEmail } from "../services";
 import type { ResetPasswordFormProps } from "../types";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
@@ -258,14 +259,7 @@ const ResetPasswordForm = ({
               autoComplete="email"
               endIcon={
                 <>
-                  {checkingEmail && (
-                    <div
-                      part="identity-widget-reset-password-email-loading"
-                      className="identity-widget-reset-password-email-loading animate-spin! rounded-full! h-5! w-5! border-b-2! border-blue-500!"
-                      role="status"
-                      aria-label="Checking email"
-                    ></div>
-                  )}
+                  {checkingEmail && <Loader />}
                   {!checkingEmail && emailExists && isEmailValid && !emailCheckError && (
                     <img
                       part="identity-widget-reset-password-email-verified-icon"
