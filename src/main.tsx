@@ -262,7 +262,6 @@ if (renderMode === "TEST") {
         // Preserve brand_data before clearing — it's set by the host and needed for login
         const brandData = localStorage.getItem("brand_data");
         clearAuthTokens();
-        localStorage.clear();
         sessionStorage.clear();
         if (brandData) {
           localStorage.setItem("brand_data", brandData);

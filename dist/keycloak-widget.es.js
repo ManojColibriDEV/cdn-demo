@@ -15264,9 +15264,7 @@ const wl = () => {
     be.REFRESH_TOKEN_TIME,
     be.ACCESS_TOKEN,
     be.ACCESS_TOKEN_EXPIRES,
-    "user_info",
-    "authority",
-    "subsidiary"
+    "user_info"
   ].forEach((r) => {
     localStorage.removeItem(r);
   }), console.log(`${Ke.AUTH} All authentication tokens and state cleared`);
@@ -18068,7 +18066,7 @@ const yh = "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent
           console.error("[Widget] Logout API call failed:", o);
         } finally {
           const o = localStorage.getItem("brand_data");
-          RE(), localStorage.clear(), sessionStorage.clear(), o && localStorage.setItem("brand_data", o), this.logoutCounter++, this.render(), this.removeAttribute("show-login"), this.onLogout && (console.log("[Widget] Calling onLogout function prop"), this.onLogout());
+          RE(), sessionStorage.clear(), o && localStorage.setItem("brand_data", o), this.logoutCounter++, this.render(), this.removeAttribute("show-login"), this.onLogout && (console.log("[Widget] Calling onLogout function prop"), this.onLogout());
           const c = new CustomEvent("logout", {
             detail: { initiatedByWidget: !0, trigger: s },
             bubbles: !0,

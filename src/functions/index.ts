@@ -427,8 +427,6 @@ export const clearAuthTokens = (): void => {
     STORAGE_KEYS.ACCESS_TOKEN,
     STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
     "user_info",
-    "authority",
-    "subsidiary",
   ];
 
   authKeys.forEach((key) => {
