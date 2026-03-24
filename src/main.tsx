@@ -78,6 +78,7 @@ if (renderMode === "TEST") {
   class KeycloakWidget extends HTMLElement {
     private root: Root | null = null;
     private isLogoutInProgress = false;
+    private logoutCounter = 0;
 
     static get observedAttributes() {
       return [
@@ -258,9 +259,22 @@ if (renderMode === "TEST") {
         console.error("[Widget] Logout API call failed:", error);
       } finally {
         // Always clear local auth state, regardless of API response
+        // Preserve brand_data before clearing — it's set by the host and needed for login
+        const brandData = localStorage.getItem("brand_data");
         clearAuthTokens();
-        localStorage.clear();
         sessionStorage.clear();
+        if (brandData) {
+          localStorage.setItem("brand_data", brandData);
+        }
+
+        // Increment logoutCounter so React App resets isAuthenticated
+        this.logoutCounter++;
+
+        // Force React to see the counter change immediately.
+        // removeAttribute below may be a no-op if show-login was already absent
+        // (removed during handleClose on login success), so render() wouldn't
+        // be triggered by attributeChangedCallback.
+        this.render();
 
         // Close login form if open
         this.removeAttribute("show-login");
@@ -379,6 +393,7 @@ if (renderMode === "TEST") {
         onRedirect: this.handleRedirect,
         onTokenValidityCheck: this.handleTokenValidity,
         handleClose: this.handleClose,
+        logoutCounter: this.logoutCounter,
       };
     }
 
