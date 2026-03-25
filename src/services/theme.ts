@@ -78,6 +78,8 @@ export class ThemeWidget {
 
       if (!brand) {
         console.warn(`[ThemeWidget] Brand not found: ${brandFolderOrToken}. Using default theme.`);
+        sessionStorage.setItem("theme_loaded", "true");
+        window.dispatchEvent(new Event("theme-loaded"));
         return;
       }
 
@@ -116,8 +118,15 @@ export class ThemeWidget {
       // this.applyTheme(themeConfig);
 
       console.log(`[ThemeWidget] Theme loaded for brand: ${brand.name}`);
+
+      // Signal that theme has loaded so brand config checks can proceed
+      sessionStorage.setItem("theme_loaded", "true");
+      window.dispatchEvent(new Event("theme-loaded"));
     } catch (error) {
       console.error("[ThemeWidget] Error loading theme:", error);
+      // Still signal completion so the banner check can run (it will detect missing brand data)
+      sessionStorage.setItem("theme_loaded", "true");
+      window.dispatchEvent(new Event("theme-loaded"));
       throw error;
     }
   }
@@ -211,7 +220,15 @@ export async function createThemeWidget(options: {
     const detectedToken = await widget.detectBrandFromDomain();
     if (detectedToken) {
       await widget.loadTheme(detectedToken);
+    } else {
+      // No brand detected — still signal theme loading is done
+      sessionStorage.setItem("theme_loaded", "true");
+      window.dispatchEvent(new Event("theme-loaded"));
     }
+  } else {
+    // No brand identifier or auto-detect — signal completion
+    sessionStorage.setItem("theme_loaded", "true");
+    window.dispatchEvent(new Event("theme-loaded"));
   }
 
   return widget;

@@ -808,8 +808,15 @@ describe("CreateAccountForm — brand configuration error", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Signal theme as already loaded so useBrandConfigError runs immediately
+    // without waiting for the "theme-loaded" window event.
+    sessionStorage.setItem("theme_loaded", "true");
     // Brand config is broken: getBrandHeaders returns empty (no X-Brand-Id)
     vi.mocked(services.getBrandHeaders).mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
   });
 
   it("should show brand error banner when X-Brand-Id is missing", async () => {
