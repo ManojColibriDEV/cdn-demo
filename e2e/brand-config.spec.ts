@@ -109,7 +109,7 @@ async function gotoRegistrationNoBrand(page: Page) {
 
 async function gotoResetPasswordNoBrand(page: Page) {
   await gotoLoginWithBrand(page);
-  const forgotLink = page.locator('a[part~="identity-widget-login-forgot-link"]');
+  const forgotLink = page.locator('a[part~="identity-widget-login-forgot-password-link"]');
   await forgotLink.click();
   await page.waitForSelector(RESET.formTitle, { state: "visible" });
   // Now the reset-password component is mounted; its own brand check already
@@ -270,7 +270,7 @@ test.describe("Brand Configuration Error — Reset Password Form", () => {
       localStorage.setItem("brand_data", JSON.stringify({ domain: "elitelearning.com" }));
     });
     await gotoLoginForm(page);
-    await page.click('a[part~="identity-widget-login-forgot-link"]');
+    await page.click('a[part~="identity-widget-login-forgot-password-link"]');
     await page.waitForSelector(RESET.formTitle, { state: "visible" });
 
     // Clear brand data so subsequent component mounts have no brand
@@ -319,7 +319,7 @@ test.describe("Brand Configuration Error — Reset Password Form", () => {
     // Without brand data the forgot-password link is still an anchor (not disabled),
     // but the reset password form's own brand check will block email lookups.
     // Navigate to reset form directly by clicking the link.
-    await page.click('a[part~="identity-widget-login-forgot-link"]');
+    await page.click('a[part~="identity-widget-login-forgot-password-link"]');
     await page.waitForSelector(RESET.formTitle, { state: "visible" });
 
     await page.fill(RESET.emailInput, "test@example.com");

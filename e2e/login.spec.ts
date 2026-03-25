@@ -17,7 +17,7 @@ const SELECTORS = {
   submitButton: 'button[part~="identity-widget-login-submit-button"]',
   createAccountButton: 'button[part~="identity-widget-login-create-account-button"]',
   rememberMeCheckbox: 'input[aria-label="Remember me"]',
-  forgotPasswordLink: 'a[part~="identity-widget-login-forgot-link"]',
+  forgotPasswordLink: 'a[part~="identity-widget-login-forgot-password-link"]',
   closeButton: 'button[aria-label="Close dialog"]',
   showPasswordButton: 'button[aria-label="Show password"]',
   hidePasswordButton: 'button[aria-label="Hide password"]',
@@ -404,9 +404,9 @@ test.describe("Auth Widget — Login Form", () => {
       await gotoLoginForm(page);
       await page.click(SELECTORS.forgotPasswordLink);
 
-      // Click back button
-      const backButton = page.locator('button[part~="identity-widget-reset-password-back-button"]');
-      await backButton.click();
+      // Click back link
+      const backLink = page.locator('a[part~="identity-widget-reset-password-back-link"]');
+      await backLink.click();
 
       await expect(page.locator(SELECTORS.loginTitle)).toBeVisible();
     });

@@ -40,6 +40,22 @@ export interface ResetPasswordSuccessProps {
   onClose: () => void;
 }
 
+export interface ForgotUsernameFormProps {
+  email: string;
+  onBack: () => void;
+  handleClose: () => void;
+  onCreateAccount?: () => void;
+}
+
+export interface ForgotUsernameSuccessProps {
+  email: string;
+  loading: boolean;
+  cooldown: number;
+  onResendLink: () => void;
+  onBack: () => void;
+  onClose: () => void;
+}
+
 export interface AppProps {
   authority?: string;
   subsidiary?: string;

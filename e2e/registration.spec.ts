@@ -429,11 +429,12 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockCheckEmail(page, false);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await page.fill(REG_SELECTORS.emailInput, "newuser@example.com");
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       // Leave password empty
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Password is required").first()).toBeVisible({
@@ -445,11 +446,12 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockCheckEmail(page, false);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await page.fill(REG_SELECTORS.emailInput, "newuser@example.com");
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       await page.fill(REG_SELECTORS.passwordInput, "Ab1!");
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Password must be 9-15 characters long").first()).toBeVisible({
@@ -461,11 +463,12 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockCheckEmail(page, false);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await page.fill(REG_SELECTORS.emailInput, "newuser@example.com");
       await page.fill(REG_SELECTORS.firstNameInput, "Jane");
       await page.fill(REG_SELECTORS.lastNameInput, "Smith");
       await page.fill(REG_SELECTORS.passwordInput, "bad");
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator('[id="password-error"]')).toBeVisible({ timeout: 3000 });
@@ -487,9 +490,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockAuthLoginSuccess(page);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      // Wait for email debounce
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       // After auto-login succeeds the widget unmounts the form
@@ -512,8 +515,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockAuthLoginSuccess(page);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Creating Account...")).toBeVisible({ timeout: 3000 });
@@ -527,8 +531,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockAuthLoginSuccess(page);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.check(REG_SELECTORS.rememberMeCheckbox);
       await page.click(REG_SELECTORS.submitButton);
 
@@ -546,8 +551,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockAuthLoginSuccess(page);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       // remember me stays unchecked (default)
       await page.click(REG_SELECTORS.submitButton);
 
@@ -568,8 +574,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockRegisterFailure(page, "Email is already in use");
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Email is already in use").first()).toBeVisible({
@@ -582,8 +589,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockRegisterFailureStructured(page, "Username already exists in the system");
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Username already exists in the system").first()).toBeVisible({
@@ -596,8 +604,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockRegisterServerError(page);
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       await expect(page.locator("text=Registration failed. Please try again.").first()).toBeVisible(
@@ -610,8 +619,9 @@ test.describe("Auth Widget — Registration Form", () => {
       await mockRegisterFailure(page, "Something went wrong");
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       // Wait for error to appear
@@ -639,8 +649,9 @@ test.describe("Auth Widget — Registration Form", () => {
       );
       await gotoCreateAccountForm(page);
 
+      const checkEmailResponse = page.waitForResponse("**/api/check-email");
       await fillRegistrationForm(page);
-      await page.waitForResponse("**/api/check-email");
+      await checkEmailResponse;
       await page.click(REG_SELECTORS.submitButton);
 
       // Registration succeeded but auto-login failed: form stays visible, no redirect

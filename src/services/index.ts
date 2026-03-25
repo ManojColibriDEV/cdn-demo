@@ -310,6 +310,35 @@ export const forgotPassword = async (email: string): Promise<any> => {
 };
 
 /**
+ * Forgot Username API - Send username verification link to email
+ */
+export const forgotUsername = async (email: string): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.FORGOT_USERNAME);
+  const payload = { email };
+  try {
+    const response = await axios.post(url, payload, {
+      headers: await getBrandHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error sending username verification:", error);
+
+    // Extract error message from response
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.NOT_FOUND) {
+      throw new Error("We couldn't find an account with that email.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error(ERROR_MESSAGES.USERNAME_RECOVERY_FAILED);
+  }
+};
+
+/**
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {

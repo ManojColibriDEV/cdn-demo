@@ -118,6 +118,7 @@ export const API_ENDPOINTS = {
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
   FORGOT_PASSWORD: "/api/forgot-password",
+  FORGOT_USERNAME: "/api/forgot-username",
   REFRESH_TOKEN: "/api/refresh",
   LOGOUT: "/api/logout",
   GLOBAL_SUBSIDIARIES: "/global/subsidiaries",
@@ -288,6 +289,9 @@ export const ERROR_MESSAGES = {
   // Reset Password Errors
   RESET_LINK_FAILED: "Failed to send reset link. Please try again.",
 
+  // Forgot Username Errors
+  USERNAME_RECOVERY_FAILED: "Failed to send verification link. Please try again.",
+
   // Brand Configuration Errors
   BRAND_CONFIG_TITLE: "We're having trouble signing you in",
   BRAND_CONFIG_MESSAGE:
@@ -303,6 +307,7 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   REGISTRATION_SUCCESS: "Account created successfully!",
   RESET_LINK_SENT: "Password reset link sent successfully!",
+  USERNAME_VERIFICATION_SENT: "Username verification link sent successfully!",
   LOGIN_SUCCESS: "Login successful!",
 } as const;
 
@@ -327,6 +332,7 @@ export const LOG_PREFIX = {
   EMAIL_CHECK: "[EmailCheck]",
   REGISTRATION: "[Registration]",
   RESET_PASSWORD: "[ResetPassword]",
+  FORGOT_USERNAME: "[ForgotUsername]",
   EMBEDDED_LOGIN: "[EmbeddedLogin]",
   CREATE_ACCOUNT: "[CreateAccount]",
   COOKIE: "[Cookie]",
