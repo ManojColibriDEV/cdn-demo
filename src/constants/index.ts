@@ -87,6 +87,7 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN_TIME: "refresh_token_time",
   BRAND_DATA: "brand_data",
   AUTHORITY_OVERRIDE: "authority_override",
+  THEME_LOADED: "theme_loaded",
 } as const;
 
 /**

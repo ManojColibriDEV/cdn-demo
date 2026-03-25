@@ -360,10 +360,10 @@ test.describe("Auth Widget — Forgot Username", () => {
 
   test.describe("Brand Configuration Error", () => {
     test("shows error banner and disables submit when brand data is missing", async ({ page }) => {
-      // Block subsidiary lookup so getBrandHeaders resolves quickly with no X-Brand-Id
-      await page.route("**/api/subsidiaries**", (route) =>
-        route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-      );
+      // Block the CDN call so createThemeWidget cannot set brand_data in localStorage.
+      // loadTheme() still dispatches "theme-loaded" in its catch block so the
+      // useBrandConfigError hook fires and detects the missing brand configuration.
+      await page.route("**dev-cdn.colibrilearning.com**", (route) => route.abort());
       await gotoLoginForm(page, { setBrandData: false });
       await page.click(SELECTORS.forgotUsernameLink);
       await expect(page.locator(SELECTORS.forgotUsernameTitle)).toBeVisible();
@@ -380,9 +380,8 @@ test.describe("Auth Widget — Forgot Username", () => {
 
     test("does not call check-email API when brand data is missing", async ({ page }) => {
       let checkEmailCalled = false;
-      await page.route("**/api/subsidiaries**", (route) =>
-        route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-      );
+      // Block the CDN call so createThemeWidget cannot set brand_data in localStorage.
+      await page.route("**dev-cdn.colibrilearning.com**", (route) => route.abort());
       await page.route("**/api/check-email", (route) => {
         checkEmailCalled = true;
         return route.fulfill({

@@ -66,7 +66,10 @@ async function interceptCheckEmail(
 
 /** Navigate to the login form WITHOUT brand data (triggers brandConfigError) */
 async function gotoLoginNoBrand(page: Page) {
-  // Do NOT set localStorage — no brand_data means getBrandHeaders returns {}
+  // Block the CDN call so createThemeWidget cannot set brand_data in localStorage.
+  // loadTheme() still dispatches "theme-loaded" in its catch block, allowing the
+  // useBrandConfigError hook to run and detect the missing brand configuration.
+  await page.route("**dev-cdn.colibrilearning.com**", (route) => route.abort());
   await page.goto("/");
   await page.waitForSelector("#login-dialog-title", { state: "visible" });
 }
