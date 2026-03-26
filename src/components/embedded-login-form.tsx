@@ -5,9 +5,10 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication } from "../functions";
+import { handleAuthentication, validatePassword } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
+import WeakPasswordModal from "../common/ui/weak-password-modal";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
@@ -55,6 +56,8 @@ const EmbeddedLoginForm = ({
   const [toastType, setToastType] = useState<
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
+  const [showWeakPasswordModal, setShowWeakPasswordModal] = useState(false);
+  const [pendingTokens, setPendingTokens] = useState<any>(null);
   const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -191,8 +194,18 @@ const EmbeddedLoginForm = ({
       // Use the common authentication function
       const tokens = await handleAuthentication(email, password, rememberMe);
 
-      // Call success callback with result
-      onSuccess(tokens);
+      // Check password strength after successful authentication
+      const passwordChecks = validatePassword(password, { displayName: email.split("@")[0], email });
+      const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
+
+      if (!isPasswordStrong) {
+        // Password is weak - show recommendation modal
+        setPendingTokens(tokens);
+        setShowWeakPasswordModal(true);
+      } else {
+        // Password is strong - proceed normally
+        onSuccess(tokens);
+      }
     } catch (error) {
       console.error("[EmbeddedLogin] Login failed:", error);
       const errorMsg = error instanceof Error ? error.message : "Authentication failed";
@@ -719,6 +732,22 @@ const EmbeddedLoginForm = ({
       </div>
       {toastMessage && (
         <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
+      )}
+      {showWeakPasswordModal && (
+        <WeakPasswordModal
+          onResetPassword={() => {
+            setShowWeakPasswordModal(false);
+            setPendingTokens(null);
+            setShowResetPassword(true);
+          }}
+          onContinue={() => {
+            setShowWeakPasswordModal(false);
+            if (pendingTokens) {
+              onSuccess(pendingTokens);
+            }
+            setPendingTokens(null);
+          }}
+        />
       )}
     </div>
   );
