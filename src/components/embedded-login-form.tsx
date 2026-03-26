@@ -34,6 +34,8 @@ const EmbeddedLoginForm = ({
   subtitle = "Continue by signing in.",
   initialEmail = "",
   enableGoogleLogin = true,
+  enableAppleLogin = false,
+  appleClientId,
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -58,6 +60,67 @@ const EmbeddedLoginForm = ({
   const brandConfigError = useBrandConfigError();
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const appleScriptLoaded = useRef(false);
+
+  // Load Apple Sign In JS SDK
+  useEffect(() => {
+    if (!enableAppleLogin || !appleClientId || appleScriptLoaded.current) return;
+
+    const existingScript = document.querySelector(
+      'script[src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"]'
+    );
+    if (existingScript) {
+      appleScriptLoaded.current = true;
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src =
+      "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+    script.async = true;
+    script.onload = () => {
+      appleScriptLoaded.current = true;
+    };
+    document.head.appendChild(script);
+  }, [enableAppleLogin, appleClientId]);
+
+  const handleAppleLogin = async () => {
+    try {
+      const AppleID = (window as any).AppleID;
+      if (!AppleID) {
+        const errorMsg = "Apple Sign In SDK not loaded. Please try again.";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+        return;
+      }
+
+      AppleID.auth.init({
+        clientId: appleClientId,
+        scope: "name email",
+        redirectURI: window.location.origin,
+        usePopup: true,
+      });
+
+      const response = await AppleID.auth.signIn();
+      console.log("[EmbeddedLogin] Apple auth response received", response);
+      setToastMessage(
+        "Apple sign-in completed. Connect this credential to your backend login flow."
+      );
+      setToastType(MessageType.INFO);
+      setErrorMessage("");
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (error?.error === "popup_closed_by_user") {
+        return;
+      }
+      const appleError =
+        error?.error || (error instanceof Error ? error.message : "Apple sign-in failed.");
+      setToastMessage(appleError);
+      setToastType(MessageType.ERROR);
+      onError(appleError);
+    }
+  };
 
   const handleGoogleLogin = useGoogleLogin({
     flow: "auth-code",
@@ -389,6 +452,69 @@ const EmbeddedLoginForm = ({
                   </span>
                 </div>
               </div>
+            </>
+          )}
+
+          {enableAppleLogin && appleClientId && (
+            <>
+              <div
+                part="identity-widget-apple-section"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center!"
+              >
+                <Button
+                  type={ButtonType.BUTTON}
+                  variant={ButtonVariant.OUTLINE}
+                  part="identity-widget-apple-button"
+                  onClick={handleAppleLogin}
+                  disabled={loading || brandConfigError}
+                  className="identity-widget-apple-button w-full! flex! items-center! justify-center! gap-3! m-0!"
+                >
+                  <svg
+                    part="identity-widget-apple-icon"
+                    className="identity-widget-apple-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    width="18"
+                    height="18"
+                    style={{ width: 18, height: 18, flexShrink: 0 }}
+                    aria-hidden="true"
+                  >
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                  </svg>
+                  <span part="identity-widget-apple-text" className="identity-widget-apple-text">
+                    Sign in with Apple
+                  </span>
+                </Button>
+              </div>
+
+              {!enableGoogleLogin && (
+                <div
+                  part="identity-widget-login-divider"
+                  className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+                >
+                  <div
+                    part="identity-widget-login-divider-line-wrap"
+                    className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!"
+                  >
+                    <div
+                      part="identity-widget-login-divider-line"
+                      className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"
+                    ></div>
+                  </div>
+                  <div
+                    part="identity-widget-login-divider-text-wrap"
+                    className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!"
+                  >
+                    <span
+                      part="identity-widget-login-divider-text"
+                      className="identity-widget-login-divider-text px-2! bg-white text-gray-500"
+                    >
+                      OR
+                    </span>
+                  </div>
+                </div>
+              )}
             </>
           )}
 

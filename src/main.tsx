@@ -14,6 +14,7 @@ const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
 const GOOGLE_CLIENT_ID =
   (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ||
   "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent.com";
+const APPLE_CLIENT_ID = (import.meta as any).env.VITE_APPLE_CLIENT_ID || "";
 
 // Get widget styles from global (injected by vite plugin)
 // Following bloom-elements standard pattern
@@ -64,6 +65,7 @@ if (renderMode === "TEST") {
             showLogin={true}
             autoRedirection={false}
             googleClientId={GOOGLE_CLIENT_ID}
+            appleClientId={APPLE_CLIENT_ID}
             onTokenValidityCheck={(isTokenValid) => {
               console.log(`[main.tsx] Token valid: ${isTokenValid}`);
             }}
@@ -94,6 +96,8 @@ if (renderMode === "TEST") {
         "autoRedirection",
         "google-client-id",
         "googleClientId",
+        "apple-client-id",
+        "appleClientId",
         "redirect-url",
         "login-title",
         "login-subtitle",
@@ -390,6 +394,11 @@ if (renderMode === "TEST") {
           this.getAttribute("google-client-id") ||
           this.getAttribute("googleClientId") ||
           GOOGLE_CLIENT_ID,
+        appleClientId:
+          this.getAttribute("apple-client-id") ||
+          this.getAttribute("appleClientId") ||
+          APPLE_CLIENT_ID ||
+          undefined,
         onRedirect: this.handleRedirect,
         onTokenValidityCheck: this.handleTokenValidity,
         handleClose: this.handleClose,
