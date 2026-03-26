@@ -158,21 +158,37 @@ test.describe("Auth Widget — Reset Password Success Screen", () => {
   });
 
   test("resend link button can be clicked and triggers a loading state", async ({ page }) => {
-    // Mock succeeds for both the original send and the resend
+    // Install fake clock so we can advance past the 30-second resend cooldown
+    await page.clock.install({ time: Date.now() });
+
     await mockForgotPasswordSuccess(page);
     await mockCheckEmail(page, true);
     await gotoResetPasswordForm(page);
 
     await page.fill(SELECTORS.resetEmailInput, "user@example.com");
-    await page.waitForResponse("**/api/check-email");
+    // Advance clock to fire the 500ms check-email debounce
+    await page.clock.fastForward(600);
 
     const sendLinkButton = page.locator(SELECTORS.resetSubmitButton);
-    await expect(sendLinkButton).toBeEnabled({ timeout: 8000 });
+    await expect(sendLinkButton).toBeEnabled({ timeout: 5000 });
     await sendLinkButton.click();
 
     await expect(page.locator("text=Check your email").first()).toBeVisible({ timeout: 5000 });
 
-    // Delay the resend response so we can observe a loading state
+    // The cooldown uses a chained setTimeout pattern — advance 1 second at a time so React
+    // can re-render between each tick and schedule the next timer (fastForward(31000) would
+    // only fire the first timer in the chain).
+    for (let i = 0; i < 31; i++) {
+      await page.clock.fastForward(1000);
+    }
+
+    // Resend button should now be enabled
+    const resendButton = page
+      .locator('button[part~="identity-widget-reset-success-resend-button"]')
+      .first();
+    await expect(resendButton).toBeEnabled({ timeout: 3000 });
+
+    // Delay the resend response so we can observe a loading/disabled state
     await page.route("**/api/forgot-password", (route) =>
       new Promise<void>((resolve) => setTimeout(resolve, 500)).then(() =>
         route.fulfill({
@@ -183,9 +199,6 @@ test.describe("Auth Widget — Reset Password Success Screen", () => {
       )
     );
 
-    const resendButton = page
-      .locator('button[part~="identity-widget-reset-success-resend-button"]')
-      .first();
     await resendButton.click();
 
     // During the in-flight request the button should enter a loading/disabled state
@@ -193,18 +206,29 @@ test.describe("Auth Widget — Reset Password Success Screen", () => {
   });
 
   test("cooldown message appears after a successful resend", async ({ page }) => {
+    // Install fake clock so we can advance past the 30-second resend cooldown
+    await page.clock.install({ time: Date.now() });
+
     await mockForgotPasswordSuccess(page);
     await mockCheckEmail(page, true);
     await gotoResetPasswordForm(page);
 
     await page.fill(SELECTORS.resetEmailInput, "user@example.com");
-    await page.waitForResponse("**/api/check-email");
+    // Advance clock to fire the 500ms check-email debounce
+    await page.clock.fastForward(600);
 
     const sendLinkButton = page.locator(SELECTORS.resetSubmitButton);
-    await expect(sendLinkButton).toBeEnabled({ timeout: 8000 });
+    await expect(sendLinkButton).toBeEnabled({ timeout: 5000 });
     await sendLinkButton.click();
 
     await expect(page.locator("text=Check your email").first()).toBeVisible({ timeout: 5000 });
+
+    // The cooldown uses a chained setTimeout pattern — advance 1 second at a time so React
+    // can re-render between each tick and schedule the next timer (fastForward(31000) would
+    // only fire the first timer in the chain).
+    for (let i = 0; i < 31; i++) {
+      await page.clock.fastForward(1000);
+    }
 
     // Re-mock for resend
     await mockForgotPasswordSuccess(page);
@@ -212,6 +236,7 @@ test.describe("Auth Widget — Reset Password Success Screen", () => {
     const resendButton = page
       .locator('button[part~="identity-widget-reset-success-resend-button"]')
       .first();
+    await expect(resendButton).toBeEnabled({ timeout: 3000 });
     await resendButton.click();
 
     // After a successful resend a cooldown message should appear
@@ -433,8 +458,7 @@ test.describe("Auth Widget — Help Center", () => {
     await page.keyboard.press("Escape");
 
     // In TEST mode handleClose has no prop — Escape is a no-op and help center stays visible
-    // The widget must remain mounted and usable
-    await expect(page.locator("body")).toBeVisible();
+    // Verify the widget content is still rendered and accessible
     await expect(page.locator("text=Help Center").first()).toBeVisible();
   });
 
