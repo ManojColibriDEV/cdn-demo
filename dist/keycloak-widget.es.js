@@ -18194,7 +18194,7 @@ const Ml = "data:image/svg+xml,%3csvg%20width='40'%20height='40'%20viewBox='0%20
                         "div",
                         {
                           part: "identity-widget-apple-section",
-                          className: "identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!",
+                          className: "identity-widget-apple-section mt-0! mb-4! flex! justify-center!",
                           children: /* @__PURE__ */ m.jsxs(
                             et,
                             {

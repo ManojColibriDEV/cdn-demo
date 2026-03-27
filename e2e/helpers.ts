@@ -49,6 +49,37 @@ export async function mockAuthLoginSuccess(page: Page) {
   );
 }
 
+/** Mock the POST /api/auth/google endpoint to return a successful token response */
+export async function mockAuthGoogleSuccess(page: Page) {
+  await page.route("**/api/auth/google", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        tokens: {
+          access_token: MOCK_ACCESS_TOKEN,
+          refresh_token: MOCK_REFRESH_TOKEN,
+          expires_in: 3600,
+          token_type: "Bearer",
+          scope: "openid",
+        },
+        x_credential: "mock-x-credential",
+      }),
+    })
+  );
+}
+
+/** Mock the POST /api/auth/google endpoint to return an error */
+export async function mockAuthGoogleFailure(page: Page, message = "Google authentication failed") {
+  await page.route("**/api/auth/google", (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: message }),
+    })
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Shared Navigation Helpers
 // ---------------------------------------------------------------------------

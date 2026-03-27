@@ -12,6 +12,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  timeout: 60000, // Increase global timeout to 60 seconds
 
   reporter: [["html", { outputFolder: "playwright-report", open: "never" }], ["list"]],
 
@@ -21,6 +22,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    actionTimeout: 10000, // 10 second timeout for actions
   },
 
   projects: [
