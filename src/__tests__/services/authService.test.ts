@@ -14,6 +14,7 @@ import {
   forgotUsername,
   authRefresh,
   authLogout,
+  authGoogle,
   fetchSubsidiaries,
   getBrandHeaders,
   setAuthorityOverride,
@@ -693,6 +694,63 @@ describe("Authentication Service", () => {
 
       await svc.fetchSubsidiaries("none.example.com");
       localMock.restore();
+    });
+  });
+
+  describe("authGoogle", () => {
+    it("should successfully exchange Google authorization code for tokens", async () => {
+      const mockResponse = {
+        tokens: { access_token: "google-access", refresh_token: "google-refresh" },
+        x_credential: "google-xcred",
+      };
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(200, mockResponse);
+
+      const response = await authGoogle("google-auth-code-123");
+
+      expect(response.tokens).toEqual(mockResponse.tokens);
+      expect(response.x_credential).toBe("google-xcred");
+    });
+
+    it("should throw error field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(400, { error: "invalid_grant" });
+
+      await expect(authGoogle("bad-code")).rejects.toThrow("invalid_grant");
+    });
+
+    it("should throw message field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(400, { message: "Google code expired" });
+
+      await expect(authGoogle("expired-code")).rejects.toThrow("Google code expired");
+    });
+
+    it("should throw unauthorized error message for 401 status", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(401, {});
+
+      await expect(authGoogle("unauthorized-code")).rejects.toThrow(
+        "Google authentication failed. Please try again."
+      );
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("network-google-fail"));
+      await expect(authGoogle("network-code")).rejects.toThrow("network-google-fail");
+      spy.mockRestore();
+    });
+
+    it("should throw generic auth failed fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authGoogle("empty-error-code")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should include brand headers in request", async () => {
+      localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
+      mockAxios.onPost(/\/api\/auth\/google$/).reply((config) => {
+        expect(config.headers).toHaveProperty("X-Brand-Domain");
+        return [200, { tokens: { access_token: "t" }, x_credential: "x" }];
+      });
+
+      await authGoogle("brand-code");
     });
   });
 });

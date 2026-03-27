@@ -556,7 +556,10 @@ export const handleGoogleAuthentication = async (
     }
 
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
+    localStorage.setItem(
+      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+      (Date.now() + expiresIn * 1000).toString()
+    );
 
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
     const refreshTokenExpiry = 30 * 24 * 60 * 60;

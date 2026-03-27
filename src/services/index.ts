@@ -344,9 +344,13 @@ export const forgotUsername = async (email: string): Promise<any> => {
 export const authGoogle = async (code: string): Promise<any> => {
   const url = apiUrl(API_ENDPOINTS.GOOGLE_AUTH);
   try {
-    const response = await axios.post(url, { code }, {
-      headers: await getBrandHeaders(),
-    });
+    const response = await axios.post(
+      url,
+      { code },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
     return {
       ...response.data,
       x_credential: response.data.x_credential,

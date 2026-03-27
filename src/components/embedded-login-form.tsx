@@ -413,13 +413,16 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-google-section"
-                className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!"
+                className="identity-widget-google-section mt-0! mb-4! justify-center! hidden!"
               >
                 <Button
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-google-button"
-                  onClick={() => { setGoogleLoading(true); googleLogin(); }}
+                  onClick={() => {
+                    setGoogleLoading(true);
+                    googleLogin();
+                  }}
                   disabled={loading || googleLoading || brandConfigError}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
@@ -467,7 +470,7 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-apple-section"
-                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center!"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!"
               >
                 <Button
                   type={ButtonType.BUTTON}
@@ -475,7 +478,7 @@ const EmbeddedLoginForm = ({
                   part="identity-widget-apple-button"
                   onClick={handleAppleLogin}
                   disabled={loading || brandConfigError}
-                  className="identity-widget-apple-button w-full! flex! items-center! justify-center! gap-3! m-0!"
+                  className="identity-widget-apple-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <svg
                     part="identity-widget-apple-icon"

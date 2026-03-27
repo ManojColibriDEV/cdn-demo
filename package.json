@@ -1,11 +1,7 @@
 {
   "name": "@colibri/identity-widget",
   "private": false,
-<<<<<<< HEAD
-  "version": "4.2.0",
-=======
-  "version": "4.0.0",
->>>>>>> 057e15697ad55e26ec1cbfca224a6144512dcd5b
+  "version": "4.3.0",
   "description": "Embedded authentication widget for Colibri Identity platform",
   "type": "module",
   "main": "./dist/keycloak-widget.umd.js",

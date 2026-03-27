@@ -18,6 +18,7 @@ const APPLE_CLIENT_ID = (import.meta as any).env.VITE_APPLE_CLIENT_ID || "";
 
 // Only wrap with GoogleOAuthProvider when a client ID is available
 // Without this guard the provider throws on init and blocks widget render
+// eslint-disable-next-line react-refresh/only-export-components
 const WithGoogleProvider = ({
   clientId,
   children,

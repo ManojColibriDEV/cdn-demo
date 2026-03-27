@@ -572,6 +572,68 @@ describe("ForgotUsernameForm Component", () => {
     await user.click(screen.getByRole("button", { name: /Let's create one/i }));
     expect(onCreateAccount).toHaveBeenCalled();
   });
+  it("should render onCreateAccount action in email-not-found banner", async () => {
+    const user = userEvent.setup();
+    const onCreateAccount = vi.fn();
+
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderForgotUsernameForm({ onCreateAccount });
+
+    await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
+
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+    expect(onCreateAccount).toHaveBeenCalled();
+  });
+});
+
+describe("ForgotUsernameForm — cooldown timer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should exercise cooldown countdown after successful submit", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
+    vi.mocked(services.forgotUsername).mockResolvedValue({ success: true });
+
+    renderForgotUsernameForm({ email: "timer@example.com" });
+
+    // Wait for debounced email check
+    await vi.advanceTimersByTimeAsync(600);
+
+    await waitFor(() => {
+      const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
+      expect(submitButton).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
+
+    await waitFor(() => {
+      expect(services.forgotUsername).toHaveBeenCalledWith("timer@example.com");
+    });
+
+    vi.useRealTimers();
+  });
 });
 
 describe("ForgotUsernameForm — brand configuration error", () => {

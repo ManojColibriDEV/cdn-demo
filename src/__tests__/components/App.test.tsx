@@ -87,7 +87,9 @@ describe("App Component", () => {
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
     vi.mocked(functions.silentTokenRefresh).mockResolvedValue(undefined);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
-    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue("https://dev-learn.example.com/courses");
+    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue(
+      "https://dev-learn.example.com/courses"
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -155,9 +157,7 @@ describe("App Component", () => {
     renderApp({ authority: "https://keycloak.example.com/realms/colibri" });
 
     await waitFor(() => {
-      expect(localStorage.getItem("authority")).toBe(
-        "https://keycloak.example.com/realms/colibri"
-      );
+      expect(localStorage.getItem("authority")).toBe("https://keycloak.example.com/realms/colibri");
     });
   });
 
@@ -176,9 +176,7 @@ describe("App Component", () => {
     });
 
     await waitFor(() => {
-      expect(localStorage.getItem("authority")).toBe(
-        "https://keycloak.example.com/realms/colibri"
-      );
+      expect(localStorage.getItem("authority")).toBe("https://keycloak.example.com/realms/colibri");
       expect(localStorage.getItem("subsidiary")).toBe("mckissock");
     });
   });

@@ -38,9 +38,7 @@ describe("ResetPasswordSuccess Component", () => {
     it("renders 'Check your email' title", () => {
       renderComponent();
 
-      expect(
-        screen.getByRole("heading", { name: /check your email/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /check your email/i })).toBeInTheDocument();
     });
 
     it("renders the email address passed as prop", () => {
@@ -52,9 +50,7 @@ describe("ResetPasswordSuccess Component", () => {
     it("renders 'Back to sign in' button", () => {
       renderComponent();
 
-      expect(
-        screen.getByRole("button", { name: /back to sign in/i })
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /back to sign in/i })).toBeInTheDocument();
     });
 
     it("renders 'Resend link' button when not loading and no cooldown", () => {
@@ -69,10 +65,7 @@ describe("ResetPasswordSuccess Component", () => {
       const dialog = screen.getByRole("dialog");
       expect(dialog).toBeInTheDocument();
       expect(dialog).toHaveAttribute("aria-modal", "true");
-      expect(dialog).toHaveAttribute(
-        "aria-labelledby",
-        "reset-success-dialog-title"
-      );
+      expect(dialog).toHaveAttribute("aria-labelledby", "reset-success-dialog-title");
     });
 
     it("renders success icon image", () => {
@@ -152,9 +145,7 @@ describe("ResetPasswordSuccess Component", () => {
       const user = userEvent.setup();
       renderComponent({ loading: false, cooldown: 0, onResendLink });
 
-      await user.click(
-        screen.getByRole("button", { name: /resend password reset link/i })
-      );
+      await user.click(screen.getByRole("button", { name: /resend password reset link/i }));
 
       expect(onResendLink).toHaveBeenCalledTimes(1);
     });

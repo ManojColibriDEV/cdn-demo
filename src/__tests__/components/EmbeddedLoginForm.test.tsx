@@ -1354,6 +1354,346 @@ describe("App Component", () => {
   });
 });
 
+describe("EmbeddedLoginForm — Apple Sign In", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should render Apple sign-in button when enableAppleLogin and appleClientId are provided", () => {
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    expect(screen.getByRole("button", { name: /sign in with apple/i })).toBeInTheDocument();
+  });
+
+  it("should not render Apple sign-in button when enableAppleLogin is false", () => {
+    renderLoginForm({ enableAppleLogin: false });
+
+    expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
+  });
+
+  it("should not render Apple sign-in button when appleClientId is missing", () => {
+    renderLoginForm({ enableAppleLogin: true });
+
+    expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
+  });
+
+  it("should show error toast when Apple SDK is not loaded", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    // Ensure AppleID is not on window
+    delete (window as any).AppleID;
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple Sign In SDK not loaded. Please try again.");
+    });
+  });
+
+  it("should call AppleID.auth.init and signIn when SDK is loaded", async () => {
+    const user = userEvent.setup();
+    const mockSignIn = vi.fn().mockResolvedValue({ authorization: { code: "apple-code" } });
+    const mockInit = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: mockInit,
+        signIn: mockSignIn,
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(mockInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: "com.test.app",
+          scope: "name email",
+          usePopup: true,
+        })
+      );
+      expect(mockSignIn).toHaveBeenCalled();
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should silently handle popup_closed_by_user error from Apple", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({ error: "popup_closed_by_user" }),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    // popup_closed_by_user should NOT call onError
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(onError).not.toHaveBeenCalled();
+
+    delete (window as any).AppleID;
+  });
+
+  it("should show error toast for non-cancel Apple sign-in errors", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({ error: "apple_auth_error" }),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("apple_auth_error");
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should handle Apple sign-in Error object failures", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue(new Error("Apple network error")),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple network error");
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should use fallback message when Apple error has no error field or message", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({}),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple sign-in failed.");
+    });
+
+    delete (window as any).AppleID;
+  });
+});
+
+describe("EmbeddedLoginForm — Google onSuccess error path", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should show error toast when handleGoogleAuthentication fails with Error", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+    vi.mocked(functions.handleGoogleAuthentication).mockRejectedValue(
+      new Error("Google token exchange failed")
+    );
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "failing-google-code" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google token exchange failed");
+      expect(screen.getByText("Google token exchange failed")).toBeInTheDocument();
+    });
+  });
+
+  it("should show fallback error when handleGoogleAuthentication fails with non-Error", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+    vi.mocked(functions.handleGoogleAuthentication).mockRejectedValue({} as any);
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "non-error-code" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google sign-in failed");
+    });
+  });
+});
+
+describe("EmbeddedLoginForm — Forgot Username navigation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should navigate to forgot username form and back to login", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/back to login/i));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Continue to login/i })).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from forgot username to create account and back", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to forgot username
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from reset password to create account via banner action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to reset password
+    await user.click(screen.getByText(/forgot password/i));
+
+    // Wait for reset password form to appear
+    await waitFor(() => {
+      expect(screen.getByText(/back to login/i)).toBeInTheDocument();
+    });
+
+    // Clear and type a new email that doesn't exist
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.clear(emailInput);
+    await user.type(emailInput, "newuser@example.com");
+
+    // Wait for email check debounce
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Banner should show "No account found"
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    // Click create account action in banner
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+
+    // Should navigate to Create Account form
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from forgot username to create account via banner action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to forgot username
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+
+    // Type a new email that doesn't exist
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.type(emailInput, "newuser@example.com");
+
+    // Wait for email check debounce
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Banner should show "No account found"
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    // Click create account action in banner
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+
+    // Should navigate to Create Account form
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+  });
+});
+
 describe("EmbeddedLoginForm — brand configuration error", () => {
   beforeEach(() => {
     vi.clearAllMocks();
