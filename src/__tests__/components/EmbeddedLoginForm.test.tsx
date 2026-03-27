@@ -1429,6 +1429,39 @@ describe("EmbeddedLoginForm — Apple Sign In", () => {
     delete (window as any).AppleID;
   });
 
+  it("should disable Apple button while sign-in is in progress", async () => {
+    let resolveSignIn!: (value: any) => void;
+    const signInPromise = new Promise((resolve) => {
+      resolveSignIn = resolve;
+    });
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockReturnValue(signInPromise),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    const button = screen.getByRole("button", { name: /sign in with apple/i });
+    expect(button).not.toBeDisabled();
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(button).toBeDisabled();
+    });
+
+    resolveSignIn({ authorization: { code: "apple-code" } });
+
+    await waitFor(() => {
+      expect(button).not.toBeDisabled();
+    });
+
+    delete (window as any).AppleID;
+  });
+
   it("should silently handle popup_closed_by_user error from Apple", async () => {
     const user = userEvent.setup();
     const onError = vi.fn();

@@ -59,6 +59,7 @@ const EmbeddedLoginForm = ({
   >(MessageType.INFO);
   const brandConfigError = useBrandConfigError();
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const appleScriptLoaded = useRef(false);
@@ -87,6 +88,7 @@ const EmbeddedLoginForm = ({
 
   const handleAppleLogin = async () => {
     try {
+      setAppleLoading(true);
       const AppleID = (window as any).AppleID;
       if (!AppleID) {
         const errorMsg = "Apple Sign In SDK not loaded. Please try again.";
@@ -103,8 +105,7 @@ const EmbeddedLoginForm = ({
         usePopup: true,
       });
 
-      const response = await AppleID.auth.signIn();
-      console.log("[EmbeddedLogin] Apple auth response received", response);
+      await AppleID.auth.signIn();
       setToastMessage(
         "Apple sign-in completed. Connect this credential to your backend login flow."
       );
@@ -120,6 +121,8 @@ const EmbeddedLoginForm = ({
       setToastMessage(appleError);
       setToastType(MessageType.ERROR);
       onError(appleError);
+    } finally {
+      setAppleLoading(false);
     }
   };
 
@@ -477,7 +480,7 @@ const EmbeddedLoginForm = ({
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-apple-button"
                   onClick={handleAppleLogin}
-                  disabled={loading || brandConfigError}
+                  disabled={loading || appleLoading || brandConfigError}
                   className="identity-widget-apple-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <svg
