@@ -5,7 +5,7 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication } from "../functions";
+import { handleAuthentication, handleGoogleAuthentication } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
@@ -58,6 +58,7 @@ const EmbeddedLoginForm = ({
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
   const brandConfigError = useBrandConfigError();
+  const [googleLoading, setGoogleLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const appleScriptLoaded = useRef(false);
@@ -122,29 +123,36 @@ const EmbeddedLoginForm = ({
     }
   };
 
-  const handleGoogleLogin = useGoogleLogin({
-    flow: "auth-code",
-    onSuccess: (codeResponse) => {
-      console.log("[EmbeddedLogin] Google auth-code response received", codeResponse);
-      setToastMessage(
-        "Google sign-in completed. Connect this credential to your backend login flow."
-      );
-      setToastType(MessageType.INFO);
-      setErrorMessage("");
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse: { code: string }) => {
+      try {
+        const tokens = await handleGoogleAuthentication(codeResponse.code, rememberMe);
+        onSuccess(tokens);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Google sign-in failed";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+      } finally {
+        setGoogleLoading(false);
+      }
     },
-    onError: (errorResponse) => {
+    onError: (errorResponse: any) => {
       const googleError =
-        errorResponse.error_description || errorResponse.error || "Google sign-in failed.";
+        errorResponse?.error_description || errorResponse?.error || "Google sign-in failed.";
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
-    onNonOAuthError: (error) => {
+    onNonOAuthError: (error: any) => {
       const googleError = `Google sign-in failed: ${error.type}`;
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
+    flow: "auth-code",
   });
 
   // Check email existence when user types
@@ -411,8 +419,8 @@ const EmbeddedLoginForm = ({
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-google-button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={loading || brandConfigError}
+                  onClick={() => { setGoogleLoading(true); googleLogin(); }}
+                  disabled={loading || googleLoading || brandConfigError}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <img
@@ -814,7 +822,7 @@ const EmbeddedLoginForm = ({
             variant={ButtonVariant.OUTLINE}
             part="identity-widget-login-create-account-button"
             onClick={() => setShowCreateAccount(true)}
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
             <span

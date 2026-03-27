@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import React, { StrictMode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { createRoot, Root } from "react-dom/client";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -10,11 +10,24 @@ import { authLogout } from "./services";
 import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
 import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
 
+const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || "";
+
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
-const GOOGLE_CLIENT_ID =
-  (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ||
-  "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent.com";
+
 const APPLE_CLIENT_ID = (import.meta as any).env.VITE_APPLE_CLIENT_ID || "";
+
+// Only wrap with GoogleOAuthProvider when a client ID is available
+// Without this guard the provider throws on init and blocks widget render
+const WithGoogleProvider = ({
+  clientId,
+  children,
+}: {
+  clientId: string;
+  children: React.ReactNode;
+}) => {
+  if (!clientId) return <>{children}</>;
+  return <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>;
+};
 
 // Get widget styles from global (injected by vite plugin)
 // Following bloom-elements standard pattern
@@ -57,7 +70,7 @@ if (renderMode === "TEST") {
     });
 
   createRoot(document.getElementById("root")!).render(
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <WithGoogleProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <StrictMode>
           <App
@@ -72,7 +85,7 @@ if (renderMode === "TEST") {
           />
         </StrictMode>
       </BrowserRouter>
-    </GoogleOAuthProvider>
+    </WithGoogleProvider>
   );
 } else {
   // Web Component mode for production deployment
@@ -423,13 +436,13 @@ if (renderMode === "TEST") {
       const props = this.getProps();
 
       this.root.render(
-        <GoogleOAuthProvider clientId={props.googleClientId || GOOGLE_CLIENT_ID}>
+        <WithGoogleProvider clientId={props.googleClientId || GOOGLE_CLIENT_ID}>
           <BrowserRouter>
             <StrictMode>
               <App {...props} />
             </StrictMode>
           </BrowserRouter>
-        </GoogleOAuthProvider>
+        </WithGoogleProvider>
       );
     }
   }

@@ -1,7 +1,7 @@
 import type { UpgradeUser, PasswordChecks, AuthenticationTokens } from "../types/index";
 import { jwtDecode } from "jwt-decode";
 import { setAuthCookie, clearAuthCookie, getCookie } from "../utils/cookieHelper";
-import { authLogin, authRefresh } from "../services";
+import { authLogin, authRefresh, authGoogle } from "../services";
 import {
   STORAGE_KEYS,
   COOKIE_NAMES,
@@ -523,6 +523,51 @@ export const handleAuthentication = async (
       console.log(
         `${LOG_PREFIX.AUTH} Remember Me disabled - manual login required on page revisit`
       );
+    }
+  }
+
+  return tokens;
+};
+
+/**
+ * Handle Google OAuth authentication and token storage
+ * Exchanges Google authorization code via gateway and stores resulting tokens
+ *
+ * @param code - Google authorization code returned by useGoogleLogin hook
+ * @param rememberMe - Whether to enable auto-login on page revisit
+ * @returns Authentication tokens
+ */
+export const handleGoogleAuthentication = async (
+  code: string,
+  rememberMe: boolean = true
+): Promise<AuthenticationTokens> => {
+  const authResponse = await authGoogle(code);
+  const { tokens, x_credential } = authResponse;
+
+  if (tokens.access_token) {
+    const decoded: any = jwtDecode(tokens.access_token);
+    const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
+
+    const xCred = x_credential || decoded.x_credentials;
+    if (xCred) {
+      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
+    }
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + expiresIn * 1000).toString());
+
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    const refreshTokenExpiry = 30 * 24 * 60 * 60;
+    setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
+
+    if (rememberMe && tokens.refresh_token) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      console.log(`${LOG_PREFIX.AUTH} Google login - Remember Me enabled`);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      console.log(`${LOG_PREFIX.AUTH} Google login - Remember Me disabled`);
     }
   }
 
