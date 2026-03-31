@@ -129,7 +129,10 @@ const ForgotUsernameSuccess = ({
             role="status"
             aria-live="polite"
           >
-            <b>We've already sent a verification link. Try again in {cooldown}s</b>
+            <b>
+              A verification link has already been sent. Please wait {cooldown} seconds before
+              requesting another.
+            </b>
           </p>
         )}
 

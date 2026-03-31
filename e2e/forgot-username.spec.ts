@@ -301,7 +301,7 @@ test.describe("Auth Widget — Forgot Username", () => {
 
     test("shows cooldown message after submitting", async ({ page }) => {
       await goToSuccessScreen(page);
-      await expect(page.locator("text=We've already sent a verification link")).toBeVisible();
+      await expect(page.locator("text=A verification link has already been sent")).toBeVisible();
     });
 
     test("back to sign in button returns to login form", async ({ page }) => {

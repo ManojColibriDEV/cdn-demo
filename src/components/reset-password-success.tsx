@@ -129,7 +129,10 @@ const ResetPasswordSuccess = ({
             role="status"
             aria-live="polite"
           >
-            <b>We've already sent a reset link. Try again in {cooldown}s</b>
+            <b>
+              A password reset link has already been sent. Please wait {cooldown} seconds before
+              requesting another.
+            </b>
           </p>
         )}
 

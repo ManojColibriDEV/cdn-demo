@@ -195,7 +195,10 @@ const EmbeddedLoginForm = ({
       const tokens = await handleAuthentication(email, password, rememberMe);
 
       // Check password strength after successful authentication
-      const passwordChecks = validatePassword(password, { displayName: email.split("@")[0], email });
+      const passwordChecks = validatePassword(password, {
+        displayName: email.split("@")[0],
+        email,
+      });
       const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
 
       if (!isPasswordStrong) {

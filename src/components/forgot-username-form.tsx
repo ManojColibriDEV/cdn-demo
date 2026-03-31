@@ -357,7 +357,8 @@ const ForgotUsernameForm = ({
               role="status"
               aria-live="polite"
             >
-              We've already sent a verification link. Try again in {cooldown}s
+              A verification link has already been sent. Please wait {cooldown} seconds before
+              requesting another.
             </p>
           )}
 
