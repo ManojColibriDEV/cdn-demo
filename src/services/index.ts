@@ -339,6 +339,38 @@ export const forgotUsername = async (email: string): Promise<any> => {
 };
 
 /**
+ * Google Auth API - Exchange Google authorization code for Keycloak tokens
+ */
+export const authGoogle = async (code: string): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.GOOGLE_AUTH);
+  try {
+    const response = await axios.post(
+      url,
+      { code },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return {
+      ...response.data,
+      x_credential: response.data.x_credential,
+    };
+  } catch (error: any) {
+    console.error("Error during Google auth:", error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new Error("Google authentication failed. Please try again.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    throw new Error(ERROR_MESSAGES.AUTH_FAILED);
+  }
+};
+
+/**
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {

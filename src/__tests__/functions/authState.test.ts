@@ -15,6 +15,7 @@ import {
   isRefreshTokenValid,
   clearAuthTokens,
   handleAuthentication,
+  handleGoogleAuthentication,
   createUserSessionFromToken,
 } from "../../functions";
 import { STORAGE_KEYS, COOKIE_NAMES, TOKEN_EXPIRY } from "../../constants";
@@ -28,10 +29,11 @@ vi.mock("jwt-decode");
 vi.mock("../../services", () => ({
   authLogin: vi.fn(),
   authRefresh: vi.fn(),
+  authGoogle: vi.fn(),
 }));
 
 // Pull the mocked service functions so individual tests can configure them.
-import { authLogin, authRefresh } from "../../services";
+import { authLogin, authRefresh, authGoogle } from "../../services";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -465,10 +467,7 @@ describe("checkTokenAndRedirectWithRefresh", () => {
     // return expired on first call then valid for the usability check.
     // Easiest: make the ACCESS_TOKEN_EXPIRES already expired so checkTokenAndRedirect returns false,
     // but then x_cred and access_token themselves are "not expired" so refresh is skipped.
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() - 1000).toString()
-    );
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() - 1000).toString());
 
     // isRefreshTokenUsable (for the stored refresh token): not expired
     // isJwtExpired(xCredCookie): valid (not expired) → isXCredExpired = false
@@ -498,9 +497,9 @@ describe("checkTokenAndRedirectWithRefresh", () => {
     // 4. refreshAuthenticationState → createUserSessionFromToken: decode new access_token → valid
     // 5. final checkTokenAndRedirect: decode new access_token → valid → return true
     vi.mocked(jwtDecode)
-      .mockReturnValueOnce({ exp: PAST_EXP } as any)   // 1. checkTokenAndRedirect: expired
+      .mockReturnValueOnce({ exp: PAST_EXP } as any) // 1. checkTokenAndRedirect: expired
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // 2. isRefreshTokenUsable: valid
-      .mockReturnValueOnce({ exp: PAST_EXP } as any)   // 3. isJwtExpired(xCred): expired
+      .mockReturnValueOnce({ exp: PAST_EXP } as any) // 3. isJwtExpired(xCred): expired
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // 4. createUserSessionFromToken
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any); // 5. final checkTokenAndRedirect
 
@@ -667,9 +666,9 @@ describe("handleAuthentication", () => {
   it("re-throws when authLogin throws", async () => {
     vi.mocked(authLogin).mockRejectedValue(new Error("Invalid credentials"));
 
-    await expect(
-      handleAuthentication("bad@example.com", "wrongpass")
-    ).rejects.toThrow("Invalid credentials");
+    await expect(handleAuthentication("bad@example.com", "wrongpass")).rejects.toThrow(
+      "Invalid credentials"
+    );
   });
 
   it("uses x_credentials from decoded JWT when response has no x_credential", async () => {
@@ -754,5 +753,119 @@ describe("createUserSessionFromToken", () => {
     expect(session!.userInfo.email).toBeUndefined();
     expect(session!.userInfo.name).toBeUndefined();
     expect(session!.decoded.exp).toBe(FUTURE_EXP);
+  });
+});
+
+// ===========================================================================
+// 10. handleGoogleAuthentication
+// ===========================================================================
+
+describe("handleGoogleAuthentication", () => {
+  const GOOGLE_ACCESS_TOKEN = "google.access.token.jwt";
+  const GOOGLE_REFRESH_TOKEN = "google.refresh.token.jwt";
+  const GOOGLE_X_CREDENTIAL = "google-x-cred-value";
+
+  beforeEach(() => {
+    vi.mocked(authGoogle).mockResolvedValue({
+      tokens: {
+        access_token: GOOGLE_ACCESS_TOKEN,
+        refresh_token: GOOGLE_REFRESH_TOKEN,
+      },
+      x_credential: GOOGLE_X_CREDENTIAL,
+    });
+    vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP, sub: "google-user" } as any);
+  });
+
+  it("stores access_token in localStorage and returns tokens", async () => {
+    const tokens = await handleGoogleAuthentication("google-code-123", false);
+
+    expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
+    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe(GOOGLE_ACCESS_TOKEN);
+  });
+
+  it("stores refresh_token in localStorage", async () => {
+    await handleGoogleAuthentication("google-code-123", false);
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe(GOOGLE_REFRESH_TOKEN);
+  });
+
+  it("stores access_token_expires in localStorage", async () => {
+    const before = Date.now();
+    await handleGoogleAuthentication("google-code-123", false);
+    const after = Date.now();
+
+    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)!);
+    const expectedMin = before + (FUTURE_EXP - Math.floor(before / 1000)) * 1000;
+    const expectedMax = after + (FUTURE_EXP - Math.floor(after / 1000)) * 1000;
+
+    expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
+    expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
+  });
+
+  it("stores refresh_token_time when rememberMe=true", async () => {
+    const before = Date.now();
+    await handleGoogleAuthentication("google-code-123", true);
+    const after = Date.now();
+
+    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)!);
+    expect(stored).toBeGreaterThanOrEqual(before);
+    expect(stored).toBeLessThanOrEqual(after);
+  });
+
+  it("does NOT store refresh_token_time when rememberMe=false", async () => {
+    await handleGoogleAuthentication("google-code-123", false);
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+  });
+
+  it("removes any existing refresh_token_time when rememberMe=false", async () => {
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "old-timestamp");
+
+    await handleGoogleAuthentication("google-code-123", false);
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+  });
+
+  it("defaults rememberMe to true when not provided", async () => {
+    await handleGoogleAuthentication("google-code-123");
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+  });
+
+  it("re-throws when authGoogle throws", async () => {
+    vi.mocked(authGoogle).mockRejectedValue(new Error("Google auth failed"));
+
+    await expect(handleGoogleAuthentication("bad-code")).rejects.toThrow("Google auth failed");
+  });
+
+  it("uses x_credentials from decoded JWT when response has no x_credential", async () => {
+    vi.mocked(authGoogle).mockResolvedValue({
+      tokens: {
+        access_token: GOOGLE_ACCESS_TOKEN,
+        refresh_token: GOOGLE_REFRESH_TOKEN,
+      },
+      x_credential: undefined,
+    });
+    vi.mocked(jwtDecode).mockReturnValue({
+      exp: FUTURE_EXP,
+      x_credentials: "decoded-google-xcred",
+    } as any);
+
+    const tokens = await handleGoogleAuthentication("google-code-123", true);
+    expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
+  });
+
+  it("skips token storage when access_token is missing from response", async () => {
+    vi.mocked(authGoogle).mockResolvedValue({
+      tokens: {
+        access_token: "",
+        refresh_token: GOOGLE_REFRESH_TOKEN,
+      },
+      x_credential: GOOGLE_X_CREDENTIAL,
+    });
+
+    const tokens = await handleGoogleAuthentication("google-code-123");
+    expect(tokens.access_token).toBe("");
+    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
   });
 });

@@ -241,9 +241,7 @@ test.describe("Auth Widget — Reset Password Success Screen", () => {
 
     // After a successful resend a cooldown message should appear
     await expect(
-      page
-        .locator('[part~="identity-widget-reset-success-cooldown-message"]')
-        .first()
+      page.locator('[part~="identity-widget-reset-success-cooldown-message"]').first()
     ).toBeVisible({ timeout: 5000 });
   });
 });
@@ -391,9 +389,7 @@ test.describe("Auth Widget — Logout Flow", () => {
     // Trigger the logout API explicitly
     const [response] = await Promise.all([
       page.waitForResponse("**/api/logout"),
-      page.evaluate(() =>
-        fetch("/api/logout", { method: "POST", credentials: "include" })
-      ),
+      page.evaluate(() => fetch("/api/logout", { method: "POST", credentials: "include" })),
     ]);
 
     expect(response.status()).toBe(200);
