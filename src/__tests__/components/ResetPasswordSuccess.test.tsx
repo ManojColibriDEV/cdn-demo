@@ -116,7 +116,7 @@ describe("ResetPasswordSuccess Component", () => {
       renderComponent({ cooldown: 42 });
 
       expect(screen.getByRole("status")).toBeInTheDocument();
-      expect(screen.getByText(/try again in 42s/i)).toBeInTheDocument();
+      expect(screen.getByText(/please wait.*42.*seconds/i)).toBeInTheDocument();
     });
 
     it("resend button is disabled when cooldown > 0", () => {

@@ -35,6 +35,7 @@ vi.mock("../../functions", () => ({
   refreshAuthenticationState: vi.fn(),
   silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
+  validatePassword: vi.fn(),
   setAuthCookie: vi.fn(),
   clearAuthCookie: vi.fn(),
   getCookie: vi.fn(),
@@ -76,6 +77,18 @@ describe("EmbeddedLoginForm Component", () => {
       "X-Subsidiary-Id": "1",
       "X-Brand-Domain": "elitelearning.com",
     });
+    // Default: validatePassword returns all checks passing
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: true,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
   });
 
   it("should render login form with title and subtitle", () => {

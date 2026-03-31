@@ -61,7 +61,7 @@ if (renderMode === "TEST") {
   }
 
   createThemeWidget({
-    brandFolder: "elite", // Match the subsidiary in TEST mode
+    brandFolder: "western", // Match the subsidiary in TEST mode
   })
     .then(() => {
       console.log("[main.tsx] Theme loaded in TEST mode");
@@ -75,7 +75,8 @@ if (renderMode === "TEST") {
       <BrowserRouter>
         <StrictMode>
           <App
-            subsidiary="elite"
+            subsidiary="western"
+            authority="test"
             showLogin={true}
             autoRedirection={false}
             googleClientId={GOOGLE_CLIENT_ID}

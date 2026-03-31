@@ -338,7 +338,8 @@ const ResetPasswordForm = ({
               role="status"
               aria-live="polite"
             >
-              We've already sent a reset link. Try again in {cooldown}s
+              A password reset link has already been sent. Please wait {cooldown} seconds before
+              requesting another.
             </p>
           )}
 
