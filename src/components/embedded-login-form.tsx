@@ -5,7 +5,7 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication, validatePassword } from "../functions";
+import { handleAuthentication, handleGoogleAuthentication, validatePassword } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import WeakPasswordModal from "../common/ui/weak-password-modal";
@@ -35,6 +35,8 @@ const EmbeddedLoginForm = ({
   subtitle = "Continue by signing in.",
   initialEmail = "",
   enableGoogleLogin = true,
+  enableAppleLogin = false,
+  appleClientId,
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -59,32 +61,104 @@ const EmbeddedLoginForm = ({
   const [showWeakPasswordModal, setShowWeakPasswordModal] = useState(false);
   const [pendingTokens, setPendingTokens] = useState<any>(null);
   const brandConfigError = useBrandConfigError();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const appleScriptLoaded = useRef(false);
 
-  const handleGoogleLogin = useGoogleLogin({
-    flow: "auth-code",
-    onSuccess: (codeResponse) => {
-      console.log("[EmbeddedLogin] Google auth-code response received", codeResponse);
+  // Load Apple Sign In JS SDK
+  useEffect(() => {
+    if (!enableAppleLogin || !appleClientId || appleScriptLoaded.current) return;
+
+    const existingScript = document.querySelector(
+      'script[src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"]'
+    );
+    if (existingScript) {
+      appleScriptLoaded.current = true;
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src =
+      "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+    script.async = true;
+    script.onload = () => {
+      appleScriptLoaded.current = true;
+    };
+    document.head.appendChild(script);
+  }, [enableAppleLogin, appleClientId]);
+
+  const handleAppleLogin = async () => {
+    try {
+      setAppleLoading(true);
+      const AppleID = (window as any).AppleID;
+      if (!AppleID) {
+        const errorMsg = "Apple Sign In SDK not loaded. Please try again.";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+        return;
+      }
+
+      AppleID.auth.init({
+        clientId: appleClientId,
+        scope: "name email",
+        redirectURI: window.location.origin,
+        usePopup: true,
+      });
+
+      await AppleID.auth.signIn();
       setToastMessage(
-        "Google sign-in completed. Connect this credential to your backend login flow."
+        "Apple sign-in completed. Connect this credential to your backend login flow."
       );
       setToastType(MessageType.INFO);
       setErrorMessage("");
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (error?.error === "popup_closed_by_user") {
+        return;
+      }
+      const appleError =
+        error?.error || (error instanceof Error ? error.message : "Apple sign-in failed.");
+      setToastMessage(appleError);
+      setToastType(MessageType.ERROR);
+      onError(appleError);
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse: { code: string }) => {
+      try {
+        const tokens = await handleGoogleAuthentication(codeResponse.code, rememberMe);
+        onSuccess(tokens);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Google sign-in failed";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+      } finally {
+        setGoogleLoading(false);
+      }
     },
-    onError: (errorResponse) => {
+    onError: (errorResponse: any) => {
       const googleError =
-        errorResponse.error_description || errorResponse.error || "Google sign-in failed.";
+        errorResponse?.error_description || errorResponse?.error || "Google sign-in failed.";
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
-    onNonOAuthError: (error) => {
+    onNonOAuthError: (error: any) => {
       const googleError = `Google sign-in failed: ${error.type}`;
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
+    flow: "auth-code",
   });
 
   // Check email existence when user types
@@ -358,14 +432,17 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-google-section"
-                className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!"
+                className="identity-widget-google-section mt-0! mb-4! justify-center! hidden!"
               >
                 <Button
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-google-button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={loading || brandConfigError}
+                  onClick={() => {
+                    setGoogleLoading(true);
+                    googleLogin();
+                  }}
+                  disabled={loading || googleLoading || brandConfigError}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <img
@@ -405,6 +482,69 @@ const EmbeddedLoginForm = ({
                   </span>
                 </div>
               </div>
+            </>
+          )}
+
+          {enableAppleLogin && appleClientId && (
+            <>
+              <div
+                part="identity-widget-apple-section"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!"
+              >
+                <Button
+                  type={ButtonType.BUTTON}
+                  variant={ButtonVariant.OUTLINE}
+                  part="identity-widget-apple-button"
+                  onClick={handleAppleLogin}
+                  disabled={loading || appleLoading || brandConfigError}
+                  className="identity-widget-apple-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
+                >
+                  <svg
+                    part="identity-widget-apple-icon"
+                    className="identity-widget-apple-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    width="18"
+                    height="18"
+                    style={{ width: 18, height: 18, flexShrink: 0 }}
+                    aria-hidden="true"
+                  >
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                  </svg>
+                  <span part="identity-widget-apple-text" className="identity-widget-apple-text">
+                    Sign in with Apple
+                  </span>
+                </Button>
+              </div>
+
+              {!enableGoogleLogin && (
+                <div
+                  part="identity-widget-login-divider"
+                  className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+                >
+                  <div
+                    part="identity-widget-login-divider-line-wrap"
+                    className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!"
+                  >
+                    <div
+                      part="identity-widget-login-divider-line"
+                      className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"
+                    ></div>
+                  </div>
+                  <div
+                    part="identity-widget-login-divider-text-wrap"
+                    className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!"
+                  >
+                    <span
+                      part="identity-widget-login-divider-text"
+                      className="identity-widget-login-divider-text px-2! bg-white text-gray-500"
+                    >
+                      OR
+                    </span>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -704,7 +844,7 @@ const EmbeddedLoginForm = ({
             variant={ButtonVariant.OUTLINE}
             part="identity-widget-login-create-account-button"
             onClick={() => setShowCreateAccount(true)}
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
             <span

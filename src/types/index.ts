@@ -22,6 +22,8 @@ export interface EmbeddedLoginFormProps {
   subtitle?: string;
   initialEmail?: string;
   enableGoogleLogin?: boolean;
+  enableAppleLogin?: boolean;
+  appleClientId?: string;
 }
 
 export interface ResetPasswordFormProps {
@@ -70,6 +72,7 @@ export interface AppProps {
   customPrimaryColor?: string;
   autoRedirection?: boolean;
   googleClientId?: string;
+  appleClientId?: string;
 }
 
 // ============================================================================

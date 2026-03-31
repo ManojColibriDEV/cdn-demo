@@ -34,5 +34,6 @@ coverage-summary.json
 
 # Test run artefacts
 test-run-results.txt
+test-output.txt
 playwright-report/
 test-results/

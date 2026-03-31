@@ -535,6 +535,45 @@ describe("ResetPasswordForm Component", () => {
     await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
     expect(screen.getByText(/Sending.../i)).toBeInTheDocument();
   });
+
+  it("should render onCreateAccount action in email-not-found banner", async () => {
+    const user = userEvent.setup();
+    const onCreateAccount = vi.fn();
+
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderResetPasswordForm({ onCreateAccount });
+
+    await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
+
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+    expect(onCreateAccount).toHaveBeenCalled();
+  });
+
+  it("should not render create-account action when onCreateAccount is not provided", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderResetPasswordForm();
+
+    await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
+
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    expect(screen.queryByRole("button", { name: /Let's create one/i })).not.toBeInTheDocument();
+  });
 });
 
 describe("ResetPasswordForm — brand configuration error", () => {
