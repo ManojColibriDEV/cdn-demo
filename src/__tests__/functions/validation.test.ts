@@ -167,8 +167,8 @@ describe("Validation and Authentication Functions", () => {
     });
 
     it("should handle special characters correctly", () => {
-      // Allowed special chars: @ . $ % ^ _ -
-      const validSpecialChars = ["@", ".", "$", "%", "^", "_", "-"];
+      // Allowed special chars: ! @ # $ % ^ & * . _ -
+      const validSpecialChars = ["!", "@", "#", "$", "%", "^", "&", "*", ".", "_", "-"];
 
       validSpecialChars.forEach((char) => {
         const password = `Password123${char}`;

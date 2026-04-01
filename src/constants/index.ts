@@ -165,8 +165,8 @@ export const PASSWORD_REGEX = {
   UPPERCASE: /[A-Z]/,
   LOWERCASE: /[a-z]/,
   NUMBER: /[0-9]/,
-  SPECIAL_CHAR: /[@.$%^_\-]/,
-  ALLOWED_CHARS: /^[A-Za-z0-9@.$%^_\-]+$/,
+  SPECIAL_CHAR: /[!@#$%^&*._\-]/,
+  ALLOWED_CHARS: /^[A-Za-z0-9!@#$%^&*._\-]+$/,
   NO_SPACES: /\s/,
   NO_TRIPLE: /(.)\1\1/,
 } as const;
