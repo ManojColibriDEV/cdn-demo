@@ -101,21 +101,29 @@ export class ThemeWidget {
       }
 
       const themeConfig: ThemeConfig = await response.json();
-      const root = document.documentElement;
-      themeConfig.styles.forEach((token) => {
-        let value = token.value;
 
-        // If value is space-separated RGB → wrap with rgb()
-        if (/^\d+\s\d+\s\d+$/.test(value)) {
-          value = `rgb(${value})`;
-        }
+      // Apply theme styles using Shadow DOM when available (production),
+      // otherwise to document root (TEST mode)
+      if (this.shadowRoot) {
+        // Web Component mode: inject CSS variables into Shadow DOM only
+        // This ensures styles are isolated and won't be overridden by host page styles
+        this.applyThemeToShadowDOM(themeConfig);
+      } else {
+        // TEST mode: apply to document root for easier debugging
+        const root = document.documentElement;
+        themeConfig.styles.forEach((token) => {
+          let value = token.value;
 
-        root.style.setProperty(`--${token.name}`, value);
-      });
+          // If value is space-separated RGB → wrap with rgb()
+          if (/^\d+\s\d+\s\d+$/.test(value)) {
+            value = `rgb(${value})`;
+          }
+
+          root.style.setProperty(`--${token.name}`, value);
+        });
+      }
+
       this.currentBrand = brand;
-
-      // Apply theme styles
-      // this.applyTheme(themeConfig);
 
       console.log(`[ThemeWidget] Theme loaded for brand: ${brand.name}`);
 
@@ -129,6 +137,36 @@ export class ThemeWidget {
       window.dispatchEvent(new Event("theme-loaded"));
       throw error;
     }
+  }
+
+  /**
+   * Apply theme styles to Shadow DOM using CSS variables
+   * This ensures complete style isolation from host page styles
+   */
+  private applyThemeToShadowDOM(themeConfig: ThemeConfig): void {
+    if (!this.shadowRoot) return;
+
+    // Generate CSS variables from theme
+    const cssVariables = themeConfig.styles
+      .map((token) => {
+        let value = token.value;
+
+        // If value is space-separated RGB → wrap with rgb()
+        if (/^\d+\s\d+\s\d+$/.test(value)) {
+          value = `rgb(${value})`;
+        }
+
+        return `  --${token.name}: ${value};`;
+      })
+      .join("\n");
+
+    // Create style element with :host selector for Shadow DOM scope
+    const styleElement = document.createElement("style");
+    styleElement.setAttribute("data-theme-widget", "true");
+    styleElement.textContent = `:host {\n${cssVariables}\n}`;
+
+    // Inject into Shadow DOM for complete style isolation
+    this.shadowRoot.appendChild(styleElement);
   }
 
   /**

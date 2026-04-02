@@ -12328,8 +12328,8 @@ const de = {
   UPPERCASE: /[A-Z]/,
   LOWERCASE: /[a-z]/,
   NUMBER: /[0-9]/,
-  SPECIAL_CHAR: /[@.$%^_\-]/,
-  ALLOWED_CHARS: /^[A-Za-z0-9@.$%^_\-]+$/,
+  SPECIAL_CHAR: /[!@#$%^&*._\-]/,
+  ALLOWED_CHARS: /^[A-Za-z0-9!@#$%^&*._\-]+$/,
   NO_SPACES: /\s/,
   NO_TRIPLE: /(.)\1\1/
 }, Jh = /[!@#$%^&*._-]/, $h = /^[A-Za-z0-9!@#$%^&*._-]+$/, vn = {
@@ -18941,7 +18941,7 @@ class qE {
   async loadTheme(r) {
     try {
       const u = (await this.getBrands()).find(
-        (b) => b.folder.toLowerCase() === r.toLowerCase() || b.token.toLowerCase() === r.toLowerCase()
+        (p) => p.folder.toLowerCase() === r.toLowerCase() || p.token.toLowerCase() === r.toLowerCase()
       );
       if (!u) {
         console.warn(`[ThemeWidget] Brand not found: ${r}. Using default theme.`), sessionStorage.setItem("theme_loaded", "true"), window.dispatchEvent(new Event("theme-loaded"));
@@ -18959,14 +18959,35 @@ class qE {
       const c = `${this.cdnBaseUrl}/${u.folder}/theme.json`, f = await fetch(c);
       if (!f.ok)
         throw new Error(`Failed to fetch theme: ${f.statusText}`);
-      const h = await f.json(), p = document.documentElement;
-      h.styles.forEach((b) => {
-        let y = b.value;
-        /^\d+\s\d+\s\d+$/.test(y) && (y = `rgb(${y})`), p.style.setProperty(`--${b.name}`, y);
-      }), this.currentBrand = u, console.log(`[ThemeWidget] Theme loaded for brand: ${u.name}`), sessionStorage.setItem("theme_loaded", "true"), window.dispatchEvent(new Event("theme-loaded"));
+      const h = await f.json();
+      if (this.shadowRoot)
+        this.applyThemeToShadowDOM(h);
+      else {
+        const p = document.documentElement;
+        h.styles.forEach((b) => {
+          let y = b.value;
+          /^\d+\s\d+\s\d+$/.test(y) && (y = `rgb(${y})`), p.style.setProperty(`--${b.name}`, y);
+        });
+      }
+      this.currentBrand = u, console.log(`[ThemeWidget] Theme loaded for brand: ${u.name}`), sessionStorage.setItem("theme_loaded", "true"), window.dispatchEvent(new Event("theme-loaded"));
     } catch (o) {
       throw console.error("[ThemeWidget] Error loading theme:", o), sessionStorage.setItem("theme_loaded", "true"), window.dispatchEvent(new Event("theme-loaded")), o;
     }
+  }
+  /**
+   * Apply theme styles to Shadow DOM using CSS variables
+   * This ensures complete style isolation from host page styles
+   */
+  applyThemeToShadowDOM(r) {
+    if (!this.shadowRoot) return;
+    const o = r.styles.map((c) => {
+      let f = c.value;
+      return /^\d+\s\d+\s\d+$/.test(f) && (f = `rgb(${f})`), `  --${c.name}: ${f};`;
+    }).join(`
+`), u = document.createElement("style");
+    u.setAttribute("data-theme-widget", "true"), u.textContent = `:host {
+${o}
+}`, this.shadowRoot.appendChild(u);
   }
   /**
    * Apply theme styles by injecting CSS variables
