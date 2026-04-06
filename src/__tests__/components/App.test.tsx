@@ -157,7 +157,9 @@ describe("App Component", () => {
     renderApp({ authority: "https://keycloak.example.com/realms/colibri" });
 
     await waitFor(() => {
-      expect(localStorage.getItem("authority")).toBe("https://keycloak.example.com/realms/colibri");
+      expect(localStorage.getItem("iam_authority")).toBe(
+        "https://keycloak.example.com/realms/colibri"
+      );
     });
   });
 
@@ -176,7 +178,9 @@ describe("App Component", () => {
     });
 
     await waitFor(() => {
-      expect(localStorage.getItem("authority")).toBe("https://keycloak.example.com/realms/colibri");
+      expect(localStorage.getItem("iam_authority")).toBe(
+        "https://keycloak.example.com/realms/colibri"
+      );
       expect(localStorage.getItem("subsidiary")).toBe("mckissock");
     });
   });

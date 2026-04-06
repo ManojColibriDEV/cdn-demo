@@ -31,9 +31,9 @@ const RENDER_MODE = (import.meta as any).env.VITE_RENDER_MODE || RenderMode.WEBC
  */
 export function setAuthorityOverride(authority: string | null): void {
   if (authority) {
-    localStorage.setItem(STORAGE_KEYS.AUTHORITY_OVERRIDE, authority);
+    localStorage.setItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE, authority);
   } else {
-    localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+    localStorage.removeItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
   }
 }
 
@@ -41,14 +41,14 @@ export function setAuthorityOverride(authority: string | null): void {
  * Get current authority override if set
  */
 export function getAuthorityOverride(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+  return localStorage.getItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
 }
 
 /**
  * Clear authority override
  */
 export function clearAuthorityOverride(): void {
-  localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+  localStorage.removeItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
 }
 
 /**

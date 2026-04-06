@@ -193,7 +193,6 @@ export function validatePassword(pw: string, upgradeUser?: UpgradeUser | null): 
     noTriple: !PASSWORD_REGEX.NO_TRIPLE.test(pw),
     special: PASSWORD_REGEX.SPECIAL_CHAR.test(pw) && PASSWORD_REGEX.ALLOWED_CHARS.test(pw),
     noNameParts: true,
-    noEmailParts: true,
   };
 
   const low = pw.toLowerCase();
@@ -204,19 +203,6 @@ export function validatePassword(pw: string, upgradeUser?: UpgradeUser | null): 
     for (const part of parts) {
       if (part && low.includes(part.toLowerCase())) {
         checks.noNameParts = false;
-        break;
-      }
-    }
-  }
-
-  if (upgradeUser && upgradeUser.email) {
-    const local = (upgradeUser.email || "").split("@")[0] || "";
-    const tokens = local
-      .split(/[^A-Za-z0-9]+/)
-      .filter((t) => t.length >= PASSWORD_RULES.MIN_TOKEN_LENGTH_FOR_EMAIL_CHECK);
-    for (const t of tokens) {
-      if (t && low.includes(t.toLowerCase())) {
-        checks.noEmailParts = false;
         break;
       }
     }

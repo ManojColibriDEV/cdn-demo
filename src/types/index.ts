@@ -159,5 +159,4 @@ export interface PasswordChecks {
   noTriple: boolean;
   special: boolean;
   noNameParts: boolean;
-  noEmailParts: boolean;
 }

@@ -633,7 +633,7 @@ describe("Authentication Service", () => {
         writable: true,
       });
 
-      localStorage.setItem("authority_override", "not-valid");
+      localStorage.setItem("iam_authority_override", "not-valid");
 
       const axiosModule = await import("axios");
       const localMock = new MockAdapter(axiosModule.default);
@@ -647,7 +647,7 @@ describe("Authentication Service", () => {
       const response = await svc.checkEmail("fallback2@example.com");
       expect(response.exists).toBe(true);
       localMock.restore();
-      localStorage.removeItem("authority_override");
+      localStorage.removeItem("iam_authority_override");
     });
 
     it("uses valid authority override directly", async () => {
@@ -658,7 +658,7 @@ describe("Authentication Service", () => {
         writable: true,
       });
 
-      localStorage.setItem("authority_override", "dev");
+      localStorage.setItem("iam_authority_override", "dev");
 
       const axiosModule = await import("axios");
       const localMock = new MockAdapter(axiosModule.default);
@@ -672,7 +672,7 @@ describe("Authentication Service", () => {
       const response = await svc.checkEmail("override@example.com");
       expect(response.exists).toBe(true);
       localMock.restore();
-      localStorage.removeItem("authority_override");
+      localStorage.removeItem("iam_authority_override");
     });
 
     it("uses global API URL branch for /global paths", async () => {
