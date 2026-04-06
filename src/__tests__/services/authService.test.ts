@@ -108,20 +108,6 @@ describe("Authentication Service", () => {
       await expect(authLogin("test@example.com", "password")).rejects.toThrow();
     });
 
-    it("should prefer x-credential from response headers", async () => {
-      mockAxios.onPost(/\/api\/auth$/).reply(
-        200,
-        {
-          ...mockAuthLoginSuccessResponse,
-          x_credential: "body-value",
-        },
-        { "x-credential": "header-value" }
-      );
-
-      const response = await authLogin("john.doe@example.com", "SecureP@ss123!");
-      expect(response.x_credential).toBe("header-value");
-    });
-
     it("should fall back to response message field on error", async () => {
       mockAxios.onPost(/\/api\/auth$/).reply(400, { message: "Login error message" });
       await expect(authLogin("test@example.com", "password")).rejects.toThrow(
@@ -701,14 +687,12 @@ describe("Authentication Service", () => {
     it("should successfully exchange Google authorization code for tokens", async () => {
       const mockResponse = {
         tokens: { access_token: "google-access", refresh_token: "google-refresh" },
-        x_credential: "google-xcred",
       };
       mockAxios.onPost(/\/api\/auth\/google$/).reply(200, mockResponse);
 
       const response = await authGoogle("google-auth-code-123");
 
       expect(response.tokens).toEqual(mockResponse.tokens);
-      expect(response.x_credential).toBe("google-xcred");
     });
 
     it("should throw error field from response", async () => {
@@ -747,7 +731,7 @@ describe("Authentication Service", () => {
       localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
       mockAxios.onPost(/\/api\/auth\/google$/).reply((config) => {
         expect(config.headers).toHaveProperty("X-Brand-Domain");
-        return [200, { tokens: { access_token: "t" }, x_credential: "x" }];
+        return [200, { tokens: { access_token: "t" } }];
       });
 
       await authGoogle("brand-code");

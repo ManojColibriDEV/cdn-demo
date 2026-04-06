@@ -94,11 +94,6 @@ export const refreshAuthenticationState = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    const xCred = response.x_credential || userSession.decoded.x_credentials;
-    if (xCred) {
-      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
-    }
-
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
@@ -159,15 +154,11 @@ export const silentTokenRefresh = async () => {
       return;
     }
 
-    const xCredCookie =
-      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
-      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
     const accessToken =
       getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
       localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 
-    const shouldRecoverSession =
-      !xCredCookie || isJwtExpired(xCredCookie) || !accessToken || isJwtExpired(accessToken);
+    const shouldRecoverSession = !accessToken || isJwtExpired(accessToken);
 
     if (shouldRecoverSession) {
       await refreshAuthenticationState(currentRefreshToken);
@@ -218,7 +209,7 @@ export function validatePassword(pw: string, upgradeUser?: UpgradeUser | null): 
  * 1. First checks if Remember Me was enabled (refresh_token_time exists)
  *    - If NOT enabled: Returns false (requires manual login even if tokens exist)
  *    - If enabled: Proceeds to validate token
- * 2. Checks if valid access_token and X-Credential exist in cookies/localStorage
+ * 2. Checks if valid access_token exists in cookies/localStorage
  * 3. Validates token expiration
  *
  * This ensures:
@@ -244,32 +235,23 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
 
     console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me enabled - validating tokens`);
 
-    // First try cookies
-    const xCredCookie =
-      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
-      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
+    // Get access token from cookies or localStorage
     const accessTokenCookie = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
     let token: string | null = null;
-    let hasXCred = false;
 
     // Try to get token from cookie first
     if (accessTokenCookie) {
       token = accessTokenCookie;
-    }
-    if (xCredCookie) {
-      hasXCred = true;
     }
 
     // Fallback to localStorage for cross-domain scenarios
     if (!token) {
       token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
-    // X-Credential only in cookies, not in localStorage
-    // (Already checked xCredCookie above)
 
-    // Check if we have both token and x_credential
-    if (!token || !hasXCred) {
+    // Check if we have valid token
+    if (!token) {
       return false;
     }
 
@@ -324,18 +306,13 @@ export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Pr
       return false;
     }
 
-    const xCredCookie =
-      getCookie(COOKIE_NAMES.X_CREDENTIAL, false) ||
-      getCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, false);
-
     const accessToken =
       getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
       localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
 
-    const isXCredExpired = !xCredCookie || isJwtExpired(xCredCookie);
     const isAccessExpired = !accessToken || isJwtExpired(accessToken);
 
-    if (!isXCredExpired && !isAccessExpired) {
+    if (!isAccessExpired) {
       return false;
     }
 
@@ -402,8 +379,6 @@ export const isRefreshTokenValid = (): boolean => {
 export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
   clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
-  clearAuthCookie(COOKIE_NAMES.X_CREDENTIAL);
-  clearAuthCookie(COOKIE_NAMES.X_CREDENTIAL_OLD);
   clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
 
   // Clear all auth-related localStorage items
@@ -453,9 +428,9 @@ export const handleAuthentication = async (
   password: string,
   rememberMe: boolean = false
 ): Promise<AuthenticationTokens> => {
-  // Use the service function - returns { tokens, userinfo, x_credential }
+  // Use the service function - returns { tokens }
   const authResponse = await authLogin(username, password);
-  const { tokens, x_credential } = authResponse;
+  const { tokens } = authResponse;
 
   // Store tokens if provided
   if (tokens.access_token) {
@@ -463,22 +438,6 @@ export const handleAuthentication = async (
     const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
     // Set cookies for access token (with encoding)
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
-
-    // Get x_credential from response or decoded token
-    const xCred = x_credential || decoded.x_credentials;
-
-    // Set X-Credential cookie without encoding to preserve the exact format
-    if (xCred) {
-      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
-      console.log("✅ X-Credential cookie set successfully");
-    } else {
-      console.warn("⚠️ No x_credential found in response or JWT");
-    }
-
-    // Set X-Credential cookie without encoding to preserve the exact format
-    if (xCred) {
-      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
-    }
 
     // === MANDATORY STORAGE ===
     // ALWAYS store in localStorage (required for cross-domain scenarios and token persistence)
@@ -492,9 +451,6 @@ export const handleAuthentication = async (
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
     const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
-
-    // NOTE: X-Credential is ONLY stored in cookies, not localStorage
-    // This prevents duplicate x_credentials from different storage sources
 
     // === REMEMBER ME LOGIC ===
     // Only store refresh_token_time if Remember Me is checked
@@ -528,18 +484,13 @@ export const handleGoogleAuthentication = async (
   rememberMe: boolean = true
 ): Promise<AuthenticationTokens> => {
   const authResponse = await authGoogle(code);
-  const { tokens, x_credential } = authResponse;
+  const { tokens } = authResponse;
 
   if (tokens.access_token) {
     const decoded: any = jwtDecode(tokens.access_token);
     const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
-
-    const xCred = x_credential || decoded.x_credentials;
-    if (xCred) {
-      setAuthCookie(COOKIE_NAMES.X_CREDENTIAL, xCred, expiresIn, false);
-    }
 
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(
@@ -577,7 +528,6 @@ export const createUserSessionFromToken = (accessToken: string) => {
         studentId: decoded.studentId,
         sub: decoded.sub,
         email_verified: decoded.email_verified,
-        x_credentials: decoded.x_credentials,
         name: decoded.name,
         preferred_username: decoded.preferred_username,
         given_name: decoded.given_name,
@@ -587,7 +537,6 @@ export const createUserSessionFromToken = (accessToken: string) => {
       // Include token metadata for operations like cookie expiry
       decoded: {
         exp: decoded.exp,
-        x_credentials: decoded.x_credentials,
       },
     };
   } catch (e) {

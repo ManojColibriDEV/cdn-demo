@@ -329,12 +329,16 @@ describe("checkTokenAndRedirect", () => {
     expect(checkTokenAndRedirect()).toBe(false);
   });
 
-  it("returns false when remember me flag is set, token exists, but no x_credential cookie", () => {
+  it("returns true when remember me flag is set and token is valid", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
-    // No X-Credential cookie
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
 
-    expect(checkTokenAndRedirect()).toBe(false);
+    vi.mocked(jwtDecode).mockReturnValue({
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+
+    expect(checkTokenAndRedirect()).toBe(true);
   });
 
   it("returns false when token is expired via access_token_expires check", () => {
@@ -570,8 +574,6 @@ describe("clearAuthTokens", () => {
 
   it("clears all auth cookies", () => {
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access-token-value");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL_OLD, "old-xcred-value");
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token-value");
 
     clearAuthTokens();
@@ -581,8 +583,6 @@ describe("clearAuthTokens", () => {
     // The cookies are cleared (value set to empty / expired)
     // Note: jsdom removes expired cookies so they won't appear in document.cookie
     expect(cookieString).not.toContain("access-token-value");
-    expect(cookieString).not.toContain("xcred-value");
-    expect(cookieString).not.toContain("old-xcred-value");
     expect(cookieString).not.toContain("refresh-token-value");
   });
 });
@@ -724,11 +724,9 @@ describe("createUserSessionFromToken", () => {
     expect(session!.userInfo.preferred_username).toBe("jane.doe@example.com");
     expect(session!.userInfo.email_verified).toBe(true);
     expect(session!.userInfo.studentId).toBe("student-123");
-    expect(session!.userInfo.x_credentials).toBe("xcred-abc");
 
     // decoded metadata
     expect(session!.decoded.exp).toBe(FUTURE_EXP);
-    expect(session!.decoded.x_credentials).toBe("xcred-abc");
   });
 
   it("returns null when jwtDecode throws (invalid token)", () => {

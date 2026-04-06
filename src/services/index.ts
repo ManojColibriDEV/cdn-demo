@@ -185,14 +185,7 @@ export const authLogin = async (username: string, password: string): Promise<any
       headers: await getBrandHeaders(),
     });
 
-    // Check if x-credential is in response headers
-    const xCredentialFromHeader =
-      response.headers["x-credential"] || response.headers["X-Credential"];
-
-    return {
-      ...response.data,
-      x_credential: xCredentialFromHeader || response.data.x_credential,
-    };
+    return response.data;
   } catch (error: any) {
     console.error("Error during auth login:", error);
 
@@ -351,10 +344,7 @@ export const authGoogle = async (code: string): Promise<any> => {
         headers: await getBrandHeaders(),
       }
     );
-    return {
-      ...response.data,
-      x_credential: response.data.x_credential,
-    };
+    return response.data;
   } catch (error: any) {
     console.error("Error during Google auth:", error);
     if (error.response?.data?.error) {
@@ -381,13 +371,7 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
       headers: await getBrandHeaders(),
     });
 
-    const xCredentialFromHeader =
-      response.headers["x-credential"] || response.headers["X-Credential"];
-
-    return {
-      ...response.data,
-      x_credential: xCredentialFromHeader || response.data.x_credential,
-    };
+    return response.data;
   } catch (error) {
     console.error("Error during token refresh:", error);
     throw error;
