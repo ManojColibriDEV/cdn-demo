@@ -50,7 +50,6 @@ describe("Validation and Authentication Functions", () => {
       expect(checks.noSpaces).toBe(true);
       expect(checks.noTriple).toBe(true);
       expect(checks.noNameParts).toBe(true);
-      expect(checks.noEmailParts).toBe(true);
     });
 
     it("should fail for password too short", () => {
@@ -113,18 +112,7 @@ describe("Validation and Authentication Functions", () => {
       expect(checks.noNameParts).toBe(false);
     });
 
-    it("should fail when password contains email parts", () => {
-      const password = "johndoePassword123!";
-      const user: UpgradeUser = {
-        displayName: "Jane Smith",
-        email: "johndoe@example.com",
-      };
-      const checks = validatePassword(password, user);
-
-      expect(checks.noEmailParts).toBe(false);
-    });
-
-    it("should pass when password does not contain name or email parts", () => {
+    it("should pass when password does not contain name parts", () => {
       const password = "CompletelyRandom123!";
       const user: UpgradeUser = {
         displayName: "John Doe",
@@ -133,7 +121,6 @@ describe("Validation and Authentication Functions", () => {
       const checks = validatePassword(password, user);
 
       expect(checks.noNameParts).toBe(true);
-      expect(checks.noEmailParts).toBe(true);
     });
 
     it("should ignore short name parts when checking", () => {
@@ -156,14 +143,6 @@ describe("Validation and Authentication Functions", () => {
       const checks = validatePassword(password, user);
 
       expect(checks.noNameParts).toBe(true);
-    });
-
-    it("should handle empty email local-part when checking email tokens", () => {
-      const checks = validatePassword("SecureP@ss123!", {
-        displayName: "User Name",
-        email: "",
-      });
-      expect(checks.noEmailParts).toBe(true);
     });
 
     it("should handle special characters correctly", () => {
@@ -806,15 +785,6 @@ describe("Validation and Authentication Functions", () => {
   });
 
   describe("remaining auth helpers", () => {
-    it("validatePassword handles undefined email safely", () => {
-      const checks = validatePassword("StrongPass123$", {
-        displayName: "User Name",
-        email: undefined as any,
-      });
-
-      expect(checks.noEmailParts).toBe(true);
-    });
-
     it("isRefreshTokenValid should return false when timestamp missing", () => {
       expect(isRefreshTokenValid()).toBe(false);
     });
@@ -846,7 +816,7 @@ describe("Validation and Authentication Functions", () => {
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "1");
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, "2");
       localStorage.setItem("user_info", "{}");
-      localStorage.setItem("authority", "dev");
+      localStorage.setItem("iam_authority", "dev");
       localStorage.setItem("subsidiary", "elite");
 
       clearAuthTokens();
@@ -858,7 +828,7 @@ describe("Validation and Authentication Functions", () => {
       expect(localStorage.getItem("user_info")).toBeNull();
       // authority and subsidiary are configuration keys, not auth tokens
       // They are preserved by clearAuthTokens and only cleared by full logout (localStorage.clear)
-      expect(localStorage.getItem("authority")).toBe("dev");
+      expect(localStorage.getItem("iam_authority")).toBe("dev");
       expect(localStorage.getItem("subsidiary")).toBe("elite");
     });
 

@@ -150,7 +150,7 @@ const App = (props: AppProps) => {
   }, [props.redirectUrl, onTokenValidityCheck]);
 
   useEffect(() => {
-    authority && localStorage.setItem("authority", authority);
+    authority && localStorage.setItem("iam_authority", authority);
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
