@@ -168,11 +168,10 @@ describe("refreshAuthenticationState", () => {
     expect(result).toBe(false);
   });
 
-  it("returns true on success and stores cookies/localStorage, uses x_credential from response", async () => {
+  it("returns true on success and stores tokens in cookies/localStorage", async () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
-      x_credential: "x-cred-value",
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP, sub: "u1" } as any);
 
@@ -189,7 +188,6 @@ describe("refreshAuthenticationState", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "9999");
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
-      x_credential: "x-cred-value",
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -207,7 +205,6 @@ describe("refreshAuthenticationState", () => {
     // no REFRESH_TOKEN_TIME set
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
-      x_credential: "x-cred-value",
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -220,7 +217,6 @@ describe("refreshAuthenticationState", () => {
     // Make sure there is no stored token
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token" },
-      x_credential: "x-cred-value",
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -285,6 +281,7 @@ describe("silentTokenRefresh", () => {
     await silentTokenRefresh();
 
     expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 3 * 60 * 1000);
+    setIntervalSpy.mockRestore();
   });
 
   it("timer fires and calls refreshAuthenticationState when session needs recovery", async () => {
@@ -297,12 +294,10 @@ describe("silentTokenRefresh", () => {
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // isRefreshTokenUsable check
       // Inside interval callback
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // isRefreshTokenUsable for currentRefreshToken
-      .mockReturnValueOnce({ exp: PAST_EXP } as any) // isJwtExpired for xCredCookie (no cookie → undefined path)
       .mockReturnValueOnce({ exp: PAST_EXP } as any); // isJwtExpired for accessToken → triggers refresh
 
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token" },
-      x_credential: "xcred",
     });
 
     await silentTokenRefresh();
@@ -334,7 +329,7 @@ describe("checkTokenAndRedirect", () => {
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
 
-    vi.mocked(jwtDecode).mockReturnValue({
+    vi.mocked(jwtDecode).mockReturnValueOnce({
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
 
@@ -348,7 +343,6 @@ describe("checkTokenAndRedirect", () => {
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
       (Date.now() - 1000).toString() // already expired
     );
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     expect(checkTokenAndRedirect()).toBe(false);
   });
@@ -356,7 +350,6 @@ describe("checkTokenAndRedirect", () => {
   it("returns false when JWT decode fails", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "bad.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockImplementation(() => {
       throw new Error("decode error");
@@ -368,7 +361,6 @@ describe("checkTokenAndRedirect", () => {
   it("returns false when decoded token is expired", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "expired.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
@@ -378,7 +370,6 @@ describe("checkTokenAndRedirect", () => {
   it("redirects and returns true when token is valid and redirectUrl is provided", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -394,7 +385,6 @@ describe("checkTokenAndRedirect", () => {
 
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -409,7 +399,6 @@ describe("checkTokenAndRedirect", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "localStorage.access.token");
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "cookie.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -426,7 +415,6 @@ describe("checkTokenAndRedirectWithRefresh", () => {
   it("returns true immediately when checkTokenAndRedirect succeeds (valid token)", async () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -453,7 +441,7 @@ describe("checkTokenAndRedirectWithRefresh", () => {
   it("returns false when refresh token is expired/unusable", async () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "expired.refresh.token");
-    // No access token or x-cred → checkTokenAndRedirect fails
+    // No access token → checkTokenAndRedirect fails
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
     const result = await checkTokenAndRedirectWithRefresh();
@@ -464,19 +452,17 @@ describe("checkTokenAndRedirectWithRefresh", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "valid.refresh.token");
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "xcred-value");
 
     // checkTokenAndRedirect fails (no remember me tokens in a way that passes… actually
     // remember me IS set above). Let us make checkTokenAndRedirect fail by having jwtDecode
     // return expired on first call then valid for the usability check.
     // Easiest: make the ACCESS_TOKEN_EXPIRES already expired so checkTokenAndRedirect returns false,
-    // but then x_cred and access_token themselves are "not expired" so refresh is skipped.
+    // but then access_token itself is "not expired" so refresh is skipped.
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() - 1000).toString());
 
     // isRefreshTokenUsable (for the stored refresh token): not expired
-    // isJwtExpired(xCredCookie): valid (not expired) → isXCredExpired = false
     // isJwtExpired(accessToken): valid (not expired) → isAccessExpired = false
-    // → both valid → no refresh needed → return false
+    // → token valid → no refresh needed → return false
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     const result = await checkTokenAndRedirectWithRefresh();
@@ -485,31 +471,28 @@ describe("checkTokenAndRedirectWithRefresh", () => {
 
   it("calls checkTokenAndRedirect again after a successful refresh", async () => {
     // Setup: remember me is enabled, refresh token is valid, but current access token
-    // and x-credential are both expired — this causes checkTokenAndRedirect to fail on
-    // entry and forces the refresh path.
+    // is expired — this causes checkTokenAndRedirect to fail on entry and forces the refresh path.
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "valid.refresh.token");
     // No access_token_expires so the expiresAt check is skipped inside checkTokenAndRedirect.
     // Access token exists in localStorage but its JWT is expired → checkTokenAndRedirect returns false.
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "old.access.token");
-    setRawCookie(COOKIE_NAMES.X_CREDENTIAL, "old-xcred-value");
 
     // jwtDecode call order:
     // 1. checkTokenAndRedirect: decode access_token → expired → return false
     // 2. isRefreshTokenUsable(refreshToken): decode refresh_token → valid
-    // 3. isJwtExpired(xCredCookie): decode x-cred → expired → isXCredExpired = true → triggers refresh
+    // 3. isJwtExpired(accessToken): decode access_token → expired → triggers refresh
     // 4. refreshAuthenticationState → createUserSessionFromToken: decode new access_token → valid
     // 5. final checkTokenAndRedirect: decode new access_token → valid → return true
     vi.mocked(jwtDecode)
       .mockReturnValueOnce({ exp: PAST_EXP } as any) // 1. checkTokenAndRedirect: expired
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // 2. isRefreshTokenUsable: valid
-      .mockReturnValueOnce({ exp: PAST_EXP } as any) // 3. isJwtExpired(xCred): expired
+      .mockReturnValueOnce({ exp: PAST_EXP } as any) // 3. isJwtExpired(accessToken): expired
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // 4. createUserSessionFromToken
       .mockReturnValueOnce({ exp: FUTURE_EXP } as any); // 5. final checkTokenAndRedirect
 
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
-      x_credential: "new-xcred-value",
     });
 
     const result = await checkTokenAndRedirectWithRefresh();
@@ -594,7 +577,6 @@ describe("clearAuthTokens", () => {
 describe("handleAuthentication", () => {
   const ACCESS_TOKEN = "access.token.jwt";
   const REFRESH_TOKEN_VAL = "refresh.token.jwt";
-  const X_CREDENTIAL = "x-credential-value";
 
   beforeEach(() => {
     vi.mocked(authLogin).mockResolvedValue({
@@ -602,7 +584,6 @@ describe("handleAuthentication", () => {
         access_token: ACCESS_TOKEN,
         refresh_token: REFRESH_TOKEN_VAL,
       },
-      x_credential: X_CREDENTIAL,
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP, sub: "user-1" } as any);
   });
@@ -670,24 +651,6 @@ describe("handleAuthentication", () => {
       "Invalid credentials"
     );
   });
-
-  it("uses x_credentials from decoded JWT when response has no x_credential", async () => {
-    vi.mocked(authLogin).mockResolvedValue({
-      tokens: {
-        access_token: ACCESS_TOKEN,
-        refresh_token: REFRESH_TOKEN_VAL,
-      },
-      x_credential: undefined,
-    });
-    vi.mocked(jwtDecode).mockReturnValue({
-      exp: FUTURE_EXP,
-      x_credentials: "decoded-xcred",
-    } as any);
-
-    const tokens = await handleAuthentication("user@example.com", "password123", true);
-    // The function should complete successfully and return tokens
-    expect(tokens.access_token).toBe(ACCESS_TOKEN);
-  });
 });
 
 // ===========================================================================
@@ -706,7 +669,6 @@ describe("createUserSessionFromToken", () => {
       preferred_username: "jane.doe@example.com",
       email_verified: true,
       studentId: "student-123",
-      x_credentials: "xcred-abc",
     };
     vi.mocked(jwtDecode).mockReturnValue(mockDecoded as any);
 
@@ -761,7 +723,6 @@ describe("createUserSessionFromToken", () => {
 describe("handleGoogleAuthentication", () => {
   const GOOGLE_ACCESS_TOKEN = "google.access.token.jwt";
   const GOOGLE_REFRESH_TOKEN = "google.refresh.token.jwt";
-  const GOOGLE_X_CREDENTIAL = "google-x-cred-value";
 
   beforeEach(() => {
     vi.mocked(authGoogle).mockResolvedValue({
@@ -769,7 +730,6 @@ describe("handleGoogleAuthentication", () => {
         access_token: GOOGLE_ACCESS_TOKEN,
         refresh_token: GOOGLE_REFRESH_TOKEN,
       },
-      x_credential: GOOGLE_X_CREDENTIAL,
     });
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP, sub: "google-user" } as any);
   });
@@ -836,30 +796,12 @@ describe("handleGoogleAuthentication", () => {
     await expect(handleGoogleAuthentication("bad-code")).rejects.toThrow("Google auth failed");
   });
 
-  it("uses x_credentials from decoded JWT when response has no x_credential", async () => {
-    vi.mocked(authGoogle).mockResolvedValue({
-      tokens: {
-        access_token: GOOGLE_ACCESS_TOKEN,
-        refresh_token: GOOGLE_REFRESH_TOKEN,
-      },
-      x_credential: undefined,
-    });
-    vi.mocked(jwtDecode).mockReturnValue({
-      exp: FUTURE_EXP,
-      x_credentials: "decoded-google-xcred",
-    } as any);
-
-    const tokens = await handleGoogleAuthentication("google-code-123", true);
-    expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
-  });
-
   it("skips token storage when access_token is missing from response", async () => {
     vi.mocked(authGoogle).mockResolvedValue({
       tokens: {
         access_token: "",
         refresh_token: GOOGLE_REFRESH_TOKEN,
       },
-      x_credential: GOOGLE_X_CREDENTIAL,
     });
 
     const tokens = await handleGoogleAuthentication("google-code-123");

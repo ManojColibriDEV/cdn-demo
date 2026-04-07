@@ -419,7 +419,6 @@ describe("Validation and Authentication Functions", () => {
         if (token === "access-new-2") {
           return {
             exp: Math.floor(Date.now() / 1000) + 3600,
-            x_credentials: "x-cred-jwt",
           };
         }
         return { exp: Math.floor(Date.now() / 1000) + 3600 };
@@ -442,7 +441,6 @@ describe("Validation and Authentication Functions", () => {
         if (token === "access-no-rotate") {
           return {
             exp: Math.floor(Date.now() / 1000) + 3600,
-            x_credentials: "x-cred-jwt",
           };
         }
         return { exp: Math.floor(Date.now() / 1000) + 3600 };
@@ -543,7 +541,7 @@ describe("Validation and Authentication Functions", () => {
       await expect(silentTokenRefresh()).resolves.toBe(true);
     });
 
-    it("silentTokenRefresh does not call refresh when access and x-credential are still valid", async () => {
+    it("silentTokenRefresh does not call refresh when tokens are still valid", async () => {
       vi.useFakeTimers();
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
       document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=access-valid; path=/`;
@@ -793,12 +791,10 @@ describe("Validation and Authentication Functions", () => {
           access_token: "access-token",
           refresh_token: "refresh-token",
         },
-        x_credential: "x-credential-header",
       });
 
       vi.mocked(jwtDecode).mockReturnValue({
         exp: Math.floor(Date.now() / 1000) + 3600,
-        x_credentials: "x-credential-jwt",
       });
 
       const tokens = await handleAuthentication("user@example.com", "Password123$", true);
@@ -822,7 +818,6 @@ describe("Validation and Authentication Functions", () => {
 
       vi.mocked(jwtDecode).mockReturnValue({
         exp: Math.floor(Date.now() / 1000) + 3600,
-        x_credentials: "x-credential-jwt",
       });
 
       await handleAuthentication("user@example.com", "Password123$", false);
@@ -830,7 +825,7 @@ describe("Validation and Authentication Functions", () => {
       expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
     });
 
-    it("handleAuthentication should continue when x_credential is missing", async () => {
+    it("handleAuthentication should continue when auth response is minimal", async () => {
       vi.spyOn(serviceModule, "authLogin").mockResolvedValue({
         tokens: {
           access_token: "access-token-3",
@@ -869,9 +864,7 @@ describe("Validation and Authentication Functions", () => {
         },
       });
 
-      vi.mocked(jwtDecode).mockReturnValue({
-        x_credentials: "xcred-no-exp",
-      } as any);
+      vi.mocked(jwtDecode).mockReturnValue({} as any);
 
       await expect(
         handleAuthentication("user@example.com", "Password123$", false)
@@ -893,7 +886,6 @@ describe("Validation and Authentication Functions", () => {
         studentId: "s1",
         sub: "sub1",
         email_verified: true,
-        x_credentials: "x1",
         name: "Test User",
         preferred_username: "testuser",
         given_name: "Test",
