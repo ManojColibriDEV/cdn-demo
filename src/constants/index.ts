@@ -96,8 +96,6 @@ export const STORAGE_KEYS = {
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "access_token",
   REFRESH_TOKEN: "refresh_token",
-  X_CREDENTIAL: "X-Credential",
-  X_CREDENTIAL_OLD: "x_credential", // Legacy cookie name for cleanup
 } as const;
 
 /**

@@ -372,7 +372,7 @@ if (renderMode === "TEST") {
 
       // Dispatch token validity status event with boolean detail
       const event = new CustomEvent("is-token-valid", {
-        detail: isTokenValid,
+        detail: { isValid: isTokenValid },
         bubbles: true,
         composed: true,
       });
