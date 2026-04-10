@@ -38,12 +38,41 @@ export class ThemeWidget {
   }
 
   /**
-   * Auto-detect brand based on current URL domain
+   * Auto-detect brand based on current URL domain.
+   * On localhost (any port), checks localStorage keys bloom-theme-brand and
+   * clx_brand_folder first so local development can override the brand without
+   * a matching domain.
    */
   async detectBrandFromDomain(): Promise<string | null> {
     try {
-      const brands = await this.getBrands();
       const currentDomain = window.location.hostname;
+      const isLocalhost =
+        currentDomain === "localhost" ||
+        currentDomain === "127.0.0.1" ||
+        /^\d+\.\d+\.\d+\.\d+$/.test(currentDomain);
+
+      if (isLocalhost) {
+        const stripQuotes = (val: string) => val.replace(/^["']+|["']+$/g, "").trim();
+
+        const bloomBrand = localStorage.getItem("bloom-theme-brand");
+        const clxBrand = localStorage.getItem("clx_brand_folder");
+        const localBrand = bloomBrand ?? clxBrand;
+
+        if (localBrand) {
+          const identifier = stripQuotes(localBrand);
+          if (identifier) {
+            console.log(
+              `[ThemeWidget] localhost: using localStorage brand override "${identifier}"`
+            );
+            return identifier;
+          }
+        }
+
+        console.log("[ThemeWidget] localhost: no brand override found in localStorage");
+        return null;
+      }
+
+      const brands = await this.getBrands();
 
       // Find brand by matching domain
       const brand = brands.find(
