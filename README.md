@@ -1,6 +1,6 @@
 ﻿# Colibri Identity Widget
 
-_Pipeline trigger noop: 2026-04-13_
+_Pipeline trigger noop: 2026-04-14 test trigger_
 
 A reusable authentication widget for Colibri Identity platform. Available as both NPM package and CDN script.
 
