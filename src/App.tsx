@@ -10,7 +10,12 @@ import {
   createUserSessionFromToken,
   silentTokenRefresh,
 } from "./functions";
-import { setAuthorityOverride, clearAuthorityOverride } from "./services";
+import {
+  setAuthorityOverride,
+  clearAuthorityOverride,
+  fetchEnrollments,
+  fetchCheckout,
+} from "./services";
 import type { AppProps } from "./types";
 import { STORAGE_KEYS, LOG_PREFIX } from "./constants";
 
@@ -41,6 +46,64 @@ const App = (props: AppProps) => {
       clearAuthorityOverride();
     };
   }, [authority]);
+
+  // Helper function to determine redirect URL based on enrollments and checkout
+  const determineRedirectUrl = async (): Promise<string> => {
+    try {
+      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      if (!accessToken) {
+        console.error(`${LOG_PREFIX.AUTH} No access token found for redirect determination`);
+        return props.redirectUrl || getDefaultRedirectUrl();
+      }
+
+      // Fetch both enrollments and checkout in parallel, waiting for both to complete
+      const [enrollmentsResult, checkoutResult] = await Promise.allSettled([
+        fetchEnrollments(accessToken),
+        fetchCheckout(accessToken),
+      ]);
+
+      // Extract results from promises
+      let enrollmentsCount = 0;
+      let checkoutCount = 0;
+
+      if (enrollmentsResult.status === "fulfilled") {
+        enrollmentsCount =
+          enrollmentsResult.value?.results || enrollmentsResult.value?.items?.length || 0;
+        console.log(`${LOG_PREFIX.AUTH} Enrollments found: ${enrollmentsCount}`);
+      } else {
+        console.warn(`${LOG_PREFIX.AUTH} Enrollments fetch failed:`, enrollmentsResult.reason);
+      }
+
+      if (checkoutResult.status === "fulfilled") {
+        checkoutCount = checkoutResult.value?.results || checkoutResult.value?.items?.length || 0;
+        console.log(`${LOG_PREFIX.AUTH} Checkout found: ${checkoutCount}`);
+      } else {
+        console.warn(`${LOG_PREFIX.AUTH} Checkout fetch failed:`, checkoutResult.reason);
+      }
+
+      // Apply redirect rules
+      // If checkout.results > 0 and enrollments.results > 0 → redirect to redirectCheckoutUrl
+      // If checkout.results > 0 and enrollments.results === 0 → redirect to redirectCheckoutUrl
+      // If checkout.results === 0 and enrollments.results > 0 → redirect to redirectDashboardUrl
+      if (checkoutCount > 0) {
+        if (props.redirectCheckoutUrl) {
+          console.log(`${LOG_PREFIX.AUTH} Redirecting to checkout: ${props.redirectCheckoutUrl}`);
+          return props.redirectCheckoutUrl;
+        }
+      } else if (enrollmentsCount > 0) {
+        if (props.redirectDashboardUrl) {
+          console.log(`${LOG_PREFIX.AUTH} Redirecting to dashboard: ${props.redirectDashboardUrl}`);
+          return props.redirectDashboardUrl;
+        }
+      }
+
+      // Fallback to default redirect URL
+      return props.redirectUrl || getDefaultRedirectUrl();
+    } catch (error) {
+      console.error(`${LOG_PREFIX.AUTH} Error determining redirect URL:`, error);
+      return props.redirectUrl || getDefaultRedirectUrl();
+    }
+  };
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -74,14 +137,15 @@ const App = (props: AppProps) => {
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
-          // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
-          const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+
+          // Use determineRedirectUrl to get the appropriate target URL based on API responses
+          const targetUrl = await determineRedirectUrl();
+
           if (props.autoRedirection) {
             window.location.href = targetUrl;
           } else {
             // If auto-redirect is disabled, trigger onRedirect callback only
             if (onRedirect && props.redirectUrl) {
-              const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
               // Try to get user session from stored data
               const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
               if (accessToken) {
@@ -117,8 +181,9 @@ const App = (props: AppProps) => {
               onTokenValidityCheck(true);
             }
 
-            // Trigger onRedirect callback with userSession from decoded token
-            const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+            // Use determineRedirectUrl to get the appropriate target URL based on API responses
+            const targetUrl = await determineRedirectUrl();
+
             if (onRedirect) {
               console.log(
                 `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
@@ -147,7 +212,12 @@ const App = (props: AppProps) => {
     };
 
     attemptAutoLogin();
-  }, [props.redirectUrl, onTokenValidityCheck]);
+  }, [
+    props.redirectUrl,
+    props.redirectDashboardUrl,
+    props.redirectCheckoutUrl,
+    onTokenValidityCheck,
+  ]);
 
   useEffect(() => {
     authority && localStorage.setItem("iam_authority", authority);
@@ -162,23 +232,25 @@ const App = (props: AppProps) => {
     // Mark user as authenticated
     setIsAuthenticated(true);
 
-    const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-    if (onRedirect) {
-      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      if (accessToken) {
-        const userSession = createUserSessionFromToken(accessToken);
-        if (userSession) {
-          onRedirect(targetUrl, userSession);
+    // Determine the target URL asynchronously
+    void determineRedirectUrl().then((targetUrl) => {
+      if (onRedirect) {
+        const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        if (accessToken) {
+          const userSession = createUserSessionFromToken(accessToken);
+          if (userSession) {
+            onRedirect(targetUrl, userSession);
+          }
         }
       }
-    }
 
-    if (props.autoRedirection) {
-      setTimeout(() => {
-        // Redirect without URL parameters - credentials stored in cookies only
-        window.location.href = targetUrl;
-      }, 100);
-    }
+      if (props.autoRedirection) {
+        setTimeout(() => {
+          // Redirect without URL parameters - credentials stored in cookies only
+          window.location.href = targetUrl;
+        }, 100);
+      }
+    });
   };
 
   const handleEmbeddedLoginError = (error: string) => {

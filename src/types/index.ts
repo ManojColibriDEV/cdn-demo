@@ -62,6 +62,8 @@ export interface AppProps {
   authority?: string;
   subsidiary?: string;
   redirectUrl?: string;
+  redirectDashboardUrl?: string;
+  redirectCheckoutUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
   onTokenValidityCheck?: (isTokenValid: boolean) => void;
   loginTitle?: string;
@@ -138,6 +140,17 @@ export interface AuthenticationTokens {
 
 export interface CheckEmailResponse {
   exists: boolean;
+}
+
+// Enrollment and Checkout API Response Types
+export interface EnrollmentResponse {
+  items: any[];
+  results?: number;
+}
+
+export interface CheckoutResponse {
+  items: any[];
+  results?: number;
 }
 
 // ============================================================================

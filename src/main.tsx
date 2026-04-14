@@ -84,6 +84,8 @@ if (renderMode === "TEST") {
             onTokenValidityCheck={(isTokenValid) => {
               console.log(`[main.tsx] Token valid: ${isTokenValid}`);
             }}
+            redirectDashboardUrl="https://dashboard.example.com"
+            redirectCheckoutUrl="https://checkout.example.com"
           />
         </StrictMode>
       </BrowserRouter>
@@ -102,6 +104,10 @@ if (renderMode === "TEST") {
         "authority",
         "subsidiary",
         "redirectUrl",
+        "redirect-dashboard-url",
+        "redirectDashboardUrl",
+        "redirect-checkout-url",
+        "redirectCheckoutUrl",
         "loginTitle",
         "loginSubtitle",
         "show-login",
@@ -395,6 +401,14 @@ if (renderMode === "TEST") {
         subsidiary: this.getAttribute("subsidiary") || undefined,
         redirectUrl:
           this.getAttribute("redirect-url") || this.getAttribute("redirectUrl") || undefined,
+        redirectDashboardUrl:
+          this.getAttribute("redirect-dashboard-url") ||
+          this.getAttribute("redirectDashboardUrl") ||
+          undefined,
+        redirectCheckoutUrl:
+          this.getAttribute("redirect-checkout-url") ||
+          this.getAttribute("redirectCheckoutUrl") ||
+          undefined,
         loginTitle:
           this.getAttribute("login-title") || this.getAttribute("loginTitle") || undefined,
         loginSubtitle:

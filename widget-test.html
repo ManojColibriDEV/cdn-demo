@@ -83,7 +83,7 @@
     Example 1: No auto-redirection (default behavior)
     User will need to handle redirect event manually
   -->
-    <keycloak-widget id="auth-embedded" subsidiary="western" authority="test" autoRedirection="false"> </keycloak-widget>
+    <keycloak-widget id="auth-embedded" subsidiary="western" authority="dev" autoRedirection="false"> </keycloak-widget>
 
     <!-- 
     Example 2: With auto-redirection enabled
@@ -95,7 +95,7 @@
     </keycloak-widget>
   -->
 
-    <script src="./dist/keycloak-widget.umd.js"></script>
+    <script src="https://stage-iam-widget.colibrilearning.com/keycloak-widget.umd.js"></script>
 
     <script>
       const widget = document.getElementById("auth-embedded");

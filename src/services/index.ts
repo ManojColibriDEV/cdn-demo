@@ -1,5 +1,11 @@
 import axios from "axios";
-import type { CheckEmailResponse, RegisterRequest, RegisterResponse } from "../types/index";
+import type {
+  CheckEmailResponse,
+  RegisterRequest,
+  RegisterResponse,
+  EnrollmentResponse,
+  CheckoutResponse,
+} from "../types/index";
 import {
   API_ENDPOINTS,
   HTTP_STATUS,
@@ -405,5 +411,82 @@ export const authLogout = async (refreshToken: string): Promise<any> => {
     }
 
     throw new Error("Logout failed");
+  }
+};
+
+/**
+ * Learner API - Fetch user enrollments
+ * @param accessToken Bearer token for Authorization header
+ */
+export const fetchEnrollments = async (accessToken: string): Promise<EnrollmentResponse> => {
+  const url = apiUrl("/learner/enrollments");
+  const params = {
+    includeCertificates: true,
+    includeRules: true,
+    includeSchedules: true,
+    offset: 50,
+    limit: 50,
+    sort: true,
+  };
+
+  try {
+    const brandHeaders = await getBrandHeaders();
+    const response = await axios.get<EnrollmentResponse>(url, {
+      params,
+      headers: {
+        Accept: "text/plain",
+        "X-Host": brandHeaders[HTTP_HEADERS.X_BRAND_ID] || "westernschools",
+        "X-Refresh-Cache": "true",
+        "X-Test-Mode": "false",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      withCredentials: false,
+      validateStatus: () => true,
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching enrollments:", error);
+
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("Failed to fetch enrollments");
+  }
+};
+
+/**
+ * Checkout API - Fetch checkout data
+ * @param accessToken Bearer token for Authorization header
+ */
+export const fetchCheckout = async (accessToken: string): Promise<CheckoutResponse> => {
+  const url = apiUrl("/checkout");
+
+  try {
+    const response = await axios.get<CheckoutResponse>(url, {
+      headers: {
+        ...(await getBrandHeaders()),
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching checkout:", error);
+
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error("Failed to fetch checkout data");
   }
 };
