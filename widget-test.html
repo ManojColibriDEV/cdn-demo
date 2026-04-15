@@ -83,7 +83,7 @@
     Example 1: No auto-redirection (default behavior)
     User will need to handle redirect event manually
   -->
-    <keycloak-widget id="auth-embedded" autoRedirection="false"> </keycloak-widget>
+    <keycloak-widget id="auth-embedded" subsidiary="western" authority="test" autoRedirection="false"> </keycloak-widget>
 
     <!-- 
     Example 2: With auto-redirection enabled
@@ -106,14 +106,22 @@
       function applyPartStyleFallback() {
         if (!widget || !widget.shadowRoot) return;
 
-        const createAccountButton = widget.shadowRoot.querySelector(
+        const submitButton = widget.shadowRoot.querySelector(
           '[part~="identity-widget-submit-button"]'
         );
 
-        if (createAccountButton) {
-          createAccountButton.style.setProperty("background-color", "red", "important");
-          createAccountButton.style.setProperty("color", "black", "important");
+        if (submitButton) {
+          submitButton.style.setProperty("background-color", "red", "important");
+          submitButton.style.setProperty("color", "black", "important");
         }
+      }
+
+      // Watch the Shadow DOM for any DOM changes (React re-renders)
+      // so we re-apply styles whenever elements are created/replaced
+      function startShadowObserver() {
+        if (!widget || !widget.shadowRoot) return;
+        const shadowObserver = new MutationObserver(() => applyPartStyleFallback());
+        shadowObserver.observe(widget.shadowRoot, { childList: true, subtree: true });
       }
 
       // Function to open the login form using login() method
@@ -156,8 +164,8 @@
       loginBtn.addEventListener("click", openLoginForm);
       logoutBtn.addEventListener("click", triggerLogout);
 
-      const observer = new MutationObserver(() => applyPartStyleFallback());
-      observer.observe(widget, { attributes: true, attributeFilter: ["show-login"] });
+      // Start observing Shadow DOM so styles persist through React re-renders
+      startShadowObserver();
 
       // Listen for close event
       widget.addEventListener("close", function (e) {

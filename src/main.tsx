@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import React, { StrictMode } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { createRoot, Root } from "react-dom/client";
 import { GoogleOAuthProvider } from "@react-oauth/google";
@@ -10,10 +10,25 @@ import { authLogout } from "./services";
 import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
 import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
 
+const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || "";
+
 const renderMode = (import.meta as any).env.VITE_RENDER_MODE;
-const GOOGLE_CLIENT_ID =
-  (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ||
-  "832956972051-o6rtl5uehltu7di3cmrvao44mdh54911.apps.googleusercontent.com";
+
+const APPLE_CLIENT_ID = (import.meta as any).env.VITE_APPLE_CLIENT_ID || "";
+
+// Only wrap with GoogleOAuthProvider when a client ID is available
+// Without this guard the provider throws on init and blocks widget render
+// eslint-disable-next-line react-refresh/only-export-components
+const WithGoogleProvider = ({
+  clientId,
+  children,
+}: {
+  clientId: string;
+  children: React.ReactNode;
+}) => {
+  if (!clientId) return <>{children}</>;
+  return <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>;
+};
 
 // Get widget styles from global (injected by vite plugin)
 // Following bloom-elements standard pattern
@@ -46,7 +61,7 @@ if (renderMode === "TEST") {
   }
 
   createThemeWidget({
-    brandFolder: "allied", // Match the subsidiary in TEST mode
+    brandFolder: "western", // Match the subsidiary in TEST mode
   })
     .then(() => {
       console.log("[main.tsx] Theme loaded in TEST mode");
@@ -56,21 +71,23 @@ if (renderMode === "TEST") {
     });
 
   createRoot(document.getElementById("root")!).render(
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+    <WithGoogleProvider clientId={GOOGLE_CLIENT_ID}>
       <BrowserRouter>
         <StrictMode>
           <App
-            subsidiary="allied"
+            subsidiary="western"
+            authority="test"
             showLogin={true}
             autoRedirection={false}
             googleClientId={GOOGLE_CLIENT_ID}
+            appleClientId={APPLE_CLIENT_ID}
             onTokenValidityCheck={(isTokenValid) => {
               console.log(`[main.tsx] Token valid: ${isTokenValid}`);
             }}
           />
         </StrictMode>
       </BrowserRouter>
-    </GoogleOAuthProvider>
+    </WithGoogleProvider>
   );
 } else {
   // Web Component mode for production deployment
@@ -78,6 +95,7 @@ if (renderMode === "TEST") {
   class KeycloakWidget extends HTMLElement {
     private root: Root | null = null;
     private isLogoutInProgress = false;
+    private logoutCounter = 0;
 
     static get observedAttributes() {
       return [
@@ -93,6 +111,11 @@ if (renderMode === "TEST") {
         "autoRedirection",
         "google-client-id",
         "googleClientId",
+        "apple-client-id",
+        "appleClientId",
+        "redirect-url",
+        "login-title",
+        "login-subtitle",
       ];
     }
 
@@ -255,9 +278,22 @@ if (renderMode === "TEST") {
         console.error("[Widget] Logout API call failed:", error);
       } finally {
         // Always clear local auth state, regardless of API response
+        // Preserve brand_data before clearing — it's set by the host and needed for login
+        const brandData = localStorage.getItem("brand_data");
         clearAuthTokens();
-        localStorage.clear();
         sessionStorage.clear();
+        if (brandData) {
+          localStorage.setItem("brand_data", brandData);
+        }
+
+        // Increment logoutCounter so React App resets isAuthenticated
+        this.logoutCounter++;
+
+        // Force React to see the counter change immediately.
+        // removeAttribute below may be a no-op if show-login was already absent
+        // (removed during handleClose on login success), so render() wouldn't
+        // be triggered by attributeChangedCallback.
+        this.render();
 
         // Close login form if open
         this.removeAttribute("show-login");
@@ -336,7 +372,7 @@ if (renderMode === "TEST") {
 
       // Dispatch token validity status event with boolean detail
       const event = new CustomEvent("is-token-valid", {
-        detail: isTokenValid,
+        detail: { isValid: isTokenValid },
         bubbles: true,
         composed: true,
       });
@@ -357,9 +393,12 @@ if (renderMode === "TEST") {
       return {
         authority: detectedAuthority,
         subsidiary: this.getAttribute("subsidiary") || undefined,
-        redirectUrl: this.getAttribute("redirectUrl") || undefined,
-        loginTitle: this.getAttribute("loginTitle") || undefined,
-        loginSubtitle: this.getAttribute("loginSubtitle") || undefined,
+        redirectUrl:
+          this.getAttribute("redirect-url") || this.getAttribute("redirectUrl") || undefined,
+        loginTitle:
+          this.getAttribute("login-title") || this.getAttribute("loginTitle") || undefined,
+        loginSubtitle:
+          this.getAttribute("login-subtitle") || this.getAttribute("loginSubtitle") || undefined,
         showLogin: this.getAttribute("show-login") === "true",
         customPrimaryColor:
           this.getAttribute("custom-primary-color") ||
@@ -370,9 +409,15 @@ if (renderMode === "TEST") {
           this.getAttribute("google-client-id") ||
           this.getAttribute("googleClientId") ||
           GOOGLE_CLIENT_ID,
+        appleClientId:
+          this.getAttribute("apple-client-id") ||
+          this.getAttribute("appleClientId") ||
+          APPLE_CLIENT_ID ||
+          undefined,
         onRedirect: this.handleRedirect,
         onTokenValidityCheck: this.handleTokenValidity,
         handleClose: this.handleClose,
+        logoutCounter: this.logoutCounter,
       };
     }
 
@@ -393,13 +438,13 @@ if (renderMode === "TEST") {
       const props = this.getProps();
 
       this.root.render(
-        <GoogleOAuthProvider clientId={props.googleClientId || GOOGLE_CLIENT_ID}>
+        <WithGoogleProvider clientId={props.googleClientId || GOOGLE_CLIENT_ID}>
           <BrowserRouter>
             <StrictMode>
               <App {...props} />
             </StrictMode>
           </BrowserRouter>
-        </GoogleOAuthProvider>
+        </WithGoogleProvider>
       );
     }
   }

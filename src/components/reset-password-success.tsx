@@ -7,6 +7,7 @@ import badgeCheckIcon from "../icons/badge-check.svg";
 const ResetPasswordSuccess = ({
   email,
   loading,
+  cooldown,
   onResendLink,
   onBack,
   onClose,
@@ -120,14 +121,29 @@ const ResetPasswordSuccess = ({
           </p>
         </div>
 
+        {/* Cooldown message */}
+        {cooldown > 0 && (
+          <p
+            part="identity-widget-reset-success-cooldown-message"
+            className="identity-widget-reset-success-cooldown-message text-sm! text-[var(--banner-error-text)]! text-center! mb-2!"
+            role="status"
+            aria-live="polite"
+          >
+            <b>
+              A password reset link has already been sent. Please wait {cooldown} seconds before
+              requesting another.
+            </b>
+          </p>
+        )}
+
         {/* Resend Link Button */}
         <Button
           type={ButtonType.BUTTON}
           onClick={onResendLink}
-          disabled={loading}
+          disabled={loading || cooldown > 0}
           ariaLabel="Resend password reset link"
           part="identity-widget-submit-button identity-widget-reset-success-resend-button"
-          className="identity-widget-submit-button identity-widget-reset-success-resend-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-[var(--button-primary-text)]! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0! mb-4!"
+          className="identity-widget-submit-button identity-widget-reset-success-resend-button w-full! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! m-0! mb-4!"
         >
           {loading ? (
             <span

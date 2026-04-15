@@ -22,17 +22,37 @@ export interface EmbeddedLoginFormProps {
   subtitle?: string;
   initialEmail?: string;
   enableGoogleLogin?: boolean;
+  enableAppleLogin?: boolean;
+  appleClientId?: string;
 }
 
 export interface ResetPasswordFormProps {
   email: string;
   onBack: () => void;
   handleClose: () => void;
+  onCreateAccount?: () => void;
 }
 
 export interface ResetPasswordSuccessProps {
   email: string;
   loading: boolean;
+  cooldown: number;
+  onResendLink: () => void;
+  onBack: () => void;
+  onClose: () => void;
+}
+
+export interface ForgotUsernameFormProps {
+  email: string;
+  onBack: () => void;
+  handleClose: () => void;
+  onCreateAccount?: () => void;
+}
+
+export interface ForgotUsernameSuccessProps {
+  email: string;
+  loading: boolean;
+  cooldown: number;
   onResendLink: () => void;
   onBack: () => void;
   onClose: () => void;
@@ -48,9 +68,11 @@ export interface AppProps {
   loginSubtitle?: string;
   showLogin?: boolean;
   handleClose?: () => void;
+  logoutCounter?: number;
   customPrimaryColor?: string;
   autoRedirection?: boolean;
   googleClientId?: string;
+  appleClientId?: string;
 }
 
 // ============================================================================
@@ -137,5 +159,4 @@ export interface PasswordChecks {
   noTriple: boolean;
   special: boolean;
   noNameParts: boolean;
-  noEmailParts: boolean;
 }

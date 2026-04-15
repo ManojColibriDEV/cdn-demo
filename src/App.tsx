@@ -17,6 +17,14 @@ import { STORAGE_KEYS, LOG_PREFIX } from "./constants";
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect, onTokenValidityCheck } = props;
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [prevLogoutCounter, setPrevLogoutCounter] = useState(props.logoutCounter ?? 0);
+
+  // React-recommended pattern for resetting state based on prop changes
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  if ((props.logoutCounter ?? 0) !== prevLogoutCounter) {
+    setPrevLogoutCounter(props.logoutCounter ?? 0);
+    setIsAuthenticated(false);
+  }
 
   // Set authority override when provided via props
   useEffect(() => {
@@ -142,7 +150,7 @@ const App = (props: AppProps) => {
   }, [props.redirectUrl, onTokenValidityCheck]);
 
   useEffect(() => {
-    authority && localStorage.setItem("authority", authority);
+    authority && localStorage.setItem("iam_authority", authority);
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
@@ -201,6 +209,8 @@ const App = (props: AppProps) => {
                   title={props.loginTitle}
                   subtitle={props.loginSubtitle}
                   enableGoogleLogin={Boolean(props.googleClientId)}
+                  enableAppleLogin={Boolean(props.appleClientId)}
+                  appleClientId={props.appleClientId}
                 />
               )}
             </Fragment>

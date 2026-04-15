@@ -31,9 +31,9 @@ const RENDER_MODE = (import.meta as any).env.VITE_RENDER_MODE || RenderMode.WEBC
  */
 export function setAuthorityOverride(authority: string | null): void {
   if (authority) {
-    localStorage.setItem(STORAGE_KEYS.AUTHORITY_OVERRIDE, authority);
+    localStorage.setItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE, authority);
   } else {
-    localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+    localStorage.removeItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
   }
 }
 
@@ -41,14 +41,14 @@ export function setAuthorityOverride(authority: string | null): void {
  * Get current authority override if set
  */
 export function getAuthorityOverride(): string | null {
-  return localStorage.getItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+  return localStorage.getItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
 }
 
 /**
  * Clear authority override
  */
 export function clearAuthorityOverride(): void {
-  localStorage.removeItem(STORAGE_KEYS.AUTHORITY_OVERRIDE);
+  localStorage.removeItem(STORAGE_KEYS.IAM_AUTHORITY_OVERRIDE);
 }
 
 /**
@@ -185,14 +185,7 @@ export const authLogin = async (username: string, password: string): Promise<any
       headers: await getBrandHeaders(),
     });
 
-    // Check if x-credential is in response headers
-    const xCredentialFromHeader =
-      response.headers["x-credential"] || response.headers["X-Credential"];
-
-    return {
-      ...response.data,
-      x_credential: xCredentialFromHeader || response.data.x_credential,
-    };
+    return response.data;
   } catch (error: any) {
     console.error("Error during auth login:", error);
 
@@ -310,6 +303,64 @@ export const forgotPassword = async (email: string): Promise<any> => {
 };
 
 /**
+ * Forgot Username API - Send username verification link to email
+ */
+export const forgotUsername = async (email: string): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.FORGOT_USERNAME);
+  const payload = { email };
+  try {
+    const response = await axios.post(url, payload, {
+      headers: await getBrandHeaders(),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Error sending username verification:", error);
+
+    // Extract error message from response
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.NOT_FOUND) {
+      throw new Error("We couldn't find an account with that email.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+
+    throw new Error(ERROR_MESSAGES.USERNAME_RECOVERY_FAILED);
+  }
+};
+
+/**
+ * Google Auth API - Exchange Google authorization code for Keycloak tokens
+ */
+export const authGoogle = async (code: string): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.GOOGLE_AUTH);
+  try {
+    const response = await axios.post(
+      url,
+      { code },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error during Google auth:", error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new Error("Google authentication failed. Please try again.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    throw new Error(ERROR_MESSAGES.AUTH_FAILED);
+  }
+};
+
+/**
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {
@@ -320,13 +371,7 @@ export const authRefresh = async (refreshToken: string): Promise<any> => {
       headers: await getBrandHeaders(),
     });
 
-    const xCredentialFromHeader =
-      response.headers["x-credential"] || response.headers["X-Credential"];
-
-    return {
-      ...response.data,
-      x_credential: xCredentialFromHeader || response.data.x_credential,
-    };
+    return response.data;
   } catch (error) {
     console.error("Error during token refresh:", error);
     throw error;

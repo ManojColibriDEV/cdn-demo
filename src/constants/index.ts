@@ -86,7 +86,8 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN_EXPIRES: "access_token_expires",
   REFRESH_TOKEN_TIME: "refresh_token_time",
   BRAND_DATA: "brand_data",
-  AUTHORITY_OVERRIDE: "authority_override",
+  IAM_AUTHORITY_OVERRIDE: "iam_authority_override",
+  THEME_LOADED: "theme_loaded",
 } as const;
 
 /**
@@ -95,8 +96,6 @@ export const STORAGE_KEYS = {
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "access_token",
   REFRESH_TOKEN: "refresh_token",
-  X_CREDENTIAL: "X-Credential",
-  X_CREDENTIAL_OLD: "x_credential", // Legacy cookie name for cleanup
 } as const;
 
 /**
@@ -115,9 +114,11 @@ export const HTTP_HEADERS = {
  */
 export const API_ENDPOINTS = {
   AUTH: "/api/auth",
+  GOOGLE_AUTH: "/api/auth/google",
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
   FORGOT_PASSWORD: "/api/forgot-password",
+  FORGOT_USERNAME: "/api/forgot-username",
   REFRESH_TOKEN: "/api/refresh",
   LOGOUT: "/api/logout",
   GLOBAL_SUBSIDIARIES: "/global/subsidiaries",
@@ -162,8 +163,8 @@ export const PASSWORD_REGEX = {
   UPPERCASE: /[A-Z]/,
   LOWERCASE: /[a-z]/,
   NUMBER: /[0-9]/,
-  SPECIAL_CHAR: /[@.$%^_\-]/,
-  ALLOWED_CHARS: /^[A-Za-z0-9@.$%^_\-]+$/,
+  SPECIAL_CHAR: /[!@#$%^&*._\-]/,
+  ALLOWED_CHARS: /^[A-Za-z0-9!@#$%^&*._\-]+$/,
   NO_SPACES: /\s/,
   NO_TRIPLE: /(.)\1\1/,
 } as const;
@@ -185,6 +186,7 @@ export const TIMING = {
   ANIMATION_ENTRANCE_DELAY: 10,
   ANIMATION_EXIT_DURATION: 300,
   TOKEN_REFRESH_MAX_AGE_DAYS: 7,
+  RESEND_COOLDOWN_SECONDS: 30,
 } as const;
 
 /**
@@ -287,6 +289,14 @@ export const ERROR_MESSAGES = {
   // Reset Password Errors
   RESET_LINK_FAILED: "Failed to send reset link. Please try again.",
 
+  // Forgot Username Errors
+  USERNAME_RECOVERY_FAILED: "Failed to send verification link. Please try again.",
+
+  // Brand Configuration Errors
+  BRAND_CONFIG_TITLE: "We're having trouble signing you in",
+  BRAND_CONFIG_MESSAGE:
+    "It looks like this sign-in form isn't set up correctly for this site. Please contact support if this issue persists.",
+
   // Generic Errors
   SOMETHING_WENT_WRONG: "Something went wrong. Please try again.",
 } as const;
@@ -297,6 +307,7 @@ export const ERROR_MESSAGES = {
 export const SUCCESS_MESSAGES = {
   REGISTRATION_SUCCESS: "Account created successfully!",
   RESET_LINK_SENT: "Password reset link sent successfully!",
+  USERNAME_VERIFICATION_SENT: "Username verification link sent successfully!",
   LOGIN_SUCCESS: "Login successful!",
 } as const;
 
@@ -321,10 +332,12 @@ export const LOG_PREFIX = {
   EMAIL_CHECK: "[EmailCheck]",
   REGISTRATION: "[Registration]",
   RESET_PASSWORD: "[ResetPassword]",
+  FORGOT_USERNAME: "[ForgotUsername]",
   EMBEDDED_LOGIN: "[EmbeddedLogin]",
   CREATE_ACCOUNT: "[CreateAccount]",
   COOKIE: "[Cookie]",
   CHECK_TOKEN_AND_REDIRECT: "[checkTokenAndRedirect]",
+  BRAND_CONFIG: "[BrandConfig]",
 } as const;
 
 // ==================== UI CONSTANTS ====================

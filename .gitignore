@@ -31,3 +31,9 @@ coverage/
 coverage-summary.json
 *.lcov
 .nyc_output/
+
+# Test run artefacts
+test-run-results.txt
+test-output.txt
+playwright-report/
+test-results/

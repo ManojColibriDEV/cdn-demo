@@ -11,8 +11,10 @@ import {
   authRegister,
   checkEmail,
   forgotPassword,
+  forgotUsername,
   authRefresh,
   authLogout,
+  authGoogle,
   fetchSubsidiaries,
   getBrandHeaders,
   setAuthorityOverride,
@@ -38,6 +40,10 @@ import {
   mockForgotPasswordSuccessResponse,
   mockForgotPasswordNotFoundResponse,
 } from "../mocks/mockPasswordResetResponses";
+import {
+  mockForgotUsernameSuccessResponse,
+  mockForgotUsernameNotFoundResponse,
+} from "../mocks/mockForgotUsernameResponses";
 import { mockSubsidiariesResponse, mockBrandData } from "../mocks/mockSubsidiaryResponses";
 
 describe("Authentication Service", () => {
@@ -100,20 +106,6 @@ describe("Authentication Service", () => {
       mockAxios.onPost(/\/api\/auth$/).networkError();
 
       await expect(authLogin("test@example.com", "password")).rejects.toThrow();
-    });
-
-    it("should prefer x-credential from response headers", async () => {
-      mockAxios.onPost(/\/api\/auth$/).reply(
-        200,
-        {
-          ...mockAuthLoginSuccessResponse,
-          x_credential: "body-value",
-        },
-        { "x-credential": "header-value" }
-      );
-
-      const response = await authLogin("john.doe@example.com", "SecureP@ss123!");
-      expect(response.x_credential).toBe("header-value");
     });
 
     it("should fall back to response message field on error", async () => {
@@ -332,6 +324,63 @@ describe("Authentication Service", () => {
     });
   });
 
+  describe("forgotUsername", () => {
+    it("should successfully send verification link", async () => {
+      const email = "user@example.com";
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(200, mockForgotUsernameSuccessResponse);
+
+      const response = await forgotUsername(email);
+
+      expect(response.success).toBe(true);
+      expect(response.message).toContain("verification link");
+    });
+
+    it("should handle user not found error", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(404, mockForgotUsernameNotFoundResponse);
+
+      await expect(forgotUsername("nonexistent@example.com")).rejects.toThrow("Not found");
+    });
+
+    it("should handle general errors", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(500, {
+        error: "Server error",
+      });
+
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+    });
+
+    it("should return not-found specific message when 404 has no error body", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(404, {});
+      await expect(forgotUsername("missing@example.com")).rejects.toThrow(
+        "We couldn't find an account with that email."
+      );
+    });
+
+    it("should handle response message field", async () => {
+      mockAxios
+        .onPost(/\/api\/forgot-username$/)
+        .reply(400, { message: "forgot username message" });
+      await expect(forgotUsername("test@example.com")).rejects.toThrow("forgot username message");
+    });
+
+    it("should handle generic fallback error", async () => {
+      mockAxios.onPost(/\/api\/forgot-username$/).reply(500, {});
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+    });
+
+    it("should hit recovery-failed fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(forgotUsername("test@example.com")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should use thrown error message when available", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("direct-username-error"));
+      await expect(forgotUsername("test@example.com")).rejects.toThrow("direct-username-error");
+      spy.mockRestore();
+    });
+  });
+
   describe("authRefresh", () => {
     it("should successfully refresh access token", async () => {
       const refreshToken = "valid-refresh-token";
@@ -424,6 +473,21 @@ describe("Authentication Service", () => {
       const subsidiaryId = await fetchSubsidiaries("test.com");
 
       expect(subsidiaryId).toBeUndefined();
+    });
+
+    it("should return undefined when subsidiary lookup throws", async () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const findSpy = vi.spyOn(mockGetSubsidariesResponse, "find").mockImplementation(() => {
+        throw new Error("find-failure");
+      });
+
+      const subsidiary = await fetchSubsidiaries("any-domain.com");
+
+      expect(subsidiary).toBeUndefined();
+      expect(errorSpy).toHaveBeenCalled();
+
+      findSpy.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 
@@ -528,6 +592,25 @@ describe("Authentication Service", () => {
       }
     });
 
+    it("uses relative API URLs in TEST mode", async () => {
+      vi.resetModules();
+      vi.stubEnv("VITE_RENDER_MODE", "TEST");
+
+      const axiosModule = await import("axios");
+      const localMock = new MockAdapter(axiosModule.default);
+      const svc = await import("../../services");
+
+      localMock.onPost(/\/api\/check-email$/).reply((config) => {
+        expect(config.url).toMatch(/\/api\/check-email$/);
+        return [200, { exists: true }];
+      });
+
+      const response = await svc.checkEmail("test-mode@example.com");
+      expect(response.exists).toBe(true);
+
+      localMock.restore();
+    });
+
     it("handles invalid authority override by falling back to hostname", async () => {
       vi.resetModules();
       vi.stubEnv("VITE_RENDER_MODE", "WEBCOMPONENT");
@@ -536,7 +619,7 @@ describe("Authentication Service", () => {
         writable: true,
       });
 
-      localStorage.setItem("authority_override", "not-valid");
+      localStorage.setItem("iam_authority_override", "not-valid");
 
       const axiosModule = await import("axios");
       const localMock = new MockAdapter(axiosModule.default);
@@ -550,7 +633,7 @@ describe("Authentication Service", () => {
       const response = await svc.checkEmail("fallback2@example.com");
       expect(response.exists).toBe(true);
       localMock.restore();
-      localStorage.removeItem("authority_override");
+      localStorage.removeItem("iam_authority_override");
     });
 
     it("uses valid authority override directly", async () => {
@@ -561,7 +644,7 @@ describe("Authentication Service", () => {
         writable: true,
       });
 
-      localStorage.setItem("authority_override", "dev");
+      localStorage.setItem("iam_authority_override", "dev");
 
       const axiosModule = await import("axios");
       const localMock = new MockAdapter(axiosModule.default);
@@ -575,7 +658,7 @@ describe("Authentication Service", () => {
       const response = await svc.checkEmail("override@example.com");
       expect(response.exists).toBe(true);
       localMock.restore();
-      localStorage.removeItem("authority_override");
+      localStorage.removeItem("iam_authority_override");
     });
 
     it("uses global API URL branch for /global paths", async () => {
@@ -597,6 +680,61 @@ describe("Authentication Service", () => {
 
       await svc.fetchSubsidiaries("none.example.com");
       localMock.restore();
+    });
+  });
+
+  describe("authGoogle", () => {
+    it("should successfully exchange Google authorization code for tokens", async () => {
+      const mockResponse = {
+        tokens: { access_token: "google-access", refresh_token: "google-refresh" },
+      };
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(200, mockResponse);
+
+      const response = await authGoogle("google-auth-code-123");
+
+      expect(response.tokens).toEqual(mockResponse.tokens);
+    });
+
+    it("should throw error field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(400, { error: "invalid_grant" });
+
+      await expect(authGoogle("bad-code")).rejects.toThrow("invalid_grant");
+    });
+
+    it("should throw message field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(400, { message: "Google code expired" });
+
+      await expect(authGoogle("expired-code")).rejects.toThrow("Google code expired");
+    });
+
+    it("should throw unauthorized error message for 401 status", async () => {
+      mockAxios.onPost(/\/api\/auth\/google$/).reply(401, {});
+
+      await expect(authGoogle("unauthorized-code")).rejects.toThrow(
+        "Google authentication failed. Please try again."
+      );
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("network-google-fail"));
+      await expect(authGoogle("network-code")).rejects.toThrow("network-google-fail");
+      spy.mockRestore();
+    });
+
+    it("should throw generic auth failed fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authGoogle("empty-error-code")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should include brand headers in request", async () => {
+      localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
+      mockAxios.onPost(/\/api\/auth\/google$/).reply((config) => {
+        expect(config.headers).toHaveProperty("X-Brand-Domain");
+        return [200, { tokens: { access_token: "t" } }];
+      });
+
+      await authGoogle("brand-code");
     });
   });
 });

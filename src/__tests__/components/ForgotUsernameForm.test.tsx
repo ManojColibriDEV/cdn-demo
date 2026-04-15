@@ -1,18 +1,18 @@
 /**
- * Component Tests: Reset Password Form
- * Tests for password reset request and validation
+ * Component Tests: Forgot Username Form
+ * Tests for username recovery request and validation
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
-import ResetPasswordForm from "../../components/reset-password-form";
+import ForgotUsernameForm from "../../components/forgot-username-form";
 import * as services from "../../services";
 import { ERROR_MESSAGES } from "../../constants";
 
 vi.mock("../../services", () => ({
-  forgotPassword: vi.fn(),
+  forgotUsername: vi.fn(),
   checkEmail: vi.fn(),
   getBrandHeaders: vi.fn(),
 }));
@@ -28,7 +28,7 @@ vi.mock("../../constants", async (importOriginal) => {
   };
 });
 
-const renderResetPasswordForm = (props = {}) => {
+const renderForgotUsernameForm = (props = {}) => {
   const defaultProps = {
     email: "",
     onBack: vi.fn(),
@@ -37,12 +37,12 @@ const renderResetPasswordForm = (props = {}) => {
 
   return render(
     <BrowserRouter>
-      <ResetPasswordForm {...defaultProps} {...props} />
+      <ForgotUsernameForm {...defaultProps} {...props} />
     </BrowserRouter>
   );
 };
 
-describe("ResetPasswordForm Component", () => {
+describe("ForgotUsernameForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -54,29 +54,35 @@ describe("ResetPasswordForm Component", () => {
     });
   });
 
-  it("should render reset password form", () => {
-    renderResetPasswordForm();
+  it("should render forgot username form", () => {
+    renderForgotUsernameForm();
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
   });
 
   it("should render email input field", () => {
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     expect(screen.getByPlaceholderText(/email/i)).toBeInTheDocument();
   });
 
   it("should render submit button", () => {
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     expect(submitButton).toBeInTheDocument();
+  });
+
+  it("should render the Forgot Username title", () => {
+    renderForgotUsernameForm();
+
+    expect(screen.getByText("Forgot Username?", { selector: "h2" })).toBeInTheDocument();
   });
 
   it("should handle email input change", async () => {
     const user = userEvent.setup();
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "user@example.com");
@@ -88,7 +94,7 @@ describe("ResetPasswordForm Component", () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "invalid-email");
@@ -97,97 +103,97 @@ describe("ResetPasswordForm Component", () => {
     expect(emailInput).toHaveValue("invalid-email");
   });
 
-  it("should handle successful password reset request", async () => {
+  it("should handle successful forgot username request", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(services.forgotPassword).mockResolvedValue({
+    vi.mocked(services.forgotUsername).mockResolvedValue({
       success: true,
-      message: "Reset link sent",
+      message: "Verification link sent",
     });
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
-    renderResetPasswordForm({ email: "user@example.com" });
+    renderForgotUsernameForm({ email: "user@example.com" });
 
     // Wait for debounced email check (500ms) + some buffer
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(
       () => {
-        const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+        const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
         expect(submitButton).not.toBeDisabled();
       },
       { timeout: 1000 }
     );
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(services.forgotPassword).toHaveBeenCalledWith("user@example.com");
+      expect(services.forgotUsername).toHaveBeenCalledWith("user@example.com");
     });
   });
 
   it("should handle user not found error", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(services.forgotPassword).mockRejectedValue(
+    vi.mocked(services.forgotUsername).mockRejectedValue(
       new Error("We couldn't find an account with that email")
     );
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
-    renderResetPasswordForm({ email: "nonexistent@example.com" });
+    renderForgotUsernameForm({ email: "nonexistent@example.com" });
 
     // Wait for debounced email check
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(
       () => {
-        const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+        const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
         expect(submitButton).not.toBeDisabled();
       },
       { timeout: 1000 }
     );
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(services.forgotPassword).toHaveBeenCalled();
+      expect(services.forgotUsername).toHaveBeenCalled();
     });
   });
 
   it("should handle general errors", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(services.forgotPassword).mockRejectedValue(new Error("Service unavailable"));
+    vi.mocked(services.forgotUsername).mockRejectedValue(new Error("Service unavailable"));
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
-    renderResetPasswordForm({ email: "user@example.com" });
+    renderForgotUsernameForm({ email: "user@example.com" });
 
     // Wait for debounced email check
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(
       () => {
-        const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+        const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
         expect(submitButton).not.toBeDisabled();
       },
       { timeout: 1000 }
     );
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(services.forgotPassword).toHaveBeenCalled();
+      expect(services.forgotUsername).toHaveBeenCalled();
     });
   });
 
-  it("should call onBack when back button clicked", async () => {
+  it("should call onBack when back to login link clicked", async () => {
     const user = userEvent.setup();
     const onBackMock = vi.fn();
 
-    renderResetPasswordForm({ onBack: onBackMock });
+    renderForgotUsernameForm({ onBack: onBackMock });
 
     const backLink = screen.getByText(/back to login/i);
     await user.click(backLink);
@@ -198,70 +204,69 @@ describe("ResetPasswordForm Component", () => {
   it("should show loading state during submission", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(services.forgotPassword).mockImplementation(
+    vi.mocked(services.forgotUsername).mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 1000))
     );
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "user@example.com");
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     await user.click(submitButton);
 
     expect(submitButton).toBeDisabled();
   });
 
   it("should disable submit button with empty email", () => {
-    renderResetPasswordForm({ email: "" });
+    renderForgotUsernameForm({ email: "" });
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     expect(submitButton).toBeDisabled();
   });
 
   it("should enable submit button with valid email that exists", async () => {
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    renderResetPasswordForm({ email: "valid@example.com" });
+    renderForgotUsernameForm({ email: "valid@example.com" });
 
     await waitFor(
       () => {
-        const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+        const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
         expect(submitButton).not.toBeDisabled();
       },
       { timeout: 3000 }
     );
   });
 
-  it("should display success message after sending reset link", async () => {
+  it("should display success message after sending verification link", async () => {
     const user = userEvent.setup();
 
-    vi.mocked(services.forgotPassword).mockResolvedValue({
+    vi.mocked(services.forgotUsername).mockResolvedValue({
       success: true,
-      message: "Password reset link has been sent to your email",
+      message: "Verification link has been sent to your email",
     });
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
-    renderResetPasswordForm({ email: "user@example.com" });
+    renderForgotUsernameForm({ email: "user@example.com" });
 
     // Wait for debounced email check
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     await waitFor(
       () => {
-        const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+        const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
         expect(submitButton).not.toBeDisabled();
       },
       { timeout: 1000 }
     );
 
-    const submitButton = screen.getByRole("button", { name: /send|reset|submit/i });
+    const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
     await user.click(submitButton);
 
     await waitFor(
       () => {
-        // Verify the API was called successfully
-        expect(services.forgotPassword).toHaveBeenCalledWith("user@example.com");
+        expect(services.forgotUsername).toHaveBeenCalledWith("user@example.com");
       },
       { timeout: 3000 }
     );
@@ -272,12 +277,12 @@ describe("ResetPasswordForm Component", () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockResolvedValue({ success: true });
+    vi.mocked(services.forgotUsername).mockResolvedValue({ success: true });
 
-    renderResetPasswordForm({ email: "logger@example.com" });
+    renderForgotUsernameForm({ email: "logger@example.com" });
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(logSpy).toHaveBeenCalled();
@@ -291,11 +296,11 @@ describe("ResetPasswordForm Component", () => {
     const onBack = vi.fn();
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockRejectedValue(new Error("back-action-error"));
+    vi.mocked(services.forgotUsername).mockRejectedValue(new Error("back-action-error"));
 
-    renderResetPasswordForm({ email: "back@example.com", onBack });
+    renderForgotUsernameForm({ email: "back@example.com", onBack });
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(
@@ -307,14 +312,14 @@ describe("ResetPasswordForm Component", () => {
     expect(onBack).toHaveBeenCalled();
   });
 
-  it("should dismiss forgot-password error banner via close button", async () => {
+  it("should dismiss error banner via close button", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockRejectedValue(new Error("dismiss-error"));
+    vi.mocked(services.forgotUsername).mockRejectedValue(new Error("dismiss-error"));
 
-    renderResetPasswordForm({ email: "dismiss@example.com" });
+    renderForgotUsernameForm({ email: "dismiss@example.com" });
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText("dismiss-error")).toBeInTheDocument();
@@ -325,7 +330,7 @@ describe("ResetPasswordForm Component", () => {
 
   it("should close on Escape key", async () => {
     const handleClose = vi.fn();
-    renderResetPasswordForm({ handleClose });
+    renderForgotUsernameForm({ handleClose });
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(handleClose).toHaveBeenCalled();
@@ -333,7 +338,7 @@ describe("ResetPasswordForm Component", () => {
 
   it("should close when clicking overlay background", async () => {
     const handleClose = vi.fn();
-    renderResetPasswordForm({ handleClose });
+    renderForgotUsernameForm({ handleClose });
 
     const dialog = screen.getByRole("dialog");
     fireEvent.mouseDown(dialog, { target: dialog });
@@ -344,7 +349,7 @@ describe("ResetPasswordForm Component", () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue(new Error("Unable to verify email now"));
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "user@example.com");
@@ -367,7 +372,7 @@ describe("ResetPasswordForm Component", () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue({} as any);
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
     await user.type(screen.getByPlaceholderText(/email/i), "fallback@example.com");
 
     await waitFor(() => {
@@ -375,18 +380,18 @@ describe("ResetPasswordForm Component", () => {
     });
   });
 
-  it("should use generic forgot-password error when submit throws non-Error", async () => {
+  it("should use generic forgot-username error when submit throws non-Error", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockRejectedValue({} as any);
+    vi.mocked(services.forgotUsername).mockRejectedValue({} as any);
 
-    renderResetPasswordForm({ email: "nonerror-submit@example.com" });
+    renderForgotUsernameForm({ email: "nonerror-submit@example.com" });
     await new Promise((resolve) => setTimeout(resolve, 600));
 
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(ERROR_MESSAGES.RESET_LINK_FAILED)).toBeInTheDocument();
+      expect(screen.getByText(ERROR_MESSAGES.USERNAME_RECOVERY_FAILED)).toBeInTheDocument();
     });
   });
 
@@ -396,18 +401,18 @@ describe("ResetPasswordForm Component", () => {
     const onBack = vi.fn();
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockResolvedValue({ success: true });
+    vi.mocked(services.forgotUsername).mockResolvedValue({ success: true });
 
-    renderResetPasswordForm({ email: "user@example.com", handleClose, onBack });
+    renderForgotUsernameForm({ email: "user@example.com", handleClose, onBack });
 
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
+    await user.click(screen.getByRole("button", { name: /Resend username verification link/i }));
     await user.click(screen.getByRole("button", { name: /Back to sign in/i }));
     expect(onBack).toHaveBeenCalled();
 
@@ -422,47 +427,47 @@ describe("ResetPasswordForm Component", () => {
   it("resend failure should return to form and show error banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword)
+    vi.mocked(services.forgotUsername)
       .mockResolvedValueOnce({ success: true })
       .mockRejectedValueOnce(new Error("resend failed"));
 
-    renderResetPasswordForm({ email: "user@example.com" });
+    renderForgotUsernameForm({ email: "user@example.com" });
 
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
+    await user.click(screen.getByRole("button", { name: /Resend username verification link/i }));
 
     await waitFor(() => {
       expect(screen.getByText("resend failed")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /send|reset|submit/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /receive|send|submit/i })).toBeInTheDocument();
     });
   });
 
   it("resend failure should use generic message for non-Error failures", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword)
+    vi.mocked(services.forgotUsername)
       .mockResolvedValueOnce({ success: true })
       .mockRejectedValueOnce({} as any);
 
-    renderResetPasswordForm({ email: "nonerror-resend@example.com" });
+    renderForgotUsernameForm({ email: "nonerror-resend@example.com" });
 
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
+    await user.click(screen.getByRole("button", { name: /Resend username verification link/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(ERROR_MESSAGES.RESET_LINK_FAILED)).toBeInTheDocument();
+      expect(screen.getByText(ERROR_MESSAGES.USERNAME_RECOVERY_FAILED)).toBeInTheDocument();
     });
   });
 
@@ -477,7 +482,7 @@ describe("ResetPasswordForm Component", () => {
         }) as any
     );
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
     await user.type(screen.getByPlaceholderText(/email/i), "pending@example.com");
 
     await new Promise((resolve) => setTimeout(resolve, 600));
@@ -490,8 +495,8 @@ describe("ResetPasswordForm Component", () => {
   });
 
   it("should show required email error when form is submitted empty", () => {
-    renderResetPasswordForm({ email: "" });
-    fireEvent.submit(screen.getByRole("form", { name: /reset password form/i }));
+    renderForgotUsernameForm({ email: "" });
+    fireEvent.submit(screen.getByRole("form", { name: /forgot username form/i }));
     expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
   });
 
@@ -500,11 +505,11 @@ describe("ResetPasswordForm Component", () => {
     const handleClose = vi.fn();
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword).mockResolvedValue({ success: true });
+    vi.mocked(services.forgotUsername).mockResolvedValue({ success: true });
 
-    renderResetPasswordForm({ email: "user@example.com", handleClose });
+    renderForgotUsernameForm({ email: "user@example.com", handleClose });
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
@@ -518,22 +523,33 @@ describe("ResetPasswordForm Component", () => {
     const user = userEvent.setup();
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
-    vi.mocked(services.forgotPassword)
+    vi.mocked(services.forgotUsername)
       .mockResolvedValueOnce({ success: true })
       .mockImplementationOnce(
         () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 1000))
       );
 
-    renderResetPasswordForm({ email: "user@example.com" });
+    renderForgotUsernameForm({ email: "user@example.com" });
     await new Promise((resolve) => setTimeout(resolve, 600));
-    await user.click(screen.getByRole("button", { name: /send|reset|submit/i }));
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/Check your email/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Resend password reset link/i }));
+    await user.click(screen.getByRole("button", { name: /Resend username verification link/i }));
     expect(screen.getByText(/Sending.../i)).toBeInTheDocument();
+  });
+
+  it("should render Forgot Email section with support link", () => {
+    renderForgotUsernameForm();
+
+    expect(screen.getByText("Forgot Email?")).toBeInTheDocument();
+    expect(screen.getByText("contact our support team")).toBeInTheDocument();
+    expect(screen.getByText("contact our support team").closest("a")).toHaveAttribute(
+      "href",
+      "/contact-us"
+    );
   });
 
   it("should render onCreateAccount action in email-not-found banner", async () => {
@@ -542,7 +558,7 @@ describe("ResetPasswordForm Component", () => {
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
-    renderResetPasswordForm({ onCreateAccount });
+    renderForgotUsernameForm({ onCreateAccount });
 
     await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
 
@@ -556,12 +572,13 @@ describe("ResetPasswordForm Component", () => {
     await user.click(screen.getByRole("button", { name: /Let's create one/i }));
     expect(onCreateAccount).toHaveBeenCalled();
   });
-
-  it("should not render create-account action when onCreateAccount is not provided", async () => {
+  it("should render onCreateAccount action in email-not-found banner", async () => {
     const user = userEvent.setup();
+    const onCreateAccount = vi.fn();
+
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
-    renderResetPasswordForm();
+    renderForgotUsernameForm({ onCreateAccount });
 
     await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
 
@@ -572,11 +589,54 @@ describe("ResetPasswordForm Component", () => {
       { timeout: 3000 }
     );
 
-    expect(screen.queryByRole("button", { name: /Let's create one/i })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+    expect(onCreateAccount).toHaveBeenCalled();
   });
 });
 
-describe("ResetPasswordForm — brand configuration error", () => {
+describe("ForgotUsernameForm — cooldown timer", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should exercise cooldown countdown after successful submit", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
+    vi.mocked(services.forgotUsername).mockResolvedValue({ success: true });
+
+    renderForgotUsernameForm({ email: "timer@example.com" });
+
+    // Wait for debounced email check
+    await vi.advanceTimersByTimeAsync(600);
+
+    await waitFor(() => {
+      const submitButton = screen.getByRole("button", { name: /receive|send|submit/i });
+      expect(submitButton).not.toBeDisabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: /receive|send|submit/i }));
+
+    await waitFor(() => {
+      expect(services.forgotUsername).toHaveBeenCalledWith("timer@example.com");
+    });
+
+    vi.useRealTimers();
+  });
+});
+
+describe("ForgotUsernameForm — brand configuration error", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -592,7 +652,7 @@ describe("ResetPasswordForm — brand configuration error", () => {
   });
 
   it("should show brand error banner when X-Brand-Id is missing", async () => {
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     await waitFor(() => {
       expect(
@@ -602,41 +662,28 @@ describe("ResetPasswordForm — brand configuration error", () => {
   });
 
   it("should show the 'having trouble' title in the brand error banner", async () => {
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     await waitFor(() => {
       expect(screen.getByText(/we're having trouble signing you in/i)).toBeInTheDocument();
     });
   });
 
-  it("should disable the Send reset link button when brand config error", async () => {
-    renderResetPasswordForm();
+  it("should disable the submit button when brand config error", async () => {
+    renderForgotUsernameForm();
 
     await waitFor(() => {
       const submitBtn = document.querySelector(
-        'button[part~="identity-widget-reset-password-submit-button"]'
+        'button[part~="identity-widget-forgot-username-submit-button"]'
       ) as HTMLButtonElement;
       expect(submitBtn).not.toBeNull();
       expect(submitBtn).toBeDisabled();
     });
   });
 
-  it("should keep the Back to login link accessible when brand config error", async () => {
-    renderResetPasswordForm();
-
-    await waitFor(() => {
-      expect(services.getBrandHeaders).toHaveBeenCalled();
-    });
-
-    const backLink = document.querySelector(
-      'a[part~="identity-widget-reset-password-back-link"]'
-    ) as HTMLAnchorElement;
-    expect(backLink).not.toBeNull();
-  });
-
   it("should not call checkEmail when brand config error and a valid email is typed", async () => {
     const user = userEvent.setup();
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
     await waitFor(() => {
       expect(services.getBrandHeaders).toHaveBeenCalled();
     });
@@ -649,21 +696,21 @@ describe("ResetPasswordForm — brand configuration error", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should not call forgotPassword when form is submitted with brand config error", async () => {
-    renderResetPasswordForm({ email: "user@example.com" });
+  it("should not call forgotUsername when form is submitted with brand config error", async () => {
+    renderForgotUsernameForm({ email: "user@example.com" });
     await waitFor(() => {
       expect(services.getBrandHeaders).toHaveBeenCalled();
     });
 
-    fireEvent.submit(screen.getByRole("form", { name: /reset password form/i }));
+    fireEvent.submit(screen.getByRole("form", { name: /forgot username form/i }));
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    expect(services.forgotPassword).not.toHaveBeenCalled();
+    expect(services.forgotUsername).not.toHaveBeenCalled();
   });
 
   it("should show brand error banner when getBrandHeaders rejects", async () => {
     vi.mocked(services.getBrandHeaders).mockRejectedValue(new Error("Network error"));
-    renderResetPasswordForm();
+    renderForgotUsernameForm();
 
     await waitFor(() => {
       expect(

@@ -8,6 +8,7 @@ import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
 import { authRegister, checkEmail } from "../services";
 import type { CreateAccountFormProps } from "../types";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import checkSuccessImg from "../icons/badge-check.svg";
 import {
   MessageType,
@@ -59,6 +60,8 @@ const CreateAccountForm = ({
   >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const brandConfigError = useBrandConfigError();
 
   // Individual password validation checks
   const passwordChecks = {
@@ -171,6 +174,9 @@ const CreateAccountForm = ({
 
   // Check email existence when user types
   useEffect(() => {
+    // Don't make any API calls when brand isn't configured
+    if (brandConfigError) return;
+
     // Clear previous timeout
     if (emailCheckTimeoutRef.current) {
       clearTimeout(emailCheckTimeoutRef.current);
@@ -226,7 +232,7 @@ const CreateAccountForm = ({
         clearTimeout(emailCheckTimeoutRef.current);
       }
     };
-  }, [email]);
+  }, [email, brandConfigError]);
 
   // Check if email is valid
   const isEmailValid = email && EMAIL_REGEX.test(email);
@@ -247,6 +253,8 @@ const CreateAccountForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (brandConfigError) return;
 
     // Mark form as touched to show validation errors
     setTouched(true);
@@ -465,8 +473,18 @@ const CreateAccountForm = ({
               />
             </div>
 
+            {/* Brand configuration error banner */}
+            {brandConfigError && (
+              <Banner
+                type={MessageType.ERROR}
+                title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+                message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
+                className="identity-widget-create-account-brand-error-banner mb-4!"
+              />
+            )}
+
             {/* Banner for existing user or API error - appears after email field */}
-            {showBanner && emailExists && !emailCheckError && (
+            {!brandConfigError && showBanner && emailExists && !emailCheckError && (
               <Banner
                 type={MessageType.INFO}
                 message="We found an existing account."
@@ -479,7 +497,7 @@ const CreateAccountForm = ({
                 className="identity-widget-create-account-existing-banner mb-4!"
               />
             )}
-            {showBanner && emailCheckError && (
+            {!brandConfigError && showBanner && emailCheckError && (
               <Banner
                 type={MessageType.ERROR}
                 message={emailCheckErrorMessage}
@@ -663,6 +681,7 @@ const CreateAccountForm = ({
                   >
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.length ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.length ? (
@@ -701,6 +720,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasNumber ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasNumber ? (
@@ -739,6 +759,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasUppercase ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasUppercase ? (
@@ -779,6 +800,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.hasSpecialChar ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.hasSpecialChar ? (
@@ -819,6 +841,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.onlyAllowedChars ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.onlyAllowedChars ? (
@@ -859,6 +882,7 @@ const CreateAccountForm = ({
                     </li>
                     <li
                       part="identity-widget-create-account-requirement-item"
+                      data-satisfied={passwordChecks.differentFromUsername ? "true" : "false"}
                       className="identity-widget-create-account-requirement-item flex! items-center! text-sm!"
                     >
                       {passwordChecks.differentFromUsername ? (
@@ -937,9 +961,9 @@ const CreateAccountForm = ({
             {/* Create Account Button */}
             <Button
               type={ButtonType.SUBMIT}
-              disabled={loading || emailExists || !isEmailValid}
+              disabled={loading || emailExists || !isEmailValid || brandConfigError}
               part="identity-widget-submit-button identity-widget-create-account-submit-button"
-              className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-70! disabled:cursor-not-allowed! m-0!"
+              className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! m-0!"
             >
               {loading ? (
                 <span

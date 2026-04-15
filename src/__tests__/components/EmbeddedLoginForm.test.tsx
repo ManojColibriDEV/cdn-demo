@@ -12,7 +12,7 @@ import EmbeddedLoginForm from "../../components/embedded-login-form";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS, COOKIE_NAMES } from "../../constants";
+import { STORAGE_KEYS } from "../../constants";
 
 // Mock services
 vi.mock("../../services", () => ({
@@ -21,11 +21,13 @@ vi.mock("../../services", () => ({
   authRefresh: vi.fn(),
   setAuthorityOverride: vi.fn(),
   clearAuthorityOverride: vi.fn(),
+  getBrandHeaders: vi.fn(),
 }));
 
 // Mock functions
 vi.mock("../../functions", () => ({
   handleAuthentication: vi.fn(),
+  handleGoogleAuthentication: vi.fn(),
   checkTokenAndRedirect: vi.fn(),
   checkTokenAndRedirectWithRefresh: vi.fn(),
   isRefreshTokenValid: vi.fn(),
@@ -33,6 +35,7 @@ vi.mock("../../functions", () => ({
   refreshAuthenticationState: vi.fn(),
   silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
+  validatePassword: vi.fn(),
   setAuthCookie: vi.fn(),
   clearAuthCookie: vi.fn(),
   getCookie: vi.fn(),
@@ -56,10 +59,36 @@ const renderLoginForm = (props = {}) => {
   );
 };
 
+const getLoginSubmitButton = (): HTMLButtonElement => {
+  const submitButton = document.querySelector(
+    'button[part~="identity-widget-login-submit-button"]'
+  ) as HTMLButtonElement | null;
+  expect(submitButton).not.toBeNull();
+  return submitButton as HTMLButtonElement;
+};
+
 describe("EmbeddedLoginForm Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default: brand is properly configured
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+    // Default: validatePassword returns all checks passing
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: true,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
   });
 
   it("should render login form with title and subtitle", () => {
@@ -89,7 +118,7 @@ describe("EmbeddedLoginForm Component", () => {
   it("should render login button", () => {
     renderLoginForm();
 
-    const loginButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const loginButton = getLoginSubmitButton();
     expect(loginButton).toBeInTheDocument();
   });
 
@@ -134,6 +163,15 @@ describe("EmbeddedLoginForm Component", () => {
     expect(screen.getByText(/caps lock is on/i)).toBeInTheDocument();
 
     fireEvent.keyDown(passwordInput, { key: "CapsLock" });
+
+    expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
+  });
+
+  it("should ignore CapsLock keyup without toggling indicator", () => {
+    renderLoginForm();
+
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.keyUp(passwordInput, { key: "CapsLock" });
 
     expect(screen.queryByText(/caps lock is on/i)).not.toBeInTheDocument();
   });
@@ -213,7 +251,7 @@ describe("EmbeddedLoginForm Component", () => {
 
   it("should show create account option for new email", async () => {
     const user = userEvent.setup();
-    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false, message: "Email available" });
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
     renderLoginForm();
 
@@ -233,7 +271,7 @@ describe("EmbeddedLoginForm Component", () => {
 
   it("should navigate to create account form", async () => {
     const user = userEvent.setup();
-    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false, message: "Available" });
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
     renderLoginForm();
 
@@ -277,16 +315,41 @@ describe("EmbeddedLoginForm Component", () => {
     });
   });
 
+  it("should render styled help center entry text", () => {
+    renderLoginForm();
+
+    const helpCenterCta = screen.getByText(/visit our help center/i);
+    expect(helpCenterCta).toBeInTheDocument();
+    expect(helpCenterCta).toHaveClass("font-bold!");
+  });
+
+  it("should open help center and return to login", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByRole("button", { name: /can't log in\?/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /help center/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /back to sign in/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /continue to login/i })).toBeInTheDocument();
+    });
+  });
+
   it("should return from reset password to login when back button is clicked", async () => {
     const user = userEvent.setup();
     renderLoginForm();
 
     await user.click(screen.getByText(/forgot password/i));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Back to sign in/i })).toBeInTheDocument();
+      expect(screen.getByText(/back to login/i)).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /Back to sign in/i }));
+    await user.click(screen.getByText(/back to login/i));
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /Continue to login/i })).toBeInTheDocument();
@@ -300,7 +363,7 @@ describe("EmbeddedLoginForm Component", () => {
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "invalid-email");
 
-    const submitButton = screen.getAllByRole("button", { name: /login|sign in|continue/i })[0];
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     // Form validates email internally
@@ -342,11 +405,8 @@ describe("EmbeddedLoginForm Component", () => {
     const onSuccessMock = vi.fn();
 
     vi.mocked(functions.handleAuthentication).mockResolvedValue({
-      success: true,
-      tokens: {
-        access_token: "test-token",
-        refresh_token: "test-refresh",
-      },
+      access_token: "test-token",
+      refresh_token: "test-refresh",
     });
 
     renderLoginForm({ onSuccess: onSuccessMock });
@@ -354,7 +414,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "SecureP@ss123$");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     await waitFor(() => {
@@ -373,7 +433,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "wrong@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "WrongPassword");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     // Verify error callback was called
@@ -404,7 +464,13 @@ describe("EmbeddedLoginForm Component", () => {
   it("should disable submit button while loading", async () => {
     const user = userEvent.setup();
     vi.mocked(functions.handleAuthentication).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ success: true }), 1000))
+      () =>
+        new Promise((resolve) =>
+          setTimeout(
+            () => resolve({ access_token: "loading-token", refresh_token: "loading-refresh" }),
+            1000
+          )
+        )
     );
 
     renderLoginForm();
@@ -412,7 +478,7 @@ describe("EmbeddedLoginForm Component", () => {
     await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
     await user.type(screen.getByPlaceholderText(/password/i), "SecureP@ss123$");
 
-    const submitButton = screen.getByRole("button", { name: /login|sign in|continue/i });
+    const submitButton = getLoginSubmitButton();
     await user.click(submitButton);
 
     expect(submitButton).toBeDisabled();
@@ -520,7 +586,7 @@ describe("EmbeddedLoginForm Component", () => {
     renderLoginForm();
     await user.type(screen.getByPlaceholderText(/email/i), "toastloginuser");
     await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    await user.click(getLoginSubmitButton());
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /close notification/i })).toBeInTheDocument();
@@ -539,11 +605,82 @@ describe("EmbeddedLoginForm Component", () => {
     renderLoginForm();
     await user.type(screen.getByPlaceholderText(/email/i), "baduser");
     await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
-    await user.click(screen.getByRole("button", { name: /sign in/i }));
+    await user.click(getLoginSubmitButton());
 
     await waitFor(() => {
       expect(screen.queryAllByText("Toast auth error").length).toBeGreaterThan(0);
     });
+  });
+
+  it("should use fallback authentication error message for non-Error failures", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+    vi.mocked(functions.handleAuthentication).mockRejectedValue({} as any);
+
+    renderLoginForm({ onError });
+    await user.type(screen.getByPlaceholderText(/email or username/i), "fallbackuser");
+    await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
+    await user.click(getLoginSubmitButton());
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Authentication failed");
+    });
+  });
+
+  it("should show email loader while availability check is pending", async () => {
+    const user = userEvent.setup();
+
+    vi.mocked(services.checkEmail).mockImplementation(
+      () =>
+        new Promise(() => {
+          return;
+        }) as any
+    );
+
+    renderLoginForm();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "pending@example.com");
+
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    await waitFor(() => {
+      expect(document.querySelector('[part="identity-widget-loader"]')).toBeInTheDocument();
+    });
+  });
+
+  it("should return to login without updating email when create-account returns empty email", async () => {
+    const user = userEvent.setup();
+
+    renderLoginForm();
+    await user.click(screen.getByRole("button", { name: /Create an Account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("form", { name: /Create account form/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /^Sign In$/i }));
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/email or username/i)).toHaveValue("");
+    });
+  });
+
+  it("clears pending email-check timeout when unmounted", async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+
+    const view = renderLoginForm();
+    fireEvent.change(screen.getByPlaceholderText(/email or username/i), {
+      target: { value: "cleanup@example.com" },
+    });
+
+    view.unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("unmounts cleanly when no email-check timeout is queued", () => {
+    const view = renderLoginForm();
+    expect(() => view.unmount()).not.toThrow();
   });
 });
 
@@ -668,6 +805,29 @@ describe("App Component", () => {
     });
   });
 
+  it("should call handleGoogleAuthentication and invoke onSuccess when Google OAuth succeeds", async () => {
+    let googleConfig: any;
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "test-token", refresh_token: "test-refresh" };
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+    vi.mocked(functions.handleGoogleAuthentication).mockResolvedValue(mockTokens as any);
+
+    renderLoginForm({ enableGoogleLogin: true, onSuccess, onError: vi.fn() });
+
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "google-auth-code" });
+    });
+
+    await waitFor(() => {
+      expect(functions.handleGoogleAuthentication).toHaveBeenCalledWith("google-auth-code", false);
+      expect(onSuccess).toHaveBeenCalledWith(mockTokens);
+    });
+  });
+
   it("sets authority override when authority prop exists and clears on unmount", () => {
     const { unmount } = renderApp({ authority: "dev" });
     expect(services.setAuthorityOverride).toHaveBeenCalledWith("dev");
@@ -775,6 +935,30 @@ describe("App Component", () => {
     expect(onRedirect).not.toHaveBeenCalled();
   });
 
+  it("does not call onRedirect when existing token cannot be converted to user session", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-no-session");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
+
+    render(
+      <MemoryRouter>
+        <App
+          showLogin={true}
+          autoRedirection={false}
+          redirectUrl="https://example.com/callback"
+          onRedirect={onRedirect}
+        />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
+    });
+
+    expect(onRedirect).not.toHaveBeenCalled();
+  });
+
   it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
@@ -803,6 +987,28 @@ describe("App Component", () => {
     await waitFor(() => {
       expect(functions.refreshAuthenticationState).toHaveBeenCalled();
       expect(onRedirect).toHaveBeenCalled();
+    });
+  });
+
+  it("uses default redirect URL during refresh flow when redirectUrl prop is missing", async () => {
+    const onRedirect = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access-default-url");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "new-access-default-url",
+      userInfo: { email: "defaulturl@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
+    } as any);
+
+    renderApp({ onRedirect });
+
+    await waitFor(() => {
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://dev-learn.example.com/courses",
+        expect.objectContaining({ access_token: "new-access-default-url" })
+      );
     });
   });
 
@@ -847,6 +1053,8 @@ describe("App Component", () => {
     vi.mocked(functions.handleAuthentication).mockRejectedValue(new Error("embedded-app-error"));
 
     renderApp();
+    await user.type(screen.getByPlaceholderText(/email or username/i), "embedded.user");
+    await user.type(screen.getByPlaceholderText(/password/i), "BadPassword1$");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -1001,6 +1209,633 @@ describe("App Component", () => {
     await waitFor(() => {
       expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
       expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    });
+  });
+
+  it("calls onTokenValidityCheck with current refresh-cookie validity", async () => {
+    const onTokenValidityCheck = vi.fn();
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
+
+    renderApp({ onTokenValidityCheck });
+
+    await waitFor(() => {
+      expect(onTokenValidityCheck).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("calls onTokenValidityCheck(true) after successful refresh login", async () => {
+    const onTokenValidityCheck = vi.fn();
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-after-refresh");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "token-after-refresh",
+      userInfo: { email: "validity@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
+    } as any);
+
+    renderApp({ onTokenValidityCheck, onRedirect, redirectUrl: "https://example.com/validity" });
+
+    await waitFor(() => {
+      expect(onTokenValidityCheck).toHaveBeenCalledWith(true);
+      expect(onRedirect).toHaveBeenCalled();
+    });
+  });
+
+  it("returns early when refresh succeeds but access token is still missing", async () => {
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+    renderApp({ onRedirect, redirectUrl: "https://example.com/no-access" });
+
+    await waitFor(() => {
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
+    });
+    expect(onRedirect).not.toHaveBeenCalled();
+  });
+
+  it("uses default redirect URL when embedded login succeeds without redirectUrl prop", async () => {
+    const user = userEvent.setup();
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "default-redirect-token",
+      refresh_token: "default-redirect-refresh",
+    } as any);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "default-redirect-token");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "default-redirect-token",
+      userInfo: { email: "default@example.com" },
+      decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
+    } as any);
+
+    renderApp({ onRedirect });
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "defaultuser");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://dev-learn.example.com/courses",
+        expect.objectContaining({ access_token: "default-redirect-token" })
+      );
+    });
+  });
+
+  it("does not call onRedirect when embedded success has token but no user session", async () => {
+    const user = userEvent.setup();
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "no-session-token",
+      refresh_token: "no-session-refresh",
+    } as any);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "no-session-token");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
+
+    renderApp({ onRedirect, redirectUrl: "https://example.com/no-session" });
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "nosessionuser");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(functions.handleAuthentication).toHaveBeenCalled();
+    });
+    expect(onRedirect).not.toHaveBeenCalled();
+  });
+
+  it("does not call onRedirect when embedded success occurs without stored access token", async () => {
+    const user = userEvent.setup();
+    const onRedirect = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+    vi.mocked(functions.handleAuthentication).mockResolvedValue({
+      access_token: "ephemeral-token",
+      refresh_token: "ephemeral-refresh",
+    } as any);
+
+    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+
+    renderApp({ onRedirect, redirectUrl: "https://example.com/no-stored-token" });
+
+    await user.type(screen.getByPlaceholderText(/email or username/i), "nostoredtoken");
+    await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(functions.handleAuthentication).toHaveBeenCalled();
+    });
+    expect(onRedirect).not.toHaveBeenCalled();
+  });
+
+  it("ignores close action when handleClose prop is not provided", async () => {
+    const user = userEvent.setup();
+
+    renderApp({ handleClose: undefined });
+    await user.click(screen.getByRole("button", { name: /close dialog/i }));
+
+    expect(screen.getByRole("application", { name: /authentication widget/i })).toBeInTheDocument();
+  });
+
+  it("stores subsidiary value when subsidiary prop is provided", async () => {
+    renderApp({ subsidiary: "elite" as any });
+
+    await waitFor(() => {
+      expect(localStorage.getItem("subsidiary")).toBe("elite");
+    });
+  });
+});
+
+describe("EmbeddedLoginForm — Apple Sign In", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should render Apple sign-in button when enableAppleLogin and appleClientId are provided", () => {
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    expect(screen.getByRole("button", { name: /sign in with apple/i })).toBeInTheDocument();
+  });
+
+  it("should not render Apple sign-in button when enableAppleLogin is false", () => {
+    renderLoginForm({ enableAppleLogin: false });
+
+    expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
+  });
+
+  it("should not render Apple sign-in button when appleClientId is missing", () => {
+    renderLoginForm({ enableAppleLogin: true });
+
+    expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
+  });
+
+  it("should show error toast when Apple SDK is not loaded", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    // Ensure AppleID is not on window
+    delete (window as any).AppleID;
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple Sign In SDK not loaded. Please try again.");
+    });
+  });
+
+  it("should call AppleID.auth.init and signIn when SDK is loaded", async () => {
+    const user = userEvent.setup();
+    const mockSignIn = vi.fn().mockResolvedValue({ authorization: { code: "apple-code" } });
+    const mockInit = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: mockInit,
+        signIn: mockSignIn,
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(mockInit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          clientId: "com.test.app",
+          scope: "name email",
+          usePopup: true,
+        })
+      );
+      expect(mockSignIn).toHaveBeenCalled();
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should disable Apple button while sign-in is in progress", async () => {
+    let resolveSignIn!: (value: any) => void;
+    const signInPromise = new Promise((resolve) => {
+      resolveSignIn = resolve;
+    });
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockReturnValue(signInPromise),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app" });
+
+    const button = screen.getByRole("button", { name: /sign in with apple/i });
+    expect(button).not.toBeDisabled();
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(button).toBeDisabled();
+    });
+
+    resolveSignIn({ authorization: { code: "apple-code" } });
+
+    await waitFor(() => {
+      expect(button).not.toBeDisabled();
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should silently handle popup_closed_by_user error from Apple", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({ error: "popup_closed_by_user" }),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    // popup_closed_by_user should NOT call onError
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(onError).not.toHaveBeenCalled();
+
+    delete (window as any).AppleID;
+  });
+
+  it("should show error toast for non-cancel Apple sign-in errors", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({ error: "apple_auth_error" }),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("apple_auth_error");
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should handle Apple sign-in Error object failures", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue(new Error("Apple network error")),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple network error");
+    });
+
+    delete (window as any).AppleID;
+  });
+
+  it("should use fallback message when Apple error has no error field or message", async () => {
+    const user = userEvent.setup();
+    const onError = vi.fn();
+
+    (window as any).AppleID = {
+      auth: {
+        init: vi.fn(),
+        signIn: vi.fn().mockRejectedValue({}),
+      },
+    };
+
+    renderLoginForm({ enableAppleLogin: true, appleClientId: "com.test.app", onError });
+
+    await user.click(screen.getByRole("button", { name: /sign in with apple/i }));
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Apple sign-in failed.");
+    });
+
+    delete (window as any).AppleID;
+  });
+});
+
+describe("EmbeddedLoginForm — Google onSuccess error path", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should show error toast when handleGoogleAuthentication fails with Error", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+    vi.mocked(functions.handleGoogleAuthentication).mockRejectedValue(
+      new Error("Google token exchange failed")
+    );
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "failing-google-code" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google token exchange failed");
+      expect(screen.getByText("Google token exchange failed")).toBeInTheDocument();
+    });
+  });
+
+  it("should show fallback error when handleGoogleAuthentication fails with non-Error", async () => {
+    let googleConfig: any;
+    const onError = vi.fn();
+
+    vi.mocked(useGoogleLogin).mockImplementation((config: any) => {
+      googleConfig = config;
+      return vi.fn();
+    });
+    vi.mocked(functions.handleGoogleAuthentication).mockRejectedValue({} as any);
+
+    renderLoginForm({ enableGoogleLogin: true, onError });
+
+    await act(async () => {
+      await googleConfig.onSuccess({ code: "non-error-code" });
+    });
+
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalledWith("Google sign-in failed");
+    });
+  });
+});
+
+describe("EmbeddedLoginForm — Forgot Username navigation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should navigate to forgot username form and back to login", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText(/back to login/i));
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Continue to login/i })).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from forgot username to create account and back", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to forgot username
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from reset password to create account via banner action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to reset password
+    await user.click(screen.getByText(/forgot password/i));
+
+    // Wait for reset password form to appear
+    await waitFor(() => {
+      expect(screen.getByText(/back to login/i)).toBeInTheDocument();
+    });
+
+    // Clear and type a new email that doesn't exist
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.clear(emailInput);
+    await user.type(emailInput, "newuser@example.com");
+
+    // Wait for email check debounce
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Banner should show "No account found"
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    // Click create account action in banner
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+
+    // Should navigate to Create Account form
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should navigate from forgot username to create account via banner action", async () => {
+    const user = userEvent.setup();
+    vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
+
+    renderLoginForm();
+
+    // Navigate to forgot username
+    await user.click(screen.getByText(/username\?/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Forgot Username\?/i, { selector: "h2" })).toBeInTheDocument();
+    });
+
+    // Type a new email that doesn't exist
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.type(emailInput, "newuser@example.com");
+
+    // Wait for email check debounce
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Banner should show "No account found"
+    await waitFor(
+      () => {
+        expect(screen.getByText(/No account found/i)).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
+
+    // Click create account action in banner
+    await user.click(screen.getByRole("button", { name: /Let's create one/i }));
+
+    // Should navigate to Create Account form
+    await waitFor(() => {
+      expect(screen.getByText(/Create your account/i)).toBeInTheDocument();
+    });
+  });
+});
+
+describe("EmbeddedLoginForm — brand configuration error", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    // Signal theme as already loaded so useBrandConfigError runs immediately
+    // without waiting for the "theme-loaded" window event.
+    sessionStorage.setItem("theme_loaded", "true");
+    // Brand config is broken: getBrandHeaders returns empty (no X-Brand-Id)
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({});
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
+  });
+
+  it("should show brand error banner when X-Brand-Id is missing", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("should show the 'having trouble' title in the brand error banner", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(screen.getByText(/we're having trouble signing you in/i)).toBeInTheDocument();
+    });
+  });
+
+  it("should disable the submit button when brand config error", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(getLoginSubmitButton()).toBeDisabled();
+    });
+  });
+
+  it("should keep the 'Create an Account' button enabled when brand config error", async () => {
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const createBtn = document.querySelector(
+      'button[part~="identity-widget-login-create-account-button"]'
+    ) as HTMLButtonElement;
+    expect(createBtn).not.toBeNull();
+    expect(createBtn).not.toBeDisabled();
+  });
+
+  it("should not call checkEmail when brand config error and a valid email is typed", async () => {
+    const user = userEvent.setup();
+    renderLoginForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    await user.type(emailInput, "test@example.com");
+
+    // Wait past debounce window
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    expect(services.checkEmail).not.toHaveBeenCalled();
+  });
+
+  it("should not call handleAuthentication when form is submitted with brand config error", async () => {
+    renderLoginForm();
+    await waitFor(() => {
+      expect(services.getBrandHeaders).toHaveBeenCalled();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/email/i);
+    const passwordInput = screen.getByPlaceholderText(/password/i);
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "Password1!" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(functions.handleAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("should show brand error banner when getBrandHeaders rejects", async () => {
+    vi.mocked(services.getBrandHeaders).mockRejectedValue(new Error("Network error"));
+    renderLoginForm();
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
+      ).toBeInTheDocument();
     });
   });
 });

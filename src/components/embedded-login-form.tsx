@@ -5,14 +5,25 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication } from "../functions";
+import { handleAuthentication, handleGoogleAuthentication, validatePassword } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
+import WeakPasswordModal from "../common/ui/weak-password-modal";
+import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import CreateAccountForm from "./create-account-form";
 import ResetPasswordForm from "./reset-password-form";
+import ForgotUsernameForm from "./forgot-username-form";
+import HelpCenter from "./help-center";
 import checkSuccessImg from "../icons/badge-check.svg";
 import googleIcon from "../icons/google-icon.svg";
-import { MessageType, EMAIL_REGEX, ButtonType, ButtonVariant, INFO_MESSAGES } from "../constants";
+import {
+  MessageType,
+  EMAIL_REGEX,
+  ButtonType,
+  ButtonVariant,
+  INFO_MESSAGES,
+  ERROR_MESSAGES,
+} from "../constants";
 import { isCapsLockEnabled } from "../utils/keyboard";
 
 const EmbeddedLoginForm = ({
@@ -23,7 +34,9 @@ const EmbeddedLoginForm = ({
   title = "Continue to login",
   subtitle = "Continue by signing in.",
   initialEmail = "",
-  enableGoogleLogin = false,
+  enableGoogleLogin = true,
+  enableAppleLogin = false,
+  appleClientId,
 }: EmbeddedLoginFormProps) => {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -34,6 +47,8 @@ const EmbeddedLoginForm = ({
   const [rememberMe, setRememberMe] = useState(false); // Un-Checked by default
   const [showCreateAccount, setShowCreateAccount] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showForgotUsername, setShowForgotUsername] = useState(false);
+  const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
@@ -43,36 +58,114 @@ const EmbeddedLoginForm = ({
   const [toastType, setToastType] = useState<
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
+  const [showWeakPasswordModal, setShowWeakPasswordModal] = useState(false);
+  const [pendingTokens, setPendingTokens] = useState<any>(null);
+  const brandConfigError = useBrandConfigError();
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const appleScriptLoaded = useRef(false);
 
-  const handleGoogleLogin = useGoogleLogin({
-    flow: "auth-code",
-    onSuccess: (codeResponse) => {
-      console.log("[EmbeddedLogin] Google auth-code response received", codeResponse);
+  // Load Apple Sign In JS SDK
+  useEffect(() => {
+    if (!enableAppleLogin || !appleClientId || appleScriptLoaded.current) return;
+
+    const existingScript = document.querySelector(
+      'script[src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"]'
+    );
+    if (existingScript) {
+      appleScriptLoaded.current = true;
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src =
+      "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+    script.async = true;
+    script.onload = () => {
+      appleScriptLoaded.current = true;
+    };
+    document.head.appendChild(script);
+  }, [enableAppleLogin, appleClientId]);
+
+  const handleAppleLogin = async () => {
+    try {
+      setAppleLoading(true);
+      const AppleID = (window as any).AppleID;
+      if (!AppleID) {
+        const errorMsg = "Apple Sign In SDK not loaded. Please try again.";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+        return;
+      }
+
+      AppleID.auth.init({
+        clientId: appleClientId,
+        scope: "name email",
+        redirectURI: window.location.origin,
+        usePopup: true,
+      });
+
+      await AppleID.auth.signIn();
       setToastMessage(
-        "Google sign-in completed. Connect this credential to your backend login flow."
+        "Apple sign-in completed. Connect this credential to your backend login flow."
       );
       setToastType(MessageType.INFO);
       setErrorMessage("");
+    } catch (error: any) {
+      // User cancelled or error occurred
+      if (error?.error === "popup_closed_by_user") {
+        return;
+      }
+      const appleError =
+        error?.error || (error instanceof Error ? error.message : "Apple sign-in failed.");
+      setToastMessage(appleError);
+      setToastType(MessageType.ERROR);
+      onError(appleError);
+    } finally {
+      setAppleLoading(false);
+    }
+  };
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse: { code: string }) => {
+      try {
+        const tokens = await handleGoogleAuthentication(codeResponse.code, rememberMe);
+        onSuccess(tokens);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Google sign-in failed";
+        setToastMessage(errorMsg);
+        setToastType(MessageType.ERROR);
+        onError(errorMsg);
+      } finally {
+        setGoogleLoading(false);
+      }
     },
-    onError: (errorResponse) => {
+    onError: (errorResponse: any) => {
       const googleError =
-        errorResponse.error_description || errorResponse.error || "Google sign-in failed.";
+        errorResponse?.error_description || errorResponse?.error || "Google sign-in failed.";
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
-    onNonOAuthError: (error) => {
+    onNonOAuthError: (error: any) => {
       const googleError = `Google sign-in failed: ${error.type}`;
       setToastMessage(googleError);
       setToastType(MessageType.ERROR);
       onError(googleError);
+      setGoogleLoading(false);
     },
+    flow: "auth-code",
   });
 
   // Check email existence when user types
   useEffect(() => {
+    // Don't make any API calls when brand isn't configured
+    if (brandConfigError) return;
+
     // Clear previous timeout
     if (emailCheckTimeoutRef.current) {
       clearTimeout(emailCheckTimeoutRef.current);
@@ -137,7 +230,7 @@ const EmbeddedLoginForm = ({
         clearTimeout(emailCheckTimeoutRef.current);
       }
     };
-  }, [email]);
+  }, [email, brandConfigError]);
 
   // Check if email is valid
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -160,6 +253,8 @@ const EmbeddedLoginForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (brandConfigError) return;
+
     if (!email || !password) {
       setErrorMessage("Please enter both username/email and password");
       onError("Please enter both username/email and password");
@@ -173,8 +268,21 @@ const EmbeddedLoginForm = ({
       // Use the common authentication function
       const tokens = await handleAuthentication(email, password, rememberMe);
 
-      // Call success callback with result
-      onSuccess(tokens);
+      // Check password strength after successful authentication
+      const passwordChecks = validatePassword(password, {
+        displayName: email.split("@")[0],
+        email,
+      });
+      const isPasswordStrong = Object.values(passwordChecks).every(Boolean);
+
+      if (!isPasswordStrong) {
+        // Password is weak - show recommendation modal
+        setPendingTokens(tokens);
+        setShowWeakPasswordModal(true);
+      } else {
+        // Password is strong - proceed normally
+        onSuccess(tokens);
+      }
     } catch (error) {
       console.error("[EmbeddedLogin] Login failed:", error);
       const errorMsg = error instanceof Error ? error.message : "Authentication failed";
@@ -199,15 +307,6 @@ const EmbeddedLoginForm = ({
 
     setCapsLockOn(isCapsLockEnabled(event));
   };
-
-  const handlePasswordFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-    setCapsLockOn(isCapsLockEnabled(event));
-  };
-
-  const handlePasswordBlur = () => {
-    setCapsLockOn(false);
-  };
-
   // If showing reset password form, render that instead
   if (showResetPassword) {
     return (
@@ -215,8 +314,31 @@ const EmbeddedLoginForm = ({
         email={email}
         onBack={() => setShowResetPassword(false)}
         handleClose={handleClose}
+        onCreateAccount={() => {
+          setShowResetPassword(false);
+          setShowCreateAccount(true);
+        }}
       />
     );
+  }
+
+  // If showing forgot username form, render that instead
+  if (showForgotUsername) {
+    return (
+      <ForgotUsernameForm
+        email={email}
+        onBack={() => setShowForgotUsername(false)}
+        handleClose={handleClose}
+        onCreateAccount={() => {
+          setShowForgotUsername(false);
+          setShowCreateAccount(true);
+        }}
+      />
+    );
+  }
+
+  if (showHelpCenter) {
+    return <HelpCenter onBack={() => setShowHelpCenter(false)} handleClose={handleClose} />;
   }
 
   // If showing create account form, render that instead
@@ -310,14 +432,17 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-google-section"
-                className="identity-widget-google-section mt-0! mb-4! hidden! justify-center!"
+                className="identity-widget-google-section mt-0! mb-4! justify-center!"
               >
                 <Button
                   type={ButtonType.BUTTON}
                   variant={ButtonVariant.OUTLINE}
                   part="identity-widget-google-button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={loading}
+                  onClick={() => {
+                    setGoogleLoading(true);
+                    googleLogin();
+                  }}
+                  disabled={loading || googleLoading || brandConfigError}
                   className="identity-widget-google-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
                 >
                   <img
@@ -334,7 +459,7 @@ const EmbeddedLoginForm = ({
 
               <div
                 part="identity-widget-login-divider"
-                className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+                className="identity-widget-login-divider relative! mt-2! mb-4!"
               >
                 <div
                   part="identity-widget-login-divider-line-wrap"
@@ -357,6 +482,69 @@ const EmbeddedLoginForm = ({
                   </span>
                 </div>
               </div>
+            </>
+          )}
+
+          {enableAppleLogin && appleClientId && (
+            <>
+              <div
+                part="identity-widget-apple-section"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!"
+              >
+                <Button
+                  type={ButtonType.BUTTON}
+                  variant={ButtonVariant.OUTLINE}
+                  part="identity-widget-apple-button"
+                  onClick={handleAppleLogin}
+                  disabled={loading || appleLoading || brandConfigError}
+                  className="identity-widget-apple-button w-full! max-w-full! flex! items-center! justify-center! gap-3! m-0! bg-white! border! border-solid! border-gray-300! text-gray-700! shadow-none! font-medium! text-base!"
+                >
+                  <svg
+                    part="identity-widget-apple-icon"
+                    className="identity-widget-apple-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    width="18"
+                    height="18"
+                    style={{ width: 18, height: 18, flexShrink: 0 }}
+                    aria-hidden="true"
+                  >
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                  </svg>
+                  <span part="identity-widget-apple-text" className="identity-widget-apple-text">
+                    Sign in with Apple
+                  </span>
+                </Button>
+              </div>
+
+              {!enableGoogleLogin && (
+                <div
+                  part="identity-widget-login-divider"
+                  className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+                >
+                  <div
+                    part="identity-widget-login-divider-line-wrap"
+                    className="identity-widget-login-divider-line-wrap absolute! inset-0! flex! items-center!"
+                  >
+                    <div
+                      part="identity-widget-login-divider-line"
+                      className="identity-widget-login-divider-line w-full! border-t! border-solid! border-gray-300!"
+                    ></div>
+                  </div>
+                  <div
+                    part="identity-widget-login-divider-text-wrap"
+                    className="identity-widget-login-divider-text-wrap relative! flex! justify-center! text-sm!"
+                  >
+                    <span
+                      part="identity-widget-login-divider-text"
+                      className="identity-widget-login-divider-text px-2! bg-white text-gray-500"
+                    >
+                      OR
+                    </span>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -392,8 +580,18 @@ const EmbeddedLoginForm = ({
             />
           </div>
 
+          {/* Brand configuration error banner */}
+          {brandConfigError && (
+            <Banner
+              type={MessageType.ERROR}
+              title={ERROR_MESSAGES.BRAND_CONFIG_TITLE}
+              message={ERROR_MESSAGES.BRAND_CONFIG_MESSAGE}
+              className="mb-4!"
+            />
+          )}
+
           {/* Banner for non-existing user - appears after email field */}
-          {showBanner && !emailExists && isEmailValid && !emailCheckError && (
+          {!brandConfigError && showBanner && !emailExists && isEmailValid && !emailCheckError && (
             <Banner
               type={MessageType.INFO}
               message={INFO_MESSAGES.EMAIL_NOT_FOUND}
@@ -408,7 +606,7 @@ const EmbeddedLoginForm = ({
           )}
 
           {/* Banner for API error */}
-          {showBanner && emailCheckError && (
+          {!brandConfigError && showBanner && emailCheckError && (
             <Banner
               type={MessageType.ERROR}
               message={emailCheckErrorMessage}
@@ -440,8 +638,6 @@ const EmbeddedLoginForm = ({
                 }}
                 onKeyDown={handlePasswordCapsLock}
                 onKeyUp={handlePasswordCapsLock}
-                onFocus={handlePasswordFocus}
-                onBlur={handlePasswordBlur}
                 placeholder="Enter Password..."
                 disabled={loading}
                 className="w-full!"
@@ -538,26 +734,51 @@ const EmbeddedLoginForm = ({
                 Remember me
               </span>
             </label>
-            <a
-              href="#"
-              part="identity-widget-login-forgot-link"
-              className="identity-widget-login-forgot-link no-underline! --button-primary-text!"
-              style={{
-                fontWeight: "500",
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                setShowResetPassword(true);
-              }}
+            <div
+              part="identity-widget-login-forgot-links"
+              className="identity-widget-login-forgot-links flex! items-center! gap-1!"
             >
-              Forgot Password?
-            </a>
+              <a
+                href="#"
+                part="identity-widget-login-forgot-password-link"
+                className="identity-widget-login-forgot-password-link no-underline! --button-primary-text!"
+                style={{
+                  fontWeight: "500",
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowResetPassword(true);
+                }}
+              >
+                Forgot Password
+              </a>
+              <span
+                part="identity-widget-login-forgot-separator"
+                className="identity-widget-login-forgot-separator text-gray-400!"
+              >
+                or
+              </span>
+              <a
+                href="#"
+                part="identity-widget-login-forgot-username-link"
+                className="identity-widget-login-forgot-username-link no-underline! --button-primary-text!"
+                style={{
+                  fontWeight: "500",
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowForgotUsername(true);
+                }}
+              >
+                Username?
+              </a>
+            </div>
           </div>
 
           <Button
             type={ButtonType.SUBMIT}
             part="identity-widget-submit-button identity-widget-login-submit-button"
-            disabled={loading || !email}
+            disabled={loading || !email || brandConfigError}
             className="identity-widget-submit-button identity-widget-login-submit-button w-full! bg-[var(--button-primary-bg)]! enabled:bg-[var(--button-primary-bg)]! hover:bg-[var(--button-primary-bg-hover)]! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! disabled:opacity-10! disabled:cursor-not-allowed! m-0!"
           >
             {loading ? (
@@ -623,7 +844,7 @@ const EmbeddedLoginForm = ({
             variant={ButtonVariant.OUTLINE}
             part="identity-widget-login-create-account-button"
             onClick={() => setShowCreateAccount(true)}
-            disabled={loading}
+            disabled={loading || googleLoading}
             className="identity-widget-login-create-account-button w-full! flex! items-center! justify-center! gap-3! m-0!"
           >
             <span
@@ -633,10 +854,43 @@ const EmbeddedLoginForm = ({
               Create an Account
             </span>
           </Button>
+
+          <div
+            part="identity-widget-login-help-center-wrap"
+            className="identity-widget-login-help-center-wrap text-center! mt-4!"
+          >
+            <button
+              type="button"
+              part="identity-widget-login-help-center-button"
+              className="identity-widget-login-help-center-button group bg-transparent! border-none! p-0! text-sm! font-normal! cursor-pointer!"
+              onClick={() => setShowHelpCenter(true)}
+            >
+              <span className="font-bold!">Can&apos;t log in? </span>
+              <span className="text-[var(--button-primary-bg)]! font-bold! transition-all! duration-150! group-hover:underline!">
+                Visit our help center
+              </span>
+            </button>
+          </div>
         </form>
       </div>
       {toastMessage && (
         <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
+      )}
+      {showWeakPasswordModal && (
+        <WeakPasswordModal
+          onResetPassword={() => {
+            setShowWeakPasswordModal(false);
+            setPendingTokens(null);
+            setShowResetPassword(true);
+          }}
+          onContinue={() => {
+            setShowWeakPasswordModal(false);
+            if (pendingTokens) {
+              onSuccess(pendingTokens);
+            }
+            setPendingTokens(null);
+          }}
+        />
       )}
     </div>
   );
