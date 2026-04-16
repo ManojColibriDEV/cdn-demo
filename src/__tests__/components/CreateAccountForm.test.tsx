@@ -189,12 +189,13 @@ describe("CreateAccountForm Component", () => {
   });
 
   it("should disable submit without accepting terms", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
     renderCreateAccountForm();
 
     await user.type(screen.getByPlaceholderText(/email/i), "test@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
     await user.type(screen.getByPlaceholderText(/first name/i), "John");
     await user.type(screen.getByPlaceholderText(/last name/i), "Doe");
     const passwordInput = screen.getByPlaceholderText(/password/i);
