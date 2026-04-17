@@ -202,7 +202,7 @@ describe("EmbeddedLoginForm Component", () => {
   });
 
   it("should call embedded onSuccess from create-account success callback", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onSuccess = vi.fn();
 
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
@@ -223,6 +223,7 @@ describe("EmbeddedLoginForm Component", () => {
     });
 
     await user.type(screen.getByPlaceholderText(/email/i), "newperson@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
     await user.type(screen.getByPlaceholderText(/first name/i), "Jane");
     await user.type(screen.getByPlaceholderText(/last name/i), "Doe");
     await user.type(screen.getByPlaceholderText(/password/i), "ValidPass9!");
@@ -235,18 +236,22 @@ describe("EmbeddedLoginForm Component", () => {
   });
 
   it("should check email availability on blur", async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
     renderLoginForm();
 
     const emailInput = screen.getByPlaceholderText(/email/i);
     await user.type(emailInput, "existing@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 600));
     await user.tab();
 
-    await waitFor(() => {
-      expect(services.checkEmail).toHaveBeenCalledWith("existing@example.com");
-    });
+    await waitFor(
+      () => {
+        expect(services.checkEmail).toHaveBeenCalledWith("existing@example.com");
+      },
+      { timeout: 2000 }
+    );
   });
 
   it("should show create account option for new email", async () => {

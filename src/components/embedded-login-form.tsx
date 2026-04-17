@@ -432,7 +432,7 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-google-section"
-                className="identity-widget-google-section mt-0! mb-4! justify-center! hidden!"
+                className="identity-widget-google-section mt-0! mb-4! justify-center!"
               >
                 <Button
                   type={ButtonType.BUTTON}
@@ -459,7 +459,7 @@ const EmbeddedLoginForm = ({
 
               <div
                 part="identity-widget-login-divider"
-                className="identity-widget-login-divider relative! mt-2! mb-4! hidden!"
+                className="identity-widget-login-divider relative! mt-2! mb-4!"
               >
                 <div
                   part="identity-widget-login-divider-line-wrap"

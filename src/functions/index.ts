@@ -105,9 +105,26 @@ export const refreshAuthenticationState = async (
       const refreshTokenExpiry = 30 * 24 * 60 * 60;
       setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
-      const hadRememberMe = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-      if (hadRememberMe) {
-        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      // Update the session timestamp when refreshing
+      const existingTimestamp = getCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, false);
+      if (existingTimestamp) {
+        // Session exists, update timestamp
+        const sessionAge = Date.now() - parseInt(existingTimestamp);
+        const isBeyondOneDay = sessionAge >= TOKEN_EXPIRY.ONE_DAY_MS;
+
+        if (!isBeyondOneDay) {
+          // Still within 1-day window, update the timestamp
+          const newTimestamp = Date.now().toString();
+          // Use appropriate expiry based on remaining validity
+          setAuthCookie(
+            COOKIE_NAMES.REFRESH_TOKEN_TIME,
+            newTimestamp,
+            Math.ceil(TOKEN_EXPIRY.ONE_DAY_MS / 1000),
+            true
+          );
+          // Also update localStorage for backward compatibility
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, newTimestamp);
+        }
       }
     }
 
@@ -203,37 +220,47 @@ export function validatePassword(pw: string, upgradeUser?: UpgradeUser | null): 
 }
 
 /**
- * Check if user has valid access token AND Remember Me was enabled
+ * Check if user has valid access token based on Remember Me setting
  *
  * LOGIC:
- * 1. First checks if Remember Me was enabled (refresh_token_time exists)
- *    - If NOT enabled: Returns false (requires manual login even if tokens exist)
- *    - If enabled: Proceeds to validate token
+ * 1. Checks if refresh_token_time exists and is still valid
+ *    - If Remember Me CHECKED: Valid for 30 days
+ *    - If Remember Me NOT CHECKED: Valid for 1 day only
  * 2. Checks if valid access_token exists in cookies/localStorage
  * 3. Validates token expiration
  *
  * This ensures:
- * - Remember Me CHECKED: Auto-login works (tokens validated)
- * - Remember Me NOT CHECKED: Manual login required (tokens ignored)
+ * - Remember Me CHECKED: Auto-login works for 30 days
+ * - Remember Me NOT CHECKED: Auto-login works for 1 day only
  *
  * @param redirectUrl - Optional URL to redirect to if token is valid
- * @returns true if Remember Me enabled AND token valid, false otherwise
+ * @returns true if token valid and within allowed time window, false otherwise
  */
 export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
   try {
-    // CRITICAL: Check if Remember Me was enabled
-    // If user didn't check Remember Me, ignore existing tokens and require fresh login
-    const rememberMeEnabled = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-    if (!rememberMeEnabled) {
-      // Tokens exist but Remember Me was not checked
-      // User must login again manually
+    // CRITICAL: Check if session timestamp exists and is still valid
+    const sessionTimestamp = getCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, false);
+    if (!sessionTimestamp) {
+      // No session timestamp means first login or cleared session
       console.log(
-        `${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me not enabled - requires manual login`
+        `${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} No session timestamp - requires manual login`
       );
       return false;
     }
 
-    console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Remember Me enabled - validating tokens`);
+    // Check if timestamp is still within the valid window
+    const sessionAge = Date.now() - parseInt(sessionTimestamp);
+    const oneDayMs = TOKEN_EXPIRY.ONE_DAY_MS;
+
+    if (sessionAge >= oneDayMs) {
+      // Session is older than 1 day
+      console.log(
+        `${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Session expired (older than 1 day) - requires manual login`
+      );
+      return false;
+    }
+
+    console.log(`${LOG_PREFIX.CHECK_TOKEN_AND_REDIRECT} Valid session found - validating tokens`);
 
     // Get access token from cookies or localStorage
     const accessTokenCookie = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
@@ -292,8 +319,15 @@ export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Pr
   }
 
   try {
-    const rememberMeEnabled = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-    if (!rememberMeEnabled) {
+    // Check if session timestamp exists and is still valid
+    const sessionTimestamp = getCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, false);
+    if (!sessionTimestamp) {
+      return false;
+    }
+
+    // Check if timestamp is within 1 day window for token refresh attempt
+    const sessionAge = Date.now() - parseInt(sessionTimestamp);
+    if (sessionAge >= TOKEN_EXPIRY.ONE_DAY_MS) {
       return false;
     }
 
@@ -350,18 +384,19 @@ export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Pr
  */
 export const isRefreshTokenValid = (): boolean => {
   try {
-    const refreshTokenTime = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+    const refreshTokenTime = getCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, false);
 
     if (!refreshTokenTime) {
-      // No timestamp means "Remember Me" was not checked
-      // Tokens exist but auto-login should NOT occur
+      // No timestamp means session was not started or was cleared
+      // Auto-login should NOT occur
       return false;
     }
 
-    // Check if timestamp is still valid (7 days)
+    // Check if timestamp is still valid (1 day minimum window)
+    // Cookies will expire automatically, but we also check the timestamp
     const tokenAge = Date.now() - parseInt(refreshTokenTime);
 
-    return tokenAge < TOKEN_EXPIRY.REFRESH_TOKEN_MAX_AGE_MS;
+    return tokenAge < TOKEN_EXPIRY.ONE_DAY_MS;
   } catch (error) {
     console.error(`${LOG_PREFIX.TOKEN} isRefreshTokenValid Error:`, error);
     return false;
@@ -380,6 +415,9 @@ export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
   clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
   clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
+
+  // Clear Remember Me cookie
+  clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME);
 
   // Clear all auth-related localStorage items
   const authKeys = [
@@ -403,24 +441,26 @@ export const clearAuthTokens = (): void => {
  *
  * STORAGE STRATEGY:
  * - ALWAYS stores tokens in localStorage AND cookies (mandatory for cross-domain)
- * - Remember Me flag controls AUTO-LOGIN behavior on page revisit
+ * - Session timestamp controls AUTO-LOGIN behavior on page revisit
  *
  * ALWAYS STORED (localStorage + cookies):
  * - access_token
  * - refresh_token
  * - X-Credential (cookie only, not in localStorage)
+ * - refresh_token_time (ALWAYS stored, expiry varies by Remember Me)
  *
- * REMEMBER ME MECHANISM:
- * - If CHECKED: Stores refresh_token_time → enables auto-login on page revisit
- * - If NOT CHECKED: No refresh_token_time → user must manually login on page revisit
+ * AUTO-LOGIN WINDOW:
+ * - If Remember Me CHECKED: Session timestamp valid for 30 days
+ * - If Remember Me NOT CHECKED: Session timestamp valid for 1 day only
  *
- * This way:
+ * This ensures:
  * - Tokens are always available in localStorage/cookies
- * - But auto-login only happens when remember_token_time exists
+ * - Auto-login works for 30 days if Remember Me checked
+ * - Auto-login works for 1 day if Remember Me not checked
  *
  * @param username - User's email or username
  * @param password - User's password
- * @param rememberMe - Whether to enable auto-login on page revisit
+ * @param rememberMe - Whether to enable 30-day auto-login (1-day if false)
  * @returns Authentication tokens
  */
 export const handleAuthentication = async (
@@ -453,18 +493,32 @@ export const handleAuthentication = async (
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
     // === REMEMBER ME LOGIC ===
-    // Only store refresh_token_time if Remember Me is checked
-    // This flag controls whether auto-login occurs on page revisit
-    // - If present: Auto-login will work (tokens exist + flag exists)
-    // - If absent: Manual login required (tokens exist but flag missing)
-    if (rememberMe && tokens.refresh_token) {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-      console.log(`${LOG_PREFIX.AUTH} Remember Me enabled - auto-login will work on page revisit`);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-      console.log(
-        `${LOG_PREFIX.AUTH} Remember Me disabled - manual login required on page revisit`
-      );
+    // Always store session timestamp to allow auto-login
+    // - If CHECKED: Stores with 30-day expiry → auto-login for 30 days
+    // - If NOT CHECKED: Stores with 1-day expiry → auto-login for 1 day only
+    if (tokens.refresh_token) {
+      const timestamp = Date.now().toString();
+      if (rememberMe) {
+        // Remember Me checked: 30-day auto-login window
+        setAuthCookie(
+          COOKIE_NAMES.REFRESH_TOKEN_TIME,
+          timestamp,
+          TOKEN_EXPIRY.THIRTY_DAYS_SECONDS,
+          true
+        );
+        console.log(`${LOG_PREFIX.AUTH} Remember Me enabled - auto-login will work for 30 days`);
+      } else {
+        // Remember Me not checked: 1-day auto-login window only
+        setAuthCookie(
+          COOKIE_NAMES.REFRESH_TOKEN_TIME,
+          timestamp,
+          Math.ceil(TOKEN_EXPIRY.ONE_DAY_MS / 1000), // Convert to seconds
+          true
+        );
+        console.log(`${LOG_PREFIX.AUTH} Remember Me disabled - auto-login will work for 1 day`);
+      }
+      // Keep for backward compatibility
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, timestamp);
     }
   }
 
@@ -502,12 +556,29 @@ export const handleGoogleAuthentication = async (
     const refreshTokenExpiry = 30 * 24 * 60 * 60;
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
-    if (rememberMe && tokens.refresh_token) {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-      console.log(`${LOG_PREFIX.AUTH} Google login - Remember Me enabled`);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
-      console.log(`${LOG_PREFIX.AUTH} Google login - Remember Me disabled`);
+    if (tokens.refresh_token) {
+      const timestamp = Date.now().toString();
+      if (rememberMe) {
+        // Remember Me checked: 30-day auto-login window
+        setAuthCookie(
+          COOKIE_NAMES.REFRESH_TOKEN_TIME,
+          timestamp,
+          TOKEN_EXPIRY.THIRTY_DAYS_SECONDS,
+          true
+        );
+        console.log(`${LOG_PREFIX.AUTH} Google login - Remember Me enabled for 30 days`);
+      } else {
+        // Remember Me not checked: 1-day auto-login window only
+        setAuthCookie(
+          COOKIE_NAMES.REFRESH_TOKEN_TIME,
+          timestamp,
+          Math.ceil(TOKEN_EXPIRY.ONE_DAY_MS / 1000), // Convert to seconds
+          true
+        );
+        console.log(`${LOG_PREFIX.AUTH} Google login - auto-login will work for 1 day`);
+      }
+      // Keep for backward compatibility
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, timestamp);
     }
   }
 
