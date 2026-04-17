@@ -192,6 +192,7 @@
 
       // Listen for redirect event from the widget
       widget.addEventListener("is-token-valid", function (e) {
+        alert(e.detail.isValid)
         console.log("Token validation event received:", e.detail);
       });
     </script>
