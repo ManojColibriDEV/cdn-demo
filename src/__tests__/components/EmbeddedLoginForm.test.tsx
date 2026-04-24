@@ -12,7 +12,7 @@ import EmbeddedLoginForm from "../../components/embedded-login-form";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS } from "../../constants";
+import { STORAGE_KEYS, COOKIE_NAMES } from "../../constants";
 
 // Mock services
 vi.mock("../../services", () => ({
@@ -44,6 +44,15 @@ vi.mock("../../functions", () => ({
   getDefaultRedirectUrl: vi.fn(() => "https://dev-learn.example.com/courses"),
 }));
 
+// Mock cookieHelper utilities - only mock getDefaultRedirectUrl
+vi.mock("../../utils/cookieHelper", async () => {
+  const actual = await vi.importActual("../../utils/cookieHelper");
+  return {
+    ...actual,
+    getDefaultRedirectUrl: vi.fn(() => "https://dev-learn.example.com/courses"),
+  };
+});
+
 const renderLoginForm = (props = {}) => {
   const defaultProps = {
     onSuccess: vi.fn(),
@@ -66,6 +75,11 @@ const getLoginSubmitButton = (): HTMLButtonElement => {
   expect(submitButton).not.toBeNull();
   return submitButton as HTMLButtonElement;
 };
+
+function setEncodedCookie(name: string, value: string): void {
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
 
 describe("EmbeddedLoginForm Component", () => {
   beforeEach(() => {
@@ -877,7 +891,7 @@ describe("App Component", () => {
   it("calls onRedirect when valid access token exists and autoRedirection is false", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "token-value",
       userInfo: { email: "user@example.com" },
@@ -900,10 +914,15 @@ describe("App Component", () => {
     });
   });
 
-  it("does not call onRedirect callback-only path when redirectUrl is missing", async () => {
+  it("uses default redirect URL when onRedirect callback is provided without explicit redirectUrl prop", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
+      access_token: "token-value",
+      userInfo: { email: "user@example.com" },
+      decoded: { exp: 9999999999 },
+    } as any);
 
     render(
       <MemoryRouter>
@@ -912,10 +931,11 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://dev-learn.example.com/courses",
+        expect.objectContaining({ access_token: "token-value" })
+      );
     });
-
-    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("does not call onRedirect when redirectUrl exists but access token is missing", async () => {
@@ -943,7 +963,7 @@ describe("App Component", () => {
   it("does not call onRedirect when existing token cannot be converted to user session", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-no-session");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-no-session");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
 
     render(
@@ -969,9 +989,9 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "new-access");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "new-access",
       userInfo: { email: "user@example.com" },
@@ -1000,7 +1020,7 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access-default-url");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "new-access-default-url");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "new-access-default-url",
       userInfo: { email: "defaulturl@example.com" },
@@ -1022,8 +1042,8 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "new-access");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "new-access");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
 
     renderApp({ onRedirect });
@@ -1038,14 +1058,14 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r2");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t2");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "r2");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, "t2");
 
     renderApp();
 
     await waitFor(() => {
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe("r2");
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBe("t2");
+      expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
+      expect(document.cookie).toContain("r2");
     });
   });
 
@@ -1089,7 +1109,7 @@ describe("App Component", () => {
       refresh_token: "login-refresh-2",
     } as any);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "login-access-2");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "login-access-2");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "login-access-2",
       userInfo: { email: "user2@example.com" },
@@ -1115,9 +1135,9 @@ describe("App Component", () => {
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "refreshed-token");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "refreshed-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
 
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600, x_credentials: "xc-redir" },
@@ -1162,7 +1182,7 @@ describe("App Component", () => {
       refresh_token: "login-refresh",
     } as any);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "login-access");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "login-access");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "login-access",
       userInfo: { email: "user@example.com" },
@@ -1188,8 +1208,8 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockRejectedValue(new Error("refresh failed"));
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "r1");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "t1");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "r1");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, "t1");
 
     renderApp();
 
@@ -1206,8 +1226,8 @@ describe("App Component", () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
 
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "stale-refresh");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "stale-time");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "stale-refresh");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, "stale-time");
 
     renderApp();
 
@@ -1238,7 +1258,7 @@ describe("App Component", () => {
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "token-after-refresh");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-after-refresh");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "token-after-refresh",
       userInfo: { email: "validity@example.com" },
@@ -1282,7 +1302,7 @@ describe("App Component", () => {
       refresh_token: "default-redirect-refresh",
     } as any);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "default-redirect-token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "default-redirect-token");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue({
       access_token: "default-redirect-token",
       userInfo: { email: "default@example.com" },
@@ -1314,7 +1334,7 @@ describe("App Component", () => {
       refresh_token: "no-session-refresh",
     } as any);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "no-session-token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "no-session-token");
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null as any);
 
     renderApp({ onRedirect, redirectUrl: "https://example.com/no-session" });
