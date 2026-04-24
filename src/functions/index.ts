@@ -11,16 +11,6 @@ import {
   LOG_PREFIX,
 } from "../constants";
 
-// Re-export cookie helper functions for convenience
-export {
-  setAuthCookie,
-  clearAuthCookie,
-  getCookie,
-  getCookieDomain,
-  getAuthorityFromUrl,
-  getDefaultRedirectUrl,
-} from "../utils/cookieHelper";
-
 export const isRefreshTokenExpiredFromCookie = (): boolean => {
   try {
     const refreshToken = getCookie(COOKIE_NAMES.REFRESH_TOKEN, false);
@@ -39,9 +29,7 @@ export const isRefreshTokenExpiredFromCookie = (): boolean => {
 };
 
 const getStoredRefreshToken = (): string | null => {
-  return (
-    getCookie(COOKIE_NAMES.REFRESH_TOKEN, false) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-  );
+  return getCookie(COOKIE_NAMES.REFRESH_TOKEN, false);
 };
 
 const isJwtExpired = (token: string): boolean => {
@@ -94,14 +82,12 @@ export const refreshAuthenticationState = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
       (Date.now() + expiresIn * 1000).toString()
     );
 
     if (tokens.refresh_token) {
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
       const refreshTokenExpiry = 30 * 24 * 60 * 60;
       setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
@@ -138,8 +124,7 @@ export const refreshAuthenticationState = async (
 // Function to handle silent token refresh in the background
 export const silentTokenRefresh = async () => {
   const refreshToken = getStoredRefreshToken();
-  const accessToken =
-    getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
   if (!accessToken) {
     stopSilentRefreshTimer();
@@ -157,9 +142,7 @@ export const silentTokenRefresh = async () => {
   const intervalMs = 3 * 60 * 1000;
   silentRefreshTimer = setInterval(async () => {
     const currentRefreshToken = getStoredRefreshToken();
-    const currentAccessToken =
-      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
-      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const currentAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
     if (!currentAccessToken) {
       stopSilentRefreshTimer();
@@ -171,9 +154,7 @@ export const silentTokenRefresh = async () => {
       return;
     }
 
-    const accessToken =
-      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
-      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
     const shouldRecoverSession = !accessToken || isJwtExpired(accessToken);
 
@@ -272,11 +253,6 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
       token = accessTokenCookie;
     }
 
-    // Fallback to localStorage for cross-domain scenarios
-    if (!token) {
-      token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    }
-
     // Check if we have valid token
     if (!token) {
       return false;
@@ -340,9 +316,7 @@ export const checkTokenAndRedirectWithRefresh = async (redirectUrl?: string): Pr
       return false;
     }
 
-    const accessToken =
-      getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) ||
-      localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
     const isAccessExpired = !accessToken || isJwtExpired(accessToken);
 
@@ -480,15 +454,10 @@ export const handleAuthentication = async (
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // === MANDATORY STORAGE ===
-    // ALWAYS store in localStorage (required for cross-domain scenarios and token persistence)
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
       (Date.now() + expiresIn * 1000).toString()
     );
-
-    // ALWAYS store refresh token in localStorage and cookies
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
     const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
@@ -546,13 +515,11 @@ export const handleGoogleAuthentication = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
     localStorage.setItem(
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
       (Date.now() + expiresIn * 1000).toString()
     );
 
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
     const refreshTokenExpiry = 30 * 24 * 60 * 60;
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
