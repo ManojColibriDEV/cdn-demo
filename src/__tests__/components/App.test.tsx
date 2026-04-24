@@ -11,7 +11,7 @@ import { MemoryRouter } from "react-router-dom";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS } from "../../constants";
+import { STORAGE_KEYS, COOKIE_NAMES } from "../../constants";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -70,6 +70,11 @@ const renderApp = (props: Record<string, unknown> = {}) => {
     </MemoryRouter>
   );
 };
+
+function setEncodedCookie(name: string, value: string): void {
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
 
 // ---------------------------------------------------------------------------
 // Test suite
@@ -227,7 +232,7 @@ describe("App Component", () => {
     const onRedirect = vi.fn();
     const fakeToken = "fake-access-token";
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, fakeToken);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
 
     renderApp({
@@ -256,7 +261,7 @@ describe("App Component", () => {
   it("does not call onRedirect when no access token is stored after login", async () => {
     const onRedirect = vi.fn();
 
-    // No token in localStorage — createUserSessionFromToken returns null
+    // No token in cookies — createUserSessionFromToken returns null
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
 
     renderApp({

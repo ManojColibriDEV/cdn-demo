@@ -6,13 +6,13 @@ import {
   isRefreshTokenValid,
   isRefreshTokenExpiredFromCookie,
   refreshAuthenticationState,
-  getDefaultRedirectUrl,
   createUserSessionFromToken,
   silentTokenRefresh,
 } from "./functions";
 import { setAuthorityOverride, clearAuthorityOverride } from "./services";
 import type { AppProps } from "./types";
-import { STORAGE_KEYS, LOG_PREFIX } from "./constants";
+import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
+import { getCookie, getDefaultRedirectUrl } from "./utils/cookieHelper";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect, onTokenValidityCheck } = props;
@@ -65,32 +65,30 @@ const App = (props: AppProps) => {
   useEffect(() => {
     const attemptAutoLogin = async () => {
       try {
-        const isTokenValid = !isRefreshTokenExpiredFromCookie();
+                const isTokenValid = !isRefreshTokenExpiredFromCookie();
         if (onTokenValidityCheck) {
           onTokenValidityCheck(isTokenValid);
         }
-
         // First check if access token is already valid
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
-          // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
+
+          if (onTokenValidityCheck) {
+            onTokenValidityCheck(true);
+          }
+
           const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
+          const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+          const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
+
+          if (onRedirect && userSession) {
+            onRedirect(targetUrl, userSession);
+          }
+
+          // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
           if (props.autoRedirection) {
             window.location.href = targetUrl;
-          } else {
-            // If auto-redirect is disabled, trigger onRedirect callback only
-            if (onRedirect && props.redirectUrl) {
-              const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-              // Try to get user session from stored data
-              const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-              if (accessToken) {
-                const userSession = createUserSessionFromToken(accessToken);
-                if (userSession) {
-                  onRedirect(targetUrl, userSession);
-                }
-              }
-            }
           }
           return;
         }
@@ -100,7 +98,7 @@ const App = (props: AppProps) => {
         if (hasValidRefreshToken) {
           const refreshed = await refreshAuthenticationState();
           if (refreshed) {
-            const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+            const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
             if (!accessToken) {
               return;
             }
@@ -134,12 +132,18 @@ const App = (props: AppProps) => {
             }
           }
         } else {
-          // Clear expired refresh token
+          // No valid tokens — notify host and clear expired refresh token data
+          if (onTokenValidityCheck) {
+            onTokenValidityCheck(false);
+          }
           localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
           localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
         }
       } catch (error) {
         console.error(`${LOG_PREFIX.AUTH} Auto-login failed:`, error);
+        if (onTokenValidityCheck) {
+          onTokenValidityCheck(false);
+        }
         // Clear invalid tokens
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
@@ -162,9 +166,13 @@ const App = (props: AppProps) => {
     // Mark user as authenticated
     setIsAuthenticated(true);
 
+    if (onTokenValidityCheck) {
+      onTokenValidityCheck(true);
+    }
+
     const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
     if (onRedirect) {
-      const accessToken = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
       if (accessToken) {
         const userSession = createUserSessionFromToken(accessToken);
         if (userSession) {
