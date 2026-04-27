@@ -7,8 +7,9 @@ import "./theme-variables.css";
 import App from "./App";
 import { createThemeWidget } from "./services/theme";
 import { authLogout } from "./services";
-import { getAuthorityFromUrl, clearAuthTokens, getCookie } from "./functions";
-import { COOKIE_NAMES, STORAGE_KEYS } from "./constants";
+import { clearAuthTokens } from "./functions";
+import { getAuthorityFromUrl, getCookie } from "./utils/cookieHelper";
+import { COOKIE_NAMES } from "./constants";
 
 const GOOGLE_CLIENT_ID = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID || "";
 
@@ -270,9 +271,7 @@ if (renderMode === "TEST") {
       this.isLogoutInProgress = true;
 
       try {
-        const refreshToken =
-          getCookie(COOKIE_NAMES.REFRESH_TOKEN, true) ||
-          localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const refreshToken = getCookie(COOKIE_NAMES.REFRESH_TOKEN, true);
 
         if (refreshToken) {
           await authLogout(refreshToken);
@@ -382,6 +381,7 @@ if (renderMode === "TEST") {
         bubbles: true,
         composed: true,
       });
+      console.log("event", event);
 
       this.dispatchEvent(event);
     };

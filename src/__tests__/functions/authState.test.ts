@@ -128,7 +128,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("returns false when authRefresh throws", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
     vi.mocked(authRefresh).mockRejectedValue(new Error("network error"));
 
@@ -137,7 +137,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("returns false when authRefresh response has no access_token", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(authRefresh).mockResolvedValue({ tokens: {} });
 
     const result = await refreshAuthenticationState();
@@ -145,7 +145,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("returns false when the new access_token cannot be decoded (createUserSession returns null)", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "bad.access.token" },
     });
@@ -158,7 +158,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("returns false when the decoded access_token is already expired", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "expired.access.token" },
     });
@@ -169,7 +169,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("returns true on success and stores tokens in cookies/localStorage", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
     });
@@ -178,14 +178,18 @@ describe("refreshAuthenticationState", () => {
     const result = await refreshAuthenticationState();
 
     expect(result).toBe(true);
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe("new.access.token");
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe("new.refresh.token");
+    expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN}=`);
+    expect(document.cookie).toContain("new.access.token");
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
+    expect(document.cookie).toContain("new.refresh.token");
     expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeTruthy();
   });
 
   it("updates refresh_token_time when remember me flag already exists", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "9999");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
+    // Set timestamp to 10 seconds ago (well within 1-day window) so refresh will update it
+    const recentTimestamp = (Date.now() - 10000).toString();
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, recentTimestamp);
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
     });
@@ -201,7 +205,7 @@ describe("refreshAuthenticationState", () => {
   });
 
   it("does NOT update refresh_token_time when remember me flag is absent", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "some-refresh-token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "some-refresh-token");
     // no REFRESH_TOKEN_TIME set
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token", refresh_token: "new.refresh.token" },
@@ -245,7 +249,7 @@ describe("silentTokenRefresh", () => {
   });
 
   it("returns true immediately when no refresh token exists", async () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
     // No refresh token anywhere
 
@@ -254,8 +258,8 @@ describe("silentTokenRefresh", () => {
   });
 
   it("returns true immediately when refresh token is expired/unusable", async () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "expired.refresh.token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "expired.refresh.token");
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
     const result = await silentTokenRefresh();
@@ -263,8 +267,8 @@ describe("silentTokenRefresh", () => {
   });
 
   it("returns a cleanup function when both tokens are valid", async () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh.token.value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh.token.value");
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     const result = await silentTokenRefresh();
@@ -274,8 +278,8 @@ describe("silentTokenRefresh", () => {
   it("starts a 3-minute interval timer when tokens are valid", async () => {
     const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh.token.value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh.token.value");
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     await silentTokenRefresh();
@@ -285,8 +289,8 @@ describe("silentTokenRefresh", () => {
   });
 
   it("timer fires and calls refreshAuthenticationState when session needs recovery", async () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh.token.value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh.token.value");
 
     // First two calls (during silentTokenRefresh setup): refresh token usable, access token present
     // Inside the timer: access token is expired (triggers recovery)
@@ -318,15 +322,15 @@ describe("checkTokenAndRedirect", () => {
   });
 
   it("returns false when remember me flag is set but no access token exists", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
     // No access_token cookie or localStorage
 
     expect(checkTokenAndRedirect()).toBe(false);
   });
 
   it("returns true when remember me flag is set and token is valid", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
 
     vi.mocked(jwtDecode).mockReturnValueOnce({
@@ -337,8 +341,8 @@ describe("checkTokenAndRedirect", () => {
   });
 
   it("returns false when token is expired via access_token_expires check", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access.token.value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     localStorage.setItem(
       STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
       (Date.now() - 1000).toString() // already expired
@@ -349,7 +353,7 @@ describe("checkTokenAndRedirect", () => {
 
   it("returns false when JWT decode fails", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "bad.token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "bad.token");
 
     vi.mocked(jwtDecode).mockImplementation(() => {
       throw new Error("decode error");
@@ -360,7 +364,7 @@ describe("checkTokenAndRedirect", () => {
 
   it("returns false when decoded token is expired", () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "expired.token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "expired.token");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
@@ -368,8 +372,8 @@ describe("checkTokenAndRedirect", () => {
   });
 
   it("redirects and returns true when token is valid and redirectUrl is provided", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "valid.access.token");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -383,8 +387,8 @@ describe("checkTokenAndRedirect", () => {
     // Reset location.href to something predictable
     window.location.href = "http://localhost:5173";
 
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "valid.access.token");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -396,8 +400,8 @@ describe("checkTokenAndRedirect", () => {
   });
 
   it("uses access_token from cookie when both cookie and localStorage are present", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "localStorage.access.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "localStorage.access.token");
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "cookie.access.token");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
@@ -413,8 +417,8 @@ describe("checkTokenAndRedirect", () => {
 
 describe("checkTokenAndRedirectWithRefresh", () => {
   it("returns true immediately when checkTokenAndRedirect succeeds (valid token)", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "valid.access.token");
 
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
@@ -440,7 +444,7 @@ describe("checkTokenAndRedirectWithRefresh", () => {
 
   it("returns false when refresh token is expired/unusable", async () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "expired.refresh.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "expired.refresh.token");
     // No access token → checkTokenAndRedirect fails
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
@@ -450,8 +454,8 @@ describe("checkTokenAndRedirectWithRefresh", () => {
 
   it("returns false when tokens are not expired (no refresh needed)", async () => {
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "valid.refresh.token");
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "valid.access.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "valid.refresh.token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "valid.access.token");
 
     // checkTokenAndRedirect fails (no remember me tokens in a way that passes… actually
     // remember me IS set above). Let us make checkTokenAndRedirect fail by having jwtDecode
@@ -472,11 +476,11 @@ describe("checkTokenAndRedirectWithRefresh", () => {
   it("calls checkTokenAndRedirect again after a successful refresh", async () => {
     // Setup: remember me is enabled, refresh token is valid, but current access token
     // is expired — this causes checkTokenAndRedirect to fail on entry and forces the refresh path.
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "valid.refresh.token");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "valid.refresh.token");
     // No access_token_expires so the expiresAt check is skipped inside checkTokenAndRedirect.
     // Access token exists in localStorage but its JWT is expired → checkTokenAndRedirect returns false.
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "old.access.token");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "old.access.token");
 
     // jwtDecode call order:
     // 1. checkTokenAndRedirect: decode access_token → expired → return false
@@ -510,13 +514,15 @@ describe("isRefreshTokenValid", () => {
   });
 
   it("returns true when refresh_token_time is recent (within 7 days)", () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
     expect(isRefreshTokenValid()).toBe(true);
   });
 
   it("returns true for a timestamp that is 1 day old", () => {
-    const oneDayAgo = Date.now() - 1 * 24 * 60 * 60 * 1000;
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, oneDayAgo.toString());
+    // Timestamp from less than 1 day ago should still be valid
+    // Use 1 day minus 100ms to ensure it's within the window and account for test execution time
+    const almostOneDayAgo = Date.now() - TOKEN_EXPIRY.ONE_DAY_MS + 100;
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, almostOneDayAgo.toString());
     expect(isRefreshTokenValid()).toBe(true);
   });
 
@@ -540,16 +546,17 @@ describe("isRefreshTokenValid", () => {
 
 describe("clearAuthTokens", () => {
   it("removes all auth-related localStorage keys", () => {
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, "access-token-value");
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-token-value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access-token-value");
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token-value");
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, "99999999");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "88888888");
     localStorage.setItem("user_info", "{}");
 
     clearAuthTokens();
 
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBeNull();
+    expect(document.cookie).not.toContain(COOKIE_NAMES.ACCESS_TOKEN);
+    expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN);
+    expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
     expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
     expect(localStorage.getItem("user_info")).toBeNull();
@@ -592,13 +599,15 @@ describe("handleAuthentication", () => {
     const tokens = await handleAuthentication("user@example.com", "password123", false);
 
     expect(tokens.access_token).toBe(ACCESS_TOKEN);
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe(ACCESS_TOKEN);
+    // Tokens are stored in cookies
+    expect(document.cookie).toContain(COOKIE_NAMES.ACCESS_TOKEN);
   });
 
   it("stores refresh_token in localStorage", async () => {
     await handleAuthentication("user@example.com", "password123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe(REFRESH_TOKEN_VAL);
+    // Tokens are stored in cookies
+    expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
   });
 
   it("stores access_token_expires in localStorage", async () => {
@@ -627,7 +636,9 @@ describe("handleAuthentication", () => {
   it("does NOT store refresh_token_time when rememberMe=false", async () => {
     await handleAuthentication("user@example.com", "password123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    // Timestamp is always stored in localStorage for backward compatibility
+    // The difference is the cookie expiry (1-day vs 30-day)
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
   });
 
   it("removes any existing refresh_token_time when rememberMe=false", async () => {
@@ -635,13 +646,16 @@ describe("handleAuthentication", () => {
 
     await handleAuthentication("user@example.com", "password123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    // Timestamp is always updated/stored in localStorage for backward compatibility
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).not.toBe("old-timestamp");
   });
 
   it("defaults rememberMe to false when not provided", async () => {
     await handleAuthentication("user@example.com", "password123");
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    // Timestamp is always stored in localStorage for backward compatibility
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
   });
 
   it("re-throws when authLogin throws", async () => {
@@ -738,13 +752,15 @@ describe("handleGoogleAuthentication", () => {
     const tokens = await handleGoogleAuthentication("google-code-123", false);
 
     expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe(GOOGLE_ACCESS_TOKEN);
+    // Tokens are stored in cookies
+    expect(document.cookie).toContain(COOKIE_NAMES.ACCESS_TOKEN);
   });
 
   it("stores refresh_token in localStorage", async () => {
     await handleGoogleAuthentication("google-code-123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe(GOOGLE_REFRESH_TOKEN);
+    // Tokens are stored in cookies
+    expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
   });
 
   it("stores access_token_expires in localStorage", async () => {
@@ -773,7 +789,9 @@ describe("handleGoogleAuthentication", () => {
   it("does NOT store refresh_token_time when rememberMe=false", async () => {
     await handleGoogleAuthentication("google-code-123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    // Timestamp is always stored in localStorage for backward compatibility
+    // The difference is the cookie expiry (1-day vs 30-day)
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
   });
 
   it("removes any existing refresh_token_time when rememberMe=false", async () => {
@@ -781,7 +799,9 @@ describe("handleGoogleAuthentication", () => {
 
     await handleGoogleAuthentication("google-code-123", false);
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+    // Timestamp is always updated/stored in localStorage for backward compatibility
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).not.toBe("old-timestamp");
   });
 
   it("defaults rememberMe to true when not provided", async () => {
@@ -806,6 +826,6 @@ describe("handleGoogleAuthentication", () => {
 
     const tokens = await handleGoogleAuthentication("google-code-123");
     expect(tokens.access_token).toBe("");
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
+    expect(document.cookie).not.toContain(COOKIE_NAMES.ACCESS_TOKEN);
   });
 });

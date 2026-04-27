@@ -96,6 +96,7 @@ export const STORAGE_KEYS = {
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "access_token",
   REFRESH_TOKEN: "refresh_token",
+  REFRESH_TOKEN_TIME: "refresh_token_time",
 } as const;
 
 /**
@@ -195,6 +196,8 @@ export const TIMING = {
 export const TOKEN_EXPIRY = {
   REFRESH_TOKEN_MAX_AGE_MS: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   REFRESH_TOKEN_MAX_AGE_DAYS: 7,
+  ONE_DAY_MS: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+  THIRTY_DAYS_SECONDS: 30 * 24 * 60 * 60, // 30 days in seconds
 } as const;
 
 // ==================== URL CONSTANTS ====================
