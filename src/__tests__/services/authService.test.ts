@@ -15,6 +15,7 @@ import {
   authRefresh,
   authLogout,
   authGoogle,
+  authApple,
   fetchSubsidiaries,
   getBrandHeaders,
   setAuthorityOverride,
@@ -735,6 +736,72 @@ describe("Authentication Service", () => {
       });
 
       await authGoogle("brand-code");
+    });
+  });
+
+  describe("authApple", () => {
+    it("should successfully exchange Apple authorization code for tokens", async () => {
+      const mockResponse = {
+        tokens: { access_token: "apple-access", refresh_token: "apple-refresh" },
+      };
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply(200, mockResponse);
+
+      const response = await authApple("apple-auth-code-123");
+
+      expect(response.tokens).toEqual(mockResponse.tokens);
+    });
+
+    it("should forward optional user object in request body", async () => {
+      const appleUser = { name: { firstName: "Jane", lastName: "Doe" }, email: "jane@example.com" };
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply((config) => {
+        const body = JSON.parse(config.data);
+        expect(body.user).toEqual(appleUser);
+        return [200, { tokens: { access_token: "t" } }];
+      });
+
+      await authApple("apple-code-with-user", appleUser);
+    });
+
+    it("should throw error field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply(400, { error: "invalid_grant" });
+
+      await expect(authApple("bad-code")).rejects.toThrow("invalid_grant");
+    });
+
+    it("should throw message field from response", async () => {
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply(400, { message: "Apple code expired" });
+
+      await expect(authApple("expired-code")).rejects.toThrow("Apple code expired");
+    });
+
+    it("should throw unauthorized error message for 401 status", async () => {
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply(401, {});
+
+      await expect(authApple("unauthorized-code")).rejects.toThrow(
+        "Apple authentication failed. Please try again."
+      );
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("network-apple-fail"));
+      await expect(authApple("network-code")).rejects.toThrow("network-apple-fail");
+      spy.mockRestore();
+    });
+
+    it("should throw generic auth failed fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(authApple("empty-error-code")).rejects.toThrow();
+      spy.mockRestore();
+    });
+
+    it("should include brand headers in request", async () => {
+      localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
+      mockAxios.onPost(/\/api\/auth\/apple$/).reply((config) => {
+        expect(config.headers).toHaveProperty("X-Brand-Domain");
+        return [200, { tokens: { access_token: "t" } }];
+      });
+
+      await authApple("brand-code");
     });
   });
 });

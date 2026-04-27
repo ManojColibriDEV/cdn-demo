@@ -361,6 +361,35 @@ export const authGoogle = async (code: string): Promise<any> => {
 };
 
 /**
+ * Apple Auth API - Exchange Apple authorization code for Keycloak tokens
+ */
+export const authApple = async (code: string, user?: Record<string, any>): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.APPLE_AUTH);
+  try {
+    const response = await axios.post(
+      url,
+      { code, user },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error during Apple auth:", error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new Error("Apple authentication failed. Please try again.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    throw new Error(ERROR_MESSAGES.AUTH_FAILED);
+  }
+};
+
+/**
  * Auth API - Refresh token
  */
 export const authRefresh = async (refreshToken: string): Promise<any> => {

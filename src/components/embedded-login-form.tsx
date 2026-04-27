@@ -5,7 +5,7 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication, handleGoogleAuthentication, validatePassword } from "../functions";
+import { handleAuthentication, handleGoogleAuthentication, handleAppleAuthentication, validatePassword } from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import WeakPasswordModal from "../common/ui/weak-password-modal";
@@ -108,11 +108,12 @@ const EmbeddedLoginForm = ({
         usePopup: true,
       });
 
-      await AppleID.auth.signIn();
-      setToastMessage(
-        "Apple sign-in completed. Connect this credential to your backend login flow."
-      );
-      setToastType(MessageType.INFO);
+      const appleResponse = await AppleID.auth.signIn();
+      const code = appleResponse?.authorization?.code;
+      if (!code) throw new Error("Apple sign-in did not return an authorization code.");
+      const appleUser = appleResponse?.user;
+      const tokens = await handleAppleAuthentication(code, appleUser, rememberMe);
+      onSuccess(tokens);
       setErrorMessage("");
     } catch (error: any) {
       // User cancelled or error occurred
