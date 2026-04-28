@@ -126,6 +126,8 @@ function getBaseUrlForService(path: string): string {
   // Route to correct service based on path
   if (path.startsWith("/global")) {
     return GLOBAL_API_URLS[authority];
+  } else if (path.startsWith("/learner")) {
+    return GLOBAL_API_URLS[authority];
   } else if (path.startsWith("/core/ecommerce")) {
     return ECOMMERCE_API_URLS[authority];
   } else {
