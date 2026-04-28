@@ -47,9 +47,10 @@ const App = (props: AppProps) => {
     };
   }, [authority]);
 
-  // Determine redirect URL by calling enrollment and cart APIs.
-  // Returns url, raw enrollments, and raw cart data.
-  // Skips API calls only when no redirect URLs AND no onSuccess callback are configured.
+  // Determine redirect URL by conditionally calling enrollment and cart APIs.
+  // Only calls fetchEnrollments when redirectDashboardUrl is provided.
+  // Only calls fetchCheckout when redirectCheckoutUrl is provided.
+  // If neither redirect URL is provided, skips API calls entirely.
   const determineRedirectUrl = async (
     directAccessToken?: string
   ): Promise<{
@@ -57,9 +58,9 @@ const App = (props: AppProps) => {
     enrollments: EnrollmentResponse | null;
     cart: CheckoutResponse | null;
   }> => {
-    if (!props.redirectDashboardUrl && !props.redirectCheckoutUrl && !props.onSuccess) {
+    if (!props.redirectDashboardUrl && !props.redirectCheckoutUrl) {
       console.log(
-        `${LOG_PREFIX.AUTH} No redirectDashboardUrl, redirectCheckoutUrl, or onSuccess provided, skipping API calls`
+        `${LOG_PREFIX.AUTH} No redirectDashboardUrl or redirectCheckoutUrl provided, skipping enrollment/cart API calls`
       );
       return { url: null, enrollments: null, cart: null };
     }
@@ -76,10 +77,15 @@ const App = (props: AppProps) => {
         return { url: null, enrollments: null, cart: null };
       }
 
-      // Call both APIs in parallel and wait for both to complete
+      // Conditionally build API calls based on which redirect URLs are provided
+      const apiCalls: [Promise<EnrollmentResponse> | null, Promise<CheckoutResponse> | null] = [
+        props.redirectDashboardUrl ? fetchEnrollments(accessToken) : null,
+        props.redirectCheckoutUrl ? fetchCheckout(accessToken) : null,
+      ];
+
       const [enrollmentsResult, checkoutResult] = await Promise.allSettled([
-        fetchEnrollments(accessToken),
-        fetchCheckout(accessToken),
+        apiCalls[0] ?? Promise.resolve(null),
+        apiCalls[1] ?? Promise.resolve(null),
       ]);
 
       const enrollmentsData: EnrollmentResponse | null =
@@ -87,13 +93,11 @@ const App = (props: AppProps) => {
       const cartData: CheckoutResponse | null =
         checkoutResult.status === "fulfilled" ? checkoutResult.value : null;
 
-      const enrollmentCount =
-        enrollmentsResult.status === "fulfilled"
-          ? (enrollmentsResult.value?.results ?? enrollmentsResult.value?.items?.length ?? 0)
-          : 0;
+      const enrollmentCount = enrollmentsData
+        ? (enrollmentsData.results ?? enrollmentsData.items?.length ?? 0)
+        : 0;
 
-      const hasItems =
-        checkoutResult.status === "fulfilled" ? checkoutResult.value?.hasItems === true : false;
+      const hasItems = cartData?.hasItems === true;
 
       if (enrollmentsResult.status === "rejected") {
         console.warn(`${LOG_PREFIX.AUTH} Enrollments fetch failed:`, enrollmentsResult.reason);
@@ -105,20 +109,16 @@ const App = (props: AppProps) => {
       console.log(`${LOG_PREFIX.AUTH} enrollmentCount: ${enrollmentCount}, hasItems: ${hasItems}`);
 
       // Redirect rules:
-      // enrollment > 0  AND hasItems === true  → redirectCheckoutUrl
-      // enrollment === 0 AND hasItems === true  → redirectCheckoutUrl
-      // enrollment > 0  AND hasItems === false → redirectDashboardUrl
-      // enrollment === 0 AND hasItems === false → redirectDashboardUrl
-      if (hasItems) {
-        if (props.redirectCheckoutUrl) {
-          console.log(`${LOG_PREFIX.AUTH} Redirecting to checkout: ${props.redirectCheckoutUrl}`);
-          return { url: props.redirectCheckoutUrl, enrollments: enrollmentsData, cart: cartData };
-        }
-      } else {
-        if (props.redirectDashboardUrl) {
-          console.log(`${LOG_PREFIX.AUTH} Redirecting to dashboard: ${props.redirectDashboardUrl}`);
-          return { url: props.redirectDashboardUrl, enrollments: enrollmentsData, cart: cartData };
-        }
+      // hasItems === true  → redirectCheckoutUrl (if provided)
+      // hasItems === false → redirectDashboardUrl (if provided)
+      if (hasItems && props.redirectCheckoutUrl) {
+        console.log(`${LOG_PREFIX.AUTH} Redirecting to checkout: ${props.redirectCheckoutUrl}`);
+        return { url: props.redirectCheckoutUrl, enrollments: enrollmentsData, cart: cartData };
+      }
+
+      if (!hasItems && props.redirectDashboardUrl) {
+        console.log(`${LOG_PREFIX.AUTH} Redirecting to dashboard: ${props.redirectDashboardUrl}`);
+        return { url: props.redirectDashboardUrl, enrollments: enrollmentsData, cart: cartData };
       }
 
       return { url: null, enrollments: enrollmentsData, cart: cartData };
