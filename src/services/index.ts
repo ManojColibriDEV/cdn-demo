@@ -285,6 +285,35 @@ export const checkEmail = async (email: string): Promise<CheckEmailResponse> => 
 };
 
 /**
+ * Check Phone API - Check if phone number is already linked to another account
+ */
+export const checkPhone = async (phoneNumber: string): Promise<CheckEmailResponse> => {
+  const url = apiUrl(API_ENDPOINTS.CHECK_PHONE);
+  try {
+    const response = await axios.post<CheckEmailResponse>(
+      url,
+      { DayPhone: phoneNumber },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error checking phone:", error);
+
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(`Phone verification failed: ${error.message}`);
+    }
+
+    throw new Error("Unable to verify phone number. Please try again.");
+  }
+};
+
+/**
  * Forgot Password API - Send password reset link to email
  */
 export const forgotPassword = async (email: string): Promise<any> => {

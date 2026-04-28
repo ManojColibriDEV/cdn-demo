@@ -1,5 +1,63 @@
 @import "tailwindcss";
 
+/* Phone input styling - country selector and input as separate bordered boxes */
+.identity-widget-create-account-phone-input.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  /* Ensure CSS custom properties are available in Shadow DOM */
+  --PhoneInput-color--focus: #03b2cb;
+  --PhoneInputCountrySelectArrow-width: 0.3em;
+  --PhoneInputCountrySelectArrow-borderWidth: 1px;
+  --PhoneInputCountryFlag-aspectRatio: 1.5;
+  --PhoneInputCountryFlag-height: 1em;
+  --PhoneInputCountryFlag-borderWidth: 1px;
+  --PhoneInputCountryFlag-borderColor: rgba(0, 0, 0, 0.5);
+}
+
+.identity-widget-create-account-phone-input .PhoneInputCountryIcon {
+  width: calc(1em * 1.5);
+  height: 1em;
+  overflow: hidden;
+}
+
+.identity-widget-create-account-phone-input .PhoneInputCountryIcon img,
+.identity-widget-create-account-phone-input .PhoneInputCountryIcon svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.identity-widget-create-account-phone-input .PhoneInputCountry {
+  border: 1px solid #cbd5d5;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.identity-widget-create-account-phone-input .PhoneInputInput {
+  border: 1px solid #cbd5d5;
+  border-radius: 0.375rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  flex: 1;
+  box-sizing: border-box;
+  background: white;
+}
+
+.identity-widget-create-account-phone-input .PhoneInputInput:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+
+.identity-widget-create-account-phone-input.PhoneInput--error .PhoneInputCountry,
+.identity-widget-create-account-phone-input.PhoneInput--error .PhoneInputInput {
+  border-color: #d64545;
+}
+
 .identity-widget-input-field[type="password"]::-ms-reveal,
 .identity-widget-input-field[type="password"]::-ms-clear {
   display: none;
