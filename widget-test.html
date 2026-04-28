@@ -83,17 +83,11 @@
     Example 1: No auto-redirection (default behavior)
     User will need to handle redirect event manually
   -->
-    <keycloak-widget id="auth-embedded" subsidiary="western" authority="test" autoRedirection="false"> </keycloak-widget>
-
-    <!-- 
-    Example 2: With auto-redirection enabled
-    Widget will automatically redirect after successful login
-    Uncomment to test:
-    <keycloak-widget id="auth-embedded" authority="dev" redirectUrl="http://127.0.0.1:5500/widget-test.html"
-      login-title="Continue to login" login-subtitle="Continue by signing in." 
-      customPrimaryColor="#007bff" auto-redirection="true">
+    <keycloak-widget
+      id="auth-embedded"
+      subsidiary="western"
+      authority="test">
     </keycloak-widget>
-  -->
 
     <script src="./dist/keycloak-widget.umd.js"></script>
 
@@ -190,9 +184,23 @@
         }
       });
 
-      // Listen for redirect event from the widget
+      // Listen for token validity event from the widget
       widget.addEventListener("is-token-valid", function (e) {
         console.log("Token validation event received:", e.detail);
+      });
+
+      // Listen for successful login event
+      widget.addEventListener("success", function (e) {
+        console.log("Login success event received:", e.detail);
+        const { userDetails, enrollments, cart } = e.detail;
+        console.log("User details:", userDetails);
+        console.log("Enrollments:", enrollments);
+        console.log("Cart:", cart);
+      });
+
+      // Listen for login failure event
+      widget.addEventListener("failure", function (e) {
+        console.log("Login failure event received:", e.detail);
       });
     </script>
   </body>

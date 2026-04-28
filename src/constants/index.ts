@@ -96,6 +96,7 @@ export const STORAGE_KEYS = {
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "access_token",
   REFRESH_TOKEN: "refresh_token",
+  REFRESH_TOKEN_TIME: "refresh_token_time",
 } as const;
 
 /**
@@ -105,6 +106,7 @@ export const HTTP_HEADERS = {
   X_BRAND_ID: "X-Brand-Id",
   X_SUBSIDIARY_ID: "X-Subsidiary-Id",
   X_BRAND_DOMAIN: "X-Brand-Domain",
+  X_AUTHORITY: "X-Authority",
 } as const;
 
 // ==================== API ENDPOINTS ====================
@@ -195,6 +197,8 @@ export const TIMING = {
 export const TOKEN_EXPIRY = {
   REFRESH_TOKEN_MAX_AGE_MS: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   REFRESH_TOKEN_MAX_AGE_DAYS: 7,
+  ONE_DAY_MS: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+  THIRTY_DAYS_SECONDS: 30 * 24 * 60 * 60, // 30 days in seconds
 } as const;
 
 // ==================== URL CONSTANTS ====================
@@ -249,6 +253,21 @@ export const GLOBAL_API_URLS = {
   [Authority.TEST]: (import.meta as any).env.VITE_GLOBAL_API_URL_TEST,
   [Authority.STAGE]: (import.meta as any).env.VITE_GLOBAL_API_URL_STAGE,
   [Authority.PROD]: (import.meta as any).env.VITE_GLOBAL_API_URL_PROD,
+} as const;
+
+// Ecommerce API URLs (for /core/ecommerce/* endpoints: cart, checkout, etc.)
+export const ECOMMERCE_API_URLS = {
+  [Authority.DEV]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_DEV ||
+    "https://dev-ecomm-api.colibrilearning.com",
+  [Authority.TEST]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_TEST ||
+    "https://test-ecomm-api.colibrilearning.com",
+  [Authority.STAGE]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_STAGE ||
+    "https://stage-ecomm-api.colibrilearning.com",
+  [Authority.PROD]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_PROD || "https://ecomm-api.colibrilearning.com",
 } as const;
 
 // ==================== ERROR MESSAGES ====================

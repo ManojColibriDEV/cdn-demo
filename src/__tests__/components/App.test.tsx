@@ -11,7 +11,7 @@ import { MemoryRouter } from "react-router-dom";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS } from "../../constants";
+import { COOKIE_NAMES } from "../../constants";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -24,13 +24,14 @@ vi.mock("../../functions", () => ({
   refreshAuthenticationState: vi.fn(),
   silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
-  getDefaultRedirectUrl: vi.fn(),
 }));
 
 vi.mock("../../services", () => ({
   setAuthorityOverride: vi.fn(),
   clearAuthorityOverride: vi.fn(),
   getBrandHeaders: vi.fn(),
+  fetchEnrollments: vi.fn(),
+  fetchCheckout: vi.fn(),
 }));
 
 vi.mock("../../components/embedded-login-form", () => ({
@@ -51,13 +52,20 @@ vi.mock("../../components/embedded-login-form", () => ({
 // ---------------------------------------------------------------------------
 
 const mockUserSession = {
-  email: "john.doe@example.com",
-  name: "John Doe",
-  given_name: "John",
-  family_name: "Doe",
-  preferred_username: "john.doe@example.com",
-  email_verified: true,
-  sub: "test-user-id",
+  access_token: "fake-access-token",
+  userInfo: {
+    studentId: undefined,
+    sub: "test-user-id",
+    email_verified: true,
+    name: "John Doe",
+    preferred_username: "john.doe@example.com",
+    given_name: "John",
+    family_name: "Doe",
+    email: "john.doe@example.com",
+  },
+  decoded: {
+    exp: 9999999999,
+  },
 };
 
 const renderApp = (props: Record<string, unknown> = {}) => {
@@ -70,6 +78,11 @@ const renderApp = (props: Record<string, unknown> = {}) => {
     </MemoryRouter>
   );
 };
+
+function setEncodedCookie(name: string, value: string): void {
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
 
 // ---------------------------------------------------------------------------
 // Test suite
@@ -85,11 +98,10 @@ describe("App Component", () => {
     vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
-    vi.mocked(functions.silentTokenRefresh).mockResolvedValue(undefined);
+    vi.mocked(functions.silentTokenRefresh).mockResolvedValue((() => {}) as any);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
-    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue(
-      "https://dev-learn.example.com/courses"
-    );
+    vi.mocked(services.fetchEnrollments).mockResolvedValue({ items: [], results: 0 });
+    vi.mocked(services.fetchCheckout).mockResolvedValue({ hasItems: false });
   });
 
   // -------------------------------------------------------------------------
@@ -227,14 +239,13 @@ describe("App Component", () => {
     const onRedirect = vi.fn();
     const fakeToken = "fake-access-token";
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, fakeToken);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
 
     renderApp({
       showLogin: true,
       onRedirect,
-      redirectUrl: "https://dev-learn.example.com/dashboard",
-      autoRedirection: false,
+      redirectDashboardUrl: "https://dev-learn.example.com/dashboard",
     });
 
     await waitFor(() => {
@@ -256,7 +267,7 @@ describe("App Component", () => {
   it("does not call onRedirect when no access token is stored after login", async () => {
     const onRedirect = vi.fn();
 
-    // No token in localStorage — createUserSessionFromToken returns null
+    // No token in cookies — createUserSessionFromToken returns null
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
 
     renderApp({
@@ -304,18 +315,14 @@ describe("App Component", () => {
   // autoRedirection — window.location.href redirect after login
   // -------------------------------------------------------------------------
 
-  it("redirects via window.location.href when autoRedirection=true and login succeeds", async () => {
+  it("redirects via window.location.href when login succeeds with redirectDashboardUrl", async () => {
     const fakeToken = "fake-access-token";
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, fakeToken);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
-    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue(
-      "https://dev-learn.example.com/courses"
-    );
 
     renderApp({
       showLogin: true,
-      autoRedirection: true,
-      redirectUrl: "https://dev-learn.example.com/courses",
+      redirectDashboardUrl: "https://dev-learn.example.com/courses",
     });
 
     await waitFor(() => {
