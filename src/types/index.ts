@@ -66,13 +66,14 @@ export interface AppProps {
   redirectCheckoutUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
   onTokenValidityCheck?: (isTokenValid: boolean) => void;
+  onSuccess?: (payload: LoginSuccessPayload) => void;
+  onFailure?: (error: string) => void;
   loginTitle?: string;
   loginSubtitle?: string;
   showLogin?: boolean;
   handleClose?: () => void;
   logoutCounter?: number;
   customPrimaryColor?: string;
-  autoRedirection?: boolean;
   googleClientId?: string;
   appleClientId?: string;
 }
@@ -149,8 +150,22 @@ export interface EnrollmentResponse {
 }
 
 export interface CheckoutResponse {
-  items: any[];
-  results?: number;
+  hasItems: boolean;
+}
+
+export interface LoginSuccessPayload {
+  userDetails: {
+    studentId?: string | number;
+    sub?: string;
+    email_verified?: boolean;
+    name?: string;
+    preferred_username?: string;
+    given_name?: string;
+    family_name?: string;
+    email?: string;
+  } | null;
+  enrollments: EnrollmentResponse | null;
+  cart: CheckoutResponse | null;
 }
 
 // ============================================================================

@@ -15,6 +15,7 @@ import {
   ERROR_MESSAGES,
   AUTH_GATEWAY_URLS,
   GLOBAL_API_URLS,
+  ECOMMERCE_API_URLS,
   Authority,
   ENV_PREFIXES,
   LOCALHOST,
@@ -125,6 +126,8 @@ function getBaseUrlForService(path: string): string {
   // Route to correct service based on path
   if (path.startsWith("/global")) {
     return GLOBAL_API_URLS[authority];
+  } else if (path.startsWith("/core/ecommerce")) {
+    return ECOMMERCE_API_URLS[authority];
   } else {
     // Default to auth gateway for /api/* and other endpoints
     return AUTH_GATEWAY_URLS[authority];
@@ -431,6 +434,8 @@ export const fetchEnrollments = async (accessToken: string): Promise<EnrollmentR
 
   try {
     const brandHeaders = await getBrandHeaders();
+    console.log("Brand headers retrieved:", brandHeaders);
+
     const response = await axios.get<EnrollmentResponse>(url, {
       params,
       headers: {
@@ -444,6 +449,7 @@ export const fetchEnrollments = async (accessToken: string): Promise<EnrollmentR
       validateStatus: () => true,
     });
 
+    console.log("Enrollments response:", response.status, response.data);
     return response.data;
   } catch (error: any) {
     console.error("Error fetching enrollments:", error);
@@ -461,20 +467,32 @@ export const fetchEnrollments = async (accessToken: string): Promise<EnrollmentR
 };
 
 /**
- * Checkout API - Fetch checkout data
+ * Checkout API - Fetch cart items for checkout determination
+ * Calls the ecommerce API to check if user has items in cart
  * @param accessToken Bearer token for Authorization header
  */
 export const fetchCheckout = async (accessToken: string): Promise<CheckoutResponse> => {
-  const url = apiUrl("/checkout");
+  console.log("*** fetchCheckout CALLED ***");
+  const url = apiUrl("/core/ecommerce/cart/items");
 
   try {
+    const brandHeaders = await getBrandHeaders();
     const response = await axios.get<CheckoutResponse>(url, {
+      params: { onlyCheck: true },
       headers: {
-        ...(await getBrandHeaders()),
-        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "X-Host": brandHeaders[HTTP_HEADERS.X_BRAND_DOMAIN] || "westernschools",
+        "X-Access-Token": accessToken,
+
+        // 🔥 Disable caching
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
+      withCredentials: false,
     });
 
+    console.log("Checkout response:", response.status, response.data);
     return response.data;
   } catch (error: any) {
     console.error("Error fetching checkout:", error);
