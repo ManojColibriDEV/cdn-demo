@@ -119,6 +119,7 @@ export const API_ENDPOINTS = {
   GOOGLE_AUTH: "/api/auth/google",
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
+  CHECK_PHONE: "/api/check-phone",
   FORGOT_PASSWORD: "/api/forgot-password",
   FORGOT_USERNAME: "/api/forgot-username",
   REFRESH_TOKEN: "/api/refresh",

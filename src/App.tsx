@@ -160,16 +160,6 @@ const App = (props: AppProps) => {
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
-
-          const { url: targetUrl } = await determineRedirectUrl();
-          if (targetUrl) {
-            const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
-            const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
-            if (onRedirect && userSession) {
-              onRedirect(targetUrl, userSession);
-            }
-            window.location.href = targetUrl;
-          }
           return;
         }
 
@@ -194,14 +184,6 @@ const App = (props: AppProps) => {
             if (onTokenValidityCheck) {
               onTokenValidityCheck(true);
             }
-
-            const { url: targetUrl } = await determineRedirectUrl();
-            if (targetUrl) {
-              if (onRedirect) {
-                onRedirect(targetUrl, userSession);
-              }
-              window.location.href = targetUrl;
-            }
           }
         } else {
           // Clear expired refresh token
@@ -217,12 +199,7 @@ const App = (props: AppProps) => {
     };
 
     attemptAutoLogin();
-  }, [
-    props.redirectUrl,
-    props.redirectDashboardUrl,
-    props.redirectCheckoutUrl,
-    onTokenValidityCheck,
-  ]);
+  }, [onTokenValidityCheck]);
 
   useEffect(() => {
     authority && localStorage.setItem("iam_authority", authority);

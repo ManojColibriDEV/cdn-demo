@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from "react";
+import PhoneInput, { parsePhoneNumber } from "react-phone-number-input";
+import countryLabels from "react-phone-number-input/locale/en.json";
+import "react-phone-number-input/style.css";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 // Only Tailwind CSS for responsive layout
@@ -6,7 +9,7 @@ import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
 import { handleAuthentication } from "../functions";
-import { authRegister, checkEmail } from "../services";
+import { authRegister, checkEmail, checkPhone } from "../services";
 import type { CreateAccountFormProps } from "../types";
 import { useBrandConfigError } from "../hooks/useBrandConfigError";
 import checkSuccessImg from "../icons/badge-check.svg";
@@ -54,12 +57,19 @@ const CreateAccountForm = ({
   const [emailCheckError, setEmailCheckError] = useState(false);
   const [emailCheckErrorMessage, setEmailCheckErrorMessage] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Checked by default
+  const [phoneValue, setPhoneValue] = useState<string | undefined>(undefined);
+  const [phoneExists, setPhoneExists] = useState(false);
+  const [checkingPhone, setCheckingPhone] = useState(false);
+  const [phoneValid, setPhoneValid] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [smsOptIn, setSmsOptIn] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     MessageType.SUCCESS | MessageType.WARNING | MessageType.ERROR | MessageType.INFO
   >(MessageType.INFO);
   const overlayRef = useRef<HTMLDivElement>(null);
   const emailCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const phoneCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const brandConfigError = useBrandConfigError();
 
@@ -234,6 +244,88 @@ const CreateAccountForm = ({
     };
   }, [email, brandConfigError]);
 
+  // Extract national phone number (without country code) for API calls
+  const getNationalNumber = (value: string | undefined): string => {
+    if (!value) return "";
+    try {
+      const parsed = parsePhoneNumber(value);
+      return parsed?.nationalNumber || "";
+    } catch {
+      return "";
+    }
+  };
+
+  // Extract country name from phone value
+  const getCountryName = (value: string | undefined): string => {
+    if (!value) return "";
+    try {
+      const parsed = parsePhoneNumber(value);
+      if (parsed?.country) {
+        return (countryLabels as Record<string, string>)[parsed.country] || "";
+      }
+      return "";
+    } catch {
+      return "";
+    }
+  };
+
+  // Check phone number existence when user types (debounced)
+  useEffect(() => {
+    if (brandConfigError) return;
+
+    if (phoneCheckTimeoutRef.current) {
+      clearTimeout(phoneCheckTimeoutRef.current);
+    }
+
+    const nationalNumber = getNationalNumber(phoneValue);
+
+    // Reset state when phone is empty
+    if (!nationalNumber) {
+      setPhoneExists(false);
+      setPhoneValid(false);
+      setPhoneError("");
+      setCheckingPhone(false);
+      return;
+    }
+
+    // Only check if phone has at least 7 digits
+    if (nationalNumber.length < 7) {
+      setPhoneExists(false);
+      setPhoneValid(false);
+      setPhoneError("");
+      return;
+    }
+
+    // Debounce phone check by 500ms
+    phoneCheckTimeoutRef.current = setTimeout(async () => {
+      setCheckingPhone(true);
+      setPhoneError("");
+      try {
+        const result = await checkPhone(nationalNumber);
+        if (result.exists) {
+          setPhoneExists(true);
+          setPhoneValid(false);
+        } else {
+          setPhoneExists(false);
+          setPhoneValid(true);
+        }
+      } catch (error: any) {
+        console.error(`${LOG_PREFIX.CREATE_ACCOUNT} Phone check failed:`, error);
+        setPhoneExists(false);
+        setPhoneValid(false);
+        setPhoneError(error?.message || "Unable to verify phone number. Please try again.");
+      } finally {
+        setCheckingPhone(false);
+      }
+    }, TIMING.EMAIL_CHECK_DEBOUNCE);
+
+    return () => {
+      if (phoneCheckTimeoutRef.current) {
+        clearTimeout(phoneCheckTimeoutRef.current);
+      }
+    };
+  }, [phoneValue, brandConfigError]);
+
   // Check if email is valid
   const isEmailValid = email && EMAIL_REGEX.test(email);
 
@@ -289,13 +381,24 @@ const CreateAccountForm = ({
       const username = email.split("@")[0];
 
       // Call registration API
-      const registrationResult = await authRegister({
+      // Build registration payload
+      const registrationData: Parameters<typeof authRegister>[0] = {
         username,
         email,
         firstName,
         lastName,
         password,
-      });
+      };
+
+      // Add phone data if provided
+      const nationalNumber = getNationalNumber(phoneValue);
+      if (nationalNumber) {
+        registrationData.DayPhone = nationalNumber;
+        registrationData.Country = getCountryName(phoneValue);
+        registrationData.isMarketingAgreed = smsOptIn;
+      }
+
+      const registrationResult = await authRegister(registrationData);
 
       console.log(
         `${LOG_PREFIX.CREATE_ACCOUNT} Registration successful:`,
@@ -928,10 +1031,105 @@ const CreateAccountForm = ({
               </div>
             )}
 
+            {/* Phone Number */}
+            <div
+              part="identity-widget-create-account-phone-field"
+              className="identity-widget-create-account-phone-field mt-0! ml-0! mb-4! mr-0!"
+            >
+              <label
+                htmlFor="phoneNumber"
+                part="identity-widget-create-account-phone-label"
+                className="identity-widget-create-account-phone-label block! text-sm! font-medium! text-gray-700 mb-1! text-left!"
+              >
+                Phone Number <span className="text-gray-500 italic text-[13px]">(Optional)</span>
+              </label>
+              <div
+                part="identity-widget-create-account-phone-row"
+                className="identity-widget-create-account-phone-row relative!"
+              >
+                <PhoneInput
+                  international
+                  defaultCountry="US"
+                  value={phoneValue}
+                  onChange={setPhoneValue}
+                  disabled={loading}
+                  placeholder="Phone number"
+                  className={`identity-widget-create-account-phone-input ${
+                    phoneExists || phoneError ? "PhoneInput--error" : ""
+                  }`}
+                />
+                {/* Status icon: loader or checkmark */}
+                <span className="flex! items-center! justify-center! absolute! right-2.5! top-1/2! -translate-y-1/2! pointer-events-none! z-2!">
+                  {checkingPhone && <Loader />}
+                  {!checkingPhone && phoneValid && getNationalNumber(phoneValue).length >= 7 && (
+                    <img
+                      src={checkSuccessImg}
+                      alt="Phone available"
+                      aria-label="Phone number is available"
+                      style={{ width: 18, height: 18 }}
+                    />
+                  )}
+                </span>
+              </div>
+              {/* Phone exists error message */}
+              {phoneExists && (
+                <p
+                  part="identity-widget-create-account-phone-error"
+                  className="identity-widget-create-account-phone-error text-[#d64545]! text-[13px]! mt-1.5! text-left!"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  This phone number is already linked to another account.
+                </p>
+              )}
+              {/* Phone check API error message */}
+              {!phoneExists && phoneError && (
+                <p
+                  part="identity-widget-create-account-phone-error"
+                  className="identity-widget-create-account-phone-error text-[#d64545]! text-[13px]! mt-1.5! text-left!"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  {phoneError}
+                </p>
+              )}
+            </div>
+
+            {/* SMS opt-in checkbox */}
+            <div
+              part="identity-widget-create-account-sms-row"
+              className="identity-widget-create-account-sms-row flex! items-center! mt-0! ml-0! mb-4! mr-0!"
+            >
+              <label
+                part="identity-widget-create-account-sms-label"
+                className="identity-widget-create-account-sms-label flex! items-center! m-0!"
+              >
+                <input
+                  type="checkbox"
+                  part="identity-widget-create-account-sms-checkbox"
+                  checked={smsOptIn}
+                  onChange={(e) => setSmsOptIn(e.target.checked)}
+                  className="identity-widget-create-account-sms-checkbox mr-2! rounded! border-gray-300! w-[1rem]! h-[1rem]! cursor-pointer! shadow-none! accent-[var(--button-primary-bg)]!"
+                  aria-label="I agree to receive marketing communications and updates."
+                  disabled={loading}
+                />
+                <span
+                  part="identity-widget-create-account-sms-text"
+                  className="identity-widget-create-account-sms-text text-gray-600! text-sm!"
+                  style={{
+                    fontWeight: "500",
+                    color: "#5F5B7D",
+                  }}
+                >
+                  I agree to receive marketing communications and updates.
+                </span>
+              </label>
+            </div>
+
             {/* Remember me checkbox */}
             <div
               part="identity-widget-create-account-remember-row"
-              className="identity-widget-create-account-remember-row flex! items-center! mt-4! ml-0! mb-4! mr-0!"
+              className="identity-widget-create-account-remember-row flex! items-center! mt-0! ml-0! mb-4! mr-0!"
             >
               <label
                 part="identity-widget-create-account-remember-label"
@@ -961,7 +1159,7 @@ const CreateAccountForm = ({
             {/* Create Account Button */}
             <Button
               type={ButtonType.SUBMIT}
-              disabled={loading || emailExists || !isEmailValid || brandConfigError}
+              disabled={loading || emailExists || phoneExists || !isEmailValid || brandConfigError}
               part="identity-widget-submit-button identity-widget-create-account-submit-button"
               className="identity-widget-submit-button identity-widget-create-account-submit-button w-full! text-white! border-none! py-3! px-6! text-base! font-bold! rounded-lg! cursor-pointer! shadow-md! transition-colors! duration-300! active:scale-[0.98]! m-0!"
             >

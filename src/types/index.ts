@@ -115,6 +115,9 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   password: string;
+  DayPhone?: string;
+  Country?: string;
+  isMarketingAgreed?: boolean;
 }
 
 export interface RegisterResponse {
