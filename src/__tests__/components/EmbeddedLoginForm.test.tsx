@@ -878,7 +878,7 @@ describe("App Component", () => {
     expect(stopRefresh).toHaveBeenCalled();
   });
 
-  it("auto redirects when valid access token exists and redirectDashboardUrl is set", async () => {
+  it("does not auto redirect when valid access token exists on revisit", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
 
@@ -889,11 +889,14 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(window.location.href).toBe("https://example.com/target");
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(window.location.href).not.toBe("https://example.com/target");
   });
 
-  it("calls onRedirect when valid access token exists", async () => {
+  it("does not call onRedirect when valid access token exists on revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
@@ -914,11 +917,14 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalled();
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT call onRedirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("uses default redirect URL when onRedirect callback is provided without explicit redirectUrl prop", async () => {
+  it("does not call onRedirect on revisit even with redirectDashboardUrl", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
@@ -939,11 +945,11 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalledWith(
-        "https://dev-learn.example.com/courses",
-        expect.objectContaining({ access_token: "token-value" })
-      );
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT call onRedirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("does not call onRedirect when redirectUrl exists but access token is missing", async () => {
@@ -992,7 +998,7 @@ describe("App Component", () => {
     expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
+  it("does not invoke onRedirect on refresh flow revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
@@ -1018,11 +1024,13 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(functions.refreshAuthenticationState).toHaveBeenCalled();
-      expect(onRedirect).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("uses default redirect URL during refresh flow when redirectUrl prop is missing", async () => {
+  it("does not redirect during refresh flow on revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
@@ -1037,11 +1045,11 @@ describe("App Component", () => {
     renderApp({ onRedirect, redirectDashboardUrl: "https://dev-learn.example.com/courses" });
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalledWith(
-        "https://dev-learn.example.com/courses",
-        expect.objectContaining({ access_token: "new-access-default-url" })
-      );
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("stops refresh flow when session creation fails", async () => {
@@ -1137,7 +1145,7 @@ describe("App Component", () => {
     );
   });
 
-  it("auto redirects after refresh flow when autoRedirection is true", async () => {
+  it("does not auto redirect after refresh flow on revisit", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
@@ -1152,12 +1160,6 @@ describe("App Component", () => {
       userInfo: {},
     } as any);
 
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: { href: "http://localhost/" },
-    });
-
     render(
       <MemoryRouter>
         <App showLogin={true} redirectDashboardUrl="https://example.com/refresh-redirect" />
@@ -1165,13 +1167,11 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect((window.location as any).href).toBe("https://example.com/refresh-redirect");
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
     });
 
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: originalLocation,
-    });
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(window.location.href).not.toBe("https://example.com/refresh-redirect");
   });
 
   it("handles embedded login success through app callback and onRedirect", async () => {
@@ -1256,7 +1256,7 @@ describe("App Component", () => {
     });
   });
 
-  it("calls onTokenValidityCheck(true) after successful refresh login", async () => {
+  it("calls onTokenValidityCheck(true) after successful refresh without redirecting", async () => {
     const onTokenValidityCheck = vi.fn();
     const onRedirect = vi.fn();
 
@@ -1280,8 +1280,10 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(onTokenValidityCheck).toHaveBeenCalledWith(true);
-      expect(onRedirect).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("returns early when refresh succeeds but access token is still missing", async () => {
