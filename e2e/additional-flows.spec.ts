@@ -255,18 +255,24 @@ test.describe("Auth Widget — Session Persistence", () => {
     await performSuccessfulLogin(page);
 
     // After successful login, refresh_token_time is stored (metadata flag for remember me)
-    const refreshTokenTimeBeforeReload = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
+    const refreshTokenTimeBeforeReload = await page.evaluate(() =>
+      localStorage.getItem("refresh_token_time")
+    );
     expect(refreshTokenTimeBeforeReload).not.toBeNull();
 
     // Reload and verify the metadata flag still exists
     await page.reload();
     await page.waitForLoadState("networkidle");
 
-    const refreshTokenTimeAfterReload = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
+    const refreshTokenTimeAfterReload = await page.evaluate(() =>
+      localStorage.getItem("refresh_token_time")
+    );
     expect(refreshTokenTimeAfterReload).toBe(refreshTokenTimeBeforeReload);
   });
 
-  test("refresh_token_time flag is stored in localStorage after successful login", async ({ page }) => {
+  test("refresh_token_time flag is stored in localStorage after successful login", async ({
+    page,
+  }) => {
     await performSuccessfulLogin(page);
 
     // After successful login, refresh_token_time metadata flag is stored for remember me logic

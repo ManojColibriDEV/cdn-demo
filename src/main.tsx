@@ -79,12 +79,19 @@ if (renderMode === "TEST") {
             subsidiary="western"
             authority="test"
             showLogin={true}
-            autoRedirection={false}
             googleClientId={GOOGLE_CLIENT_ID}
             appleClientId={APPLE_CLIENT_ID}
             onTokenValidityCheck={(isTokenValid) => {
               console.log(`[main.tsx] Token valid: ${isTokenValid}`);
             }}
+            onSuccess={(payload) => {
+              console.log("[main.tsx] Login success:", payload);
+            }}
+            onFailure={(error) => {
+              console.log("[main.tsx] Login failure:", error);
+            }}
+            redirectDashboardUrl="https://dashboard.example.com"
+            redirectCheckoutUrl="https://checkout.example.com"
           />
         </StrictMode>
       </BrowserRouter>
@@ -103,13 +110,15 @@ if (renderMode === "TEST") {
         "authority",
         "subsidiary",
         "redirectUrl",
+        "redirect-dashboard-url",
+        "redirectDashboardUrl",
+        "redirect-checkout-url",
+        "redirectCheckoutUrl",
         "loginTitle",
         "loginSubtitle",
         "show-login",
         "custom-primary-color",
         "customPrimaryColor",
-        "auto-redirection",
-        "autoRedirection",
         "google-client-id",
         "googleClientId",
         "apple-client-id",
@@ -125,6 +134,8 @@ if (renderMode === "TEST") {
     public onClose?: () => void;
     public onLogout?: () => void;
     public onTokenValidityCheck?: (isTokenValid: boolean) => void;
+    public onSuccess?: (payload: any) => void;
+    public onFailure?: (error: string) => void;
 
     connectedCallback() {
       // Attach shadow DOM for style isolation (bloom-elements standard)
@@ -338,10 +349,6 @@ if (renderMode === "TEST") {
 
       this.dispatchEvent(event);
       console.log("[Widget] Redirect event dispatched");
-
-      // NOTE: Auto-redirect is now controlled by the App component via autoRedirection prop
-      // This widget component should NOT redirect automatically
-      // The App component will handle window.location.href if autoRedirection=true
     };
 
     private handleClose = () => {
@@ -380,21 +387,53 @@ if (renderMode === "TEST") {
       this.dispatchEvent(event);
     };
 
+    private handleSuccess = (payload: any) => {
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onSuccess) {
+        this.onSuccess(payload);
+      }
+
+      // Dispatch success event with userDetails, enrollments, and cart
+      const event = new CustomEvent("success", {
+        detail: payload,
+        bubbles: true,
+        composed: true,
+      });
+      this.dispatchEvent(event);
+    };
+
+    private handleFailure = (error: string) => {
+      // Call function prop if provided (for React/NPM usage)
+      if (this.onFailure) {
+        this.onFailure(error);
+      }
+
+      // Dispatch failure event with error detail
+      const event = new CustomEvent("failure", {
+        detail: { error },
+        bubbles: true,
+        composed: true,
+      });
+      this.dispatchEvent(event);
+    };
+
     private getProps() {
       const authorityAttr = this.getAttribute("authority");
       const detectedAuthority = authorityAttr || getAuthorityFromUrl();
-
-      // Support both kebab-case (HTML) and camelCase (React/JSX) for autoRedirection
-      const autoRedirectionAttr =
-        this.getAttribute("auto-redirection") || this.getAttribute("autoRedirection");
-      // Default to true if attribute is not set, false only if explicitly set to "false"
-      const autoRedirection = autoRedirectionAttr !== "false";
 
       return {
         authority: detectedAuthority,
         subsidiary: this.getAttribute("subsidiary") || undefined,
         redirectUrl:
           this.getAttribute("redirect-url") || this.getAttribute("redirectUrl") || undefined,
+        redirectDashboardUrl:
+          this.getAttribute("redirect-dashboard-url") ||
+          this.getAttribute("redirectDashboardUrl") ||
+          undefined,
+        redirectCheckoutUrl:
+          this.getAttribute("redirect-checkout-url") ||
+          this.getAttribute("redirectCheckoutUrl") ||
+          undefined,
         loginTitle:
           this.getAttribute("login-title") || this.getAttribute("loginTitle") || undefined,
         loginSubtitle:
@@ -404,7 +443,6 @@ if (renderMode === "TEST") {
           this.getAttribute("custom-primary-color") ||
           this.getAttribute("customPrimaryColor") ||
           undefined,
-        autoRedirection: autoRedirection,
         googleClientId:
           this.getAttribute("google-client-id") ||
           this.getAttribute("googleClientId") ||
@@ -416,6 +454,8 @@ if (renderMode === "TEST") {
           undefined,
         onRedirect: this.handleRedirect,
         onTokenValidityCheck: this.handleTokenValidity,
+        onSuccess: this.handleSuccess,
+        onFailure: this.handleFailure,
         handleClose: this.handleClose,
         logoutCounter: this.logoutCounter,
       };

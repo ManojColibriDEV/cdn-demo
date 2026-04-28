@@ -22,6 +22,8 @@ vi.mock("../../services", () => ({
   setAuthorityOverride: vi.fn(),
   clearAuthorityOverride: vi.fn(),
   getBrandHeaders: vi.fn(),
+  fetchEnrollments: vi.fn(),
+  fetchCheckout: vi.fn(),
 }));
 
 // Mock functions
@@ -711,12 +713,14 @@ describe("App Component", () => {
     vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
+    vi.mocked(services.fetchEnrollments).mockResolvedValue({ items: [], results: 0 });
+    vi.mocked(services.fetchCheckout).mockResolvedValue({ hasItems: false });
   });
 
   const renderApp = (props: any = {}) =>
     render(
       <MemoryRouter>
-        <App showLogin={true} autoRedirection={false} {...props} />
+        <App showLogin={true} {...props} />
       </MemoryRouter>
     );
 
@@ -874,12 +878,13 @@ describe("App Component", () => {
     expect(stopRefresh).toHaveBeenCalled();
   });
 
-  it("auto redirects when valid access token exists and autoRedirection is true", async () => {
+  it("auto redirects when valid access token exists and redirectDashboardUrl is set", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
 
     render(
       <MemoryRouter>
-        <App showLogin={true} autoRedirection={true} redirectUrl="https://example.com/target" />
+        <App showLogin={true} redirectDashboardUrl="https://example.com/target" />
       </MemoryRouter>
     );
 
@@ -888,7 +893,7 @@ describe("App Component", () => {
     });
   });
 
-  it("calls onRedirect when valid access token exists and autoRedirection is false", async () => {
+  it("calls onRedirect when valid access token exists", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
@@ -902,8 +907,7 @@ describe("App Component", () => {
       <MemoryRouter>
         <App
           showLogin={true}
-          autoRedirection={false}
-          redirectUrl="https://example.com/callback"
+          redirectDashboardUrl="https://example.com/callback"
           onRedirect={onRedirect}
         />
       </MemoryRouter>
@@ -926,7 +930,11 @@ describe("App Component", () => {
 
     render(
       <MemoryRouter>
-        <App showLogin={true} autoRedirection={false} onRedirect={onRedirect} />
+        <App
+          showLogin={true}
+          redirectDashboardUrl="https://dev-learn.example.com/courses"
+          onRedirect={onRedirect}
+        />
       </MemoryRouter>
     );
 
@@ -1002,8 +1010,7 @@ describe("App Component", () => {
       <MemoryRouter>
         <App
           showLogin={true}
-          autoRedirection={false}
-          redirectUrl="https://example.com/after-refresh"
+          redirectDashboardUrl="https://example.com/after-refresh"
           onRedirect={onRedirect}
         />
       </MemoryRouter>
@@ -1027,7 +1034,7 @@ describe("App Component", () => {
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
     } as any);
 
-    renderApp({ onRedirect });
+    renderApp({ onRedirect, redirectDashboardUrl: "https://dev-learn.example.com/courses" });
 
     await waitFor(() => {
       expect(onRedirect).toHaveBeenCalledWith(
@@ -1116,7 +1123,7 @@ describe("App Component", () => {
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
     } as any);
 
-    renderApp({ autoRedirection: true, redirectUrl: "https://example.com/embedded-success" });
+    renderApp({ redirectDashboardUrl: "https://example.com/embedded-success" });
 
     await user.type(screen.getByPlaceholderText(/email or username/i), "embeddeduser");
     await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
@@ -1153,11 +1160,7 @@ describe("App Component", () => {
 
     render(
       <MemoryRouter>
-        <App
-          showLogin={true}
-          autoRedirection={true}
-          redirectUrl="https://example.com/refresh-redirect"
-        />
+        <App showLogin={true} redirectDashboardUrl="https://example.com/refresh-redirect" />
       </MemoryRouter>
     );
 
@@ -1189,7 +1192,11 @@ describe("App Component", () => {
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
     } as any);
 
-    renderApp({ onRedirect, redirectUrl: "https://example.com/after-login", handleClose: vi.fn() });
+    renderApp({
+      onRedirect,
+      redirectDashboardUrl: "https://example.com/after-login",
+      handleClose: vi.fn(),
+    });
 
     await user.type(screen.getByPlaceholderText(/email or username/i), "appuser");
     await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");
@@ -1265,7 +1272,11 @@ describe("App Component", () => {
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
     } as any);
 
-    renderApp({ onTokenValidityCheck, onRedirect, redirectUrl: "https://example.com/validity" });
+    renderApp({
+      onTokenValidityCheck,
+      onRedirect,
+      redirectDashboardUrl: "https://example.com/validity",
+    });
 
     await waitFor(() => {
       expect(onTokenValidityCheck).toHaveBeenCalledWith(true);
@@ -1309,7 +1320,7 @@ describe("App Component", () => {
       decoded: { exp: Math.floor(Date.now() / 1000) + 3600 },
     } as any);
 
-    renderApp({ onRedirect });
+    renderApp({ onRedirect, redirectDashboardUrl: "https://dev-learn.example.com/courses" });
 
     await user.type(screen.getByPlaceholderText(/email or username/i), "defaultuser");
     await user.type(screen.getByPlaceholderText(/password/i), "ValidPassword1$");

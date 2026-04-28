@@ -9,10 +9,15 @@ import {
   createUserSessionFromToken,
   silentTokenRefresh,
 } from "./functions";
-import { setAuthorityOverride, clearAuthorityOverride } from "./services";
-import type { AppProps } from "./types";
+import {
+  setAuthorityOverride,
+  clearAuthorityOverride,
+  fetchEnrollments,
+  fetchCheckout,
+} from "./services";
+import type { AppProps, LoginSuccessPayload, EnrollmentResponse, CheckoutResponse } from "./types";
 import { STORAGE_KEYS, COOKIE_NAMES, LOG_PREFIX } from "./constants";
-import { getCookie, getDefaultRedirectUrl } from "./utils/cookieHelper";
+import { getCookie } from "./utils/cookieHelper";
 
 const App = (props: AppProps) => {
   const { authority, subsidiary, onRedirect, onTokenValidityCheck } = props;
@@ -42,6 +47,87 @@ const App = (props: AppProps) => {
     };
   }, [authority]);
 
+  // Determine redirect URL by calling enrollment and cart APIs.
+  // Returns url, raw enrollments, and raw cart data.
+  // Skips API calls only when no redirect URLs AND no onSuccess callback are configured.
+  const determineRedirectUrl = async (
+    directAccessToken?: string
+  ): Promise<{
+    url: string | null;
+    enrollments: EnrollmentResponse | null;
+    cart: CheckoutResponse | null;
+  }> => {
+    if (!props.redirectDashboardUrl && !props.redirectCheckoutUrl && !props.onSuccess) {
+      console.log(
+        `${LOG_PREFIX.AUTH} No redirectDashboardUrl, redirectCheckoutUrl, or onSuccess provided, skipping API calls`
+      );
+      return { url: null, enrollments: null, cart: null };
+    }
+
+    try {
+      let accessToken = directAccessToken;
+
+      if (!accessToken) {
+        accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false) || undefined;
+      }
+
+      if (!accessToken) {
+        console.error(`${LOG_PREFIX.AUTH} No access token found for redirect determination`);
+        return { url: null, enrollments: null, cart: null };
+      }
+
+      // Call both APIs in parallel and wait for both to complete
+      const [enrollmentsResult, checkoutResult] = await Promise.allSettled([
+        fetchEnrollments(accessToken),
+        fetchCheckout(accessToken),
+      ]);
+
+      const enrollmentsData: EnrollmentResponse | null =
+        enrollmentsResult.status === "fulfilled" ? enrollmentsResult.value : null;
+      const cartData: CheckoutResponse | null =
+        checkoutResult.status === "fulfilled" ? checkoutResult.value : null;
+
+      const enrollmentCount =
+        enrollmentsResult.status === "fulfilled"
+          ? (enrollmentsResult.value?.results ?? enrollmentsResult.value?.items?.length ?? 0)
+          : 0;
+
+      const hasItems =
+        checkoutResult.status === "fulfilled" ? checkoutResult.value?.hasItems === true : false;
+
+      if (enrollmentsResult.status === "rejected") {
+        console.warn(`${LOG_PREFIX.AUTH} Enrollments fetch failed:`, enrollmentsResult.reason);
+      }
+      if (checkoutResult.status === "rejected") {
+        console.warn(`${LOG_PREFIX.AUTH} Cart fetch failed:`, checkoutResult.reason);
+      }
+
+      console.log(`${LOG_PREFIX.AUTH} enrollmentCount: ${enrollmentCount}, hasItems: ${hasItems}`);
+
+      // Redirect rules:
+      // enrollment > 0  AND hasItems === true  → redirectCheckoutUrl
+      // enrollment === 0 AND hasItems === true  → redirectCheckoutUrl
+      // enrollment > 0  AND hasItems === false → redirectDashboardUrl
+      // enrollment === 0 AND hasItems === false → redirectDashboardUrl
+      if (hasItems) {
+        if (props.redirectCheckoutUrl) {
+          console.log(`${LOG_PREFIX.AUTH} Redirecting to checkout: ${props.redirectCheckoutUrl}`);
+          return { url: props.redirectCheckoutUrl, enrollments: enrollmentsData, cart: cartData };
+        }
+      } else {
+        if (props.redirectDashboardUrl) {
+          console.log(`${LOG_PREFIX.AUTH} Redirecting to dashboard: ${props.redirectDashboardUrl}`);
+          return { url: props.redirectDashboardUrl, enrollments: enrollmentsData, cart: cartData };
+        }
+      }
+
+      return { url: null, enrollments: enrollmentsData, cart: cartData };
+    } catch (error) {
+      console.error(`${LOG_PREFIX.AUTH} Error determining redirect URL:`, error);
+      return { url: null, enrollments: null, cart: null };
+    }
+  };
+
   useEffect(() => {
     let cleanup: (() => void) | undefined;
 
@@ -65,29 +151,23 @@ const App = (props: AppProps) => {
   useEffect(() => {
     const attemptAutoLogin = async () => {
       try {
-                const isTokenValid = !isRefreshTokenExpiredFromCookie();
+        const isTokenValid = !isRefreshTokenExpiredFromCookie();
         if (onTokenValidityCheck) {
           onTokenValidityCheck(isTokenValid);
         }
+
         // First check if access token is already valid
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
 
-          if (onTokenValidityCheck) {
-            onTokenValidityCheck(true);
-          }
-
-          const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-          const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
-          const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
-
-          if (onRedirect && userSession) {
-            onRedirect(targetUrl, userSession);
-          }
-
-          // Only auto-redirect if autoRedirection is enabled (uses default URL if redirectUrl not provided)
-          if (props.autoRedirection) {
+          const { url: targetUrl } = await determineRedirectUrl();
+          if (targetUrl) {
+            const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+            const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
+            if (onRedirect && userSession) {
+              onRedirect(targetUrl, userSession);
+            }
             window.location.href = targetUrl;
           }
           return;
@@ -115,35 +195,21 @@ const App = (props: AppProps) => {
               onTokenValidityCheck(true);
             }
 
-            // Trigger onRedirect callback with userSession from decoded token
-            const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-            if (onRedirect) {
-              console.log(
-                `${LOG_PREFIX.AUTH} Triggering onRedirect callback with user session:`,
-                userSession
-              );
-              onRedirect(targetUrl, userSession);
-            }
-
-            // Redirect to target URL (credentials stored in cookies)
-            // Only auto-redirect if autoRedirection prop is true
-            if (props.autoRedirection) {
+            const { url: targetUrl } = await determineRedirectUrl();
+            if (targetUrl) {
+              if (onRedirect) {
+                onRedirect(targetUrl, userSession);
+              }
               window.location.href = targetUrl;
             }
           }
         } else {
-          // No valid tokens — notify host and clear expired refresh token data
-          if (onTokenValidityCheck) {
-            onTokenValidityCheck(false);
-          }
+          // Clear expired refresh token
           localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
           localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
         }
       } catch (error) {
         console.error(`${LOG_PREFIX.AUTH} Auto-login failed:`, error);
-        if (onTokenValidityCheck) {
-          onTokenValidityCheck(false);
-        }
         // Clear invalid tokens
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
@@ -151,46 +217,65 @@ const App = (props: AppProps) => {
     };
 
     attemptAutoLogin();
-  }, [props.redirectUrl, onTokenValidityCheck]);
+  }, [
+    props.redirectUrl,
+    props.redirectDashboardUrl,
+    props.redirectCheckoutUrl,
+    onTokenValidityCheck,
+  ]);
 
   useEffect(() => {
     authority && localStorage.setItem("iam_authority", authority);
     subsidiary && localStorage.setItem("subsidiary", subsidiary);
   }, [authority, subsidiary]);
 
-  const handleEmbeddedLoginSuccess = () => {
+  const handleEmbeddedLoginSuccess = (tokens?: any) => {
     if (props.handleClose) {
       props.handleClose();
     }
 
-    // Mark user as authenticated
     setIsAuthenticated(true);
 
     if (onTokenValidityCheck) {
       onTokenValidityCheck(true);
     }
 
-    const targetUrl = props.redirectUrl || getDefaultRedirectUrl();
-    if (onRedirect) {
-      const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
-      if (accessToken) {
-        const userSession = createUserSessionFromToken(accessToken);
-        if (userSession) {
+    const accessTokenFromLogin = tokens?.access_token;
+    const accessToken = accessTokenFromLogin || getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+    const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
+
+    void determineRedirectUrl(accessTokenFromLogin)
+      .then(({ url: targetUrl, enrollments, cart }) => {
+        if (props.onSuccess) {
+          const payload: LoginSuccessPayload = {
+            userDetails: userSession?.userInfo ?? null,
+            enrollments,
+            cart,
+          };
+          props.onSuccess(payload);
+        }
+
+        if (!targetUrl) return;
+
+        if (userSession && onRedirect) {
           onRedirect(targetUrl, userSession);
         }
-      }
-    }
 
-    if (props.autoRedirection) {
-      setTimeout(() => {
-        // Redirect without URL parameters - credentials stored in cookies only
         window.location.href = targetUrl;
-      }, 100);
-    }
+      })
+      .catch((error) => {
+        console.error(`${LOG_PREFIX.AUTH} determineRedirectUrl FAILED:`, error);
+        if (props.onFailure) {
+          props.onFailure(error instanceof Error ? error.message : String(error));
+        }
+      });
   };
 
   const handleEmbeddedLoginError = (error: string) => {
     console.log(`${LOG_PREFIX.AUTH} Embedded login error:`, error);
+    if (props.onFailure) {
+      props.onFailure(error);
+    }
   };
 
   const handleClose = () => {

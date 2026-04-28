@@ -24,6 +24,18 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => path.replace(/^\/global/, "/global"),
         },
+        "/learner": {
+          target: env.VITE_GLOBAL_API_URL_DEV,
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/learner/, "/learner"),
+        },
+        "/core": {
+          target: env.VITE_ECOMMERCE_API_URL_DEV,
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/core/, "/core"),
+        },
       },
     },
     define: {
