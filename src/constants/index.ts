@@ -106,6 +106,7 @@ export const HTTP_HEADERS = {
   X_BRAND_ID: "X-Brand-Id",
   X_SUBSIDIARY_ID: "X-Subsidiary-Id",
   X_BRAND_DOMAIN: "X-Brand-Domain",
+  X_AUTHORITY: "X-Authority",
 } as const;
 
 // ==================== API ENDPOINTS ====================
@@ -252,6 +253,21 @@ export const GLOBAL_API_URLS = {
   [Authority.TEST]: (import.meta as any).env.VITE_GLOBAL_API_URL_TEST,
   [Authority.STAGE]: (import.meta as any).env.VITE_GLOBAL_API_URL_STAGE,
   [Authority.PROD]: (import.meta as any).env.VITE_GLOBAL_API_URL_PROD,
+} as const;
+
+// Ecommerce API URLs (for /core/ecommerce/* endpoints: cart, checkout, etc.)
+export const ECOMMERCE_API_URLS = {
+  [Authority.DEV]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_DEV ||
+    "https://dev-ecomm-api.colibrilearning.com",
+  [Authority.TEST]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_TEST ||
+    "https://test-ecomm-api.colibrilearning.com",
+  [Authority.STAGE]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_STAGE ||
+    "https://stage-ecomm-api.colibrilearning.com",
+  [Authority.PROD]:
+    (import.meta as any).env.VITE_ECOMMERCE_API_URL_PROD || "https://ecomm-api.colibrilearning.com",
 } as const;
 
 // ==================== ERROR MESSAGES ====================
