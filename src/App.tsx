@@ -160,6 +160,16 @@ const App = (props: AppProps) => {
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
+
+          // Only redirectUrl triggers on revisit (not redirectDashboardUrl/redirectCheckoutUrl)
+          if (props.redirectUrl) {
+            const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+            const userSession = accessToken ? createUserSessionFromToken(accessToken) : null;
+            if (userSession && onRedirect) {
+              onRedirect(props.redirectUrl, userSession);
+            }
+            window.location.href = props.redirectUrl;
+          }
           return;
         }
 
@@ -184,6 +194,14 @@ const App = (props: AppProps) => {
             if (onTokenValidityCheck) {
               onTokenValidityCheck(true);
             }
+
+            // Only redirectUrl triggers on revisit (not redirectDashboardUrl/redirectCheckoutUrl)
+            if (props.redirectUrl) {
+              if (onRedirect) {
+                onRedirect(props.redirectUrl, userSession);
+              }
+              window.location.href = props.redirectUrl;
+            }
           }
         } else {
           // Clear expired refresh token
@@ -199,7 +217,7 @@ const App = (props: AppProps) => {
     };
 
     attemptAutoLogin();
-  }, [onTokenValidityCheck]);
+  }, [props.redirectUrl, onTokenValidityCheck]);
 
   useEffect(() => {
     authority && localStorage.setItem("iam_authority", authority);
@@ -223,6 +241,9 @@ const App = (props: AppProps) => {
 
     void determineRedirectUrl(accessTokenFromLogin)
       .then(({ url: targetUrl, enrollments, cart }) => {
+        // Use redirectUrl as fallback when determineRedirectUrl returns no target
+        const finalUrl = targetUrl || props.redirectUrl || null;
+
         if (props.onSuccess) {
           const payload: LoginSuccessPayload = {
             userDetails: userSession?.userInfo ?? null,
@@ -232,13 +253,13 @@ const App = (props: AppProps) => {
           props.onSuccess(payload);
         }
 
-        if (!targetUrl) return;
+        if (!finalUrl) return;
 
         if (userSession && onRedirect) {
-          onRedirect(targetUrl, userSession);
+          onRedirect(finalUrl, userSession);
         }
 
-        window.location.href = targetUrl;
+        window.location.href = finalUrl;
       })
       .catch((error) => {
         console.error(`${LOG_PREFIX.AUTH} determineRedirectUrl FAILED:`, error);
