@@ -147,6 +147,30 @@ const App = (props: AppProps) => {
     };
   }, [isAuthenticated]);
 
+  // Handle redirect after successful auto-login (valid token exists).
+  // Only uses redirectUrl — dashboard/checkout determination is reserved for first login.
+  const handleAutoLoginRedirect = async (accessToken: string) => {
+    const userSession = createUserSessionFromToken(accessToken);
+    if (!userSession) return;
+
+    if (props.onSuccess) {
+      const payload: LoginSuccessPayload = {
+        userDetails: userSession.userInfo ?? null,
+        enrollments: null,
+        cart: null,
+      };
+      props.onSuccess(payload);
+    }
+
+    if (props.redirectUrl) {
+      if (onRedirect) {
+        console.log(`${LOG_PREFIX.AUTH} Auto-login redirect to: ${props.redirectUrl}`);
+        onRedirect(props.redirectUrl, userSession);
+      }
+      window.location.href = props.redirectUrl;
+    }
+  };
+
   // Auto-login using refresh token if available
   useEffect(() => {
     const attemptAutoLogin = async () => {
@@ -160,6 +184,10 @@ const App = (props: AppProps) => {
         const hasValidAccessToken = await checkTokenAndRedirectWithRefresh();
         if (hasValidAccessToken) {
           setIsAuthenticated(true);
+          const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+          if (accessToken) {
+            await handleAutoLoginRedirect(accessToken);
+          }
           return;
         }
 
@@ -184,6 +212,8 @@ const App = (props: AppProps) => {
             if (onTokenValidityCheck) {
               onTokenValidityCheck(true);
             }
+
+            await handleAutoLoginRedirect(accessToken);
           }
         } else {
           // Clear expired refresh token
@@ -232,13 +262,15 @@ const App = (props: AppProps) => {
           props.onSuccess(payload);
         }
 
-        if (!targetUrl) return;
-
-        if (userSession && onRedirect) {
-          onRedirect(targetUrl, userSession);
+        // Use determined URL or fall back to redirectUrl prop
+        const finalUrl = targetUrl || props.redirectUrl;
+        if (finalUrl) {
+          if (userSession && onRedirect) {
+            console.log(`${LOG_PREFIX.AUTH} Login redirect to: ${finalUrl}`);
+            onRedirect(finalUrl, userSession);
+          }
+          window.location.href = finalUrl;
         }
-
-        window.location.href = targetUrl;
       })
       .catch((error) => {
         console.error(`${LOG_PREFIX.AUTH} determineRedirectUrl FAILED:`, error);
