@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import PhoneInput, { parsePhoneNumber } from "react-phone-number-input";
-import countryLabels from "react-phone-number-input/locale/en.json";
-import "react-phone-number-input/style.css";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
 // Only Tailwind CSS for responsive layout
@@ -255,13 +253,18 @@ const CreateAccountForm = ({
     }
   };
 
-  // Extract country name from phone value
+  // Extract country name from phone value using Intl.DisplayNames (always reliable, no external JSON dependency)
   const getCountryName = (value: string | undefined): string => {
     if (!value) return "";
     try {
       const parsed = parsePhoneNumber(value);
       if (parsed?.country) {
-        return (countryLabels as Record<string, string>)[parsed.country] || "";
+        try {
+          const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+          return displayNames.of(parsed.country) || "";
+        } catch {
+          return parsed.country;
+        }
       }
       return "";
     } catch {
@@ -532,7 +535,7 @@ const CreateAccountForm = ({
           <form
             part="identity-widget-create-account-form"
             onSubmit={handleSubmit}
-            className="identity-widget-create-account-form space-y-4!"
+            className="identity-widget-create-account-form"
             aria-label="Create account form"
           >
             {/* Email Address */}

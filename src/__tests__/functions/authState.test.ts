@@ -183,6 +183,7 @@ describe("refreshAuthenticationState", () => {
     expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
     expect(document.cookie).toContain("new.refresh.token");
     expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeTruthy();
+    expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
   it("updates refresh_token_time when remember me flag already exists", async () => {
@@ -341,12 +342,11 @@ describe("checkTokenAndRedirect", () => {
   });
 
   it("returns false when token is expired via access_token_expires check", () => {
+    const expiredTime = (Date.now() - 1000).toString();
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() - 1000).toString() // already expired
-    );
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiredTime); // already expired
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiredTime);
 
     expect(checkTokenAndRedirect()).toBe(false);
   });
@@ -462,7 +462,9 @@ describe("checkTokenAndRedirectWithRefresh", () => {
     // return expired on first call then valid for the usability check.
     // Easiest: make the ACCESS_TOKEN_EXPIRES already expired so checkTokenAndRedirect returns false,
     // but then access_token itself is "not expired" so refresh is skipped.
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() - 1000).toString());
+    const expiredTime = (Date.now() - 1000).toString();
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiredTime);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiredTime);
 
     // isRefreshTokenUsable (for the stored refresh token): not expired
     // isJwtExpired(accessToken): valid (not expired) → isAccessExpired = false
@@ -548,6 +550,7 @@ describe("clearAuthTokens", () => {
   it("removes all auth-related localStorage keys", () => {
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access-token-value");
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-token-value");
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, "99999999");
     localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, "99999999");
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "88888888");
     localStorage.setItem("user_info", "{}");
@@ -557,6 +560,7 @@ describe("clearAuthTokens", () => {
     expect(document.cookie).not.toContain(COOKIE_NAMES.ACCESS_TOKEN);
     expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN);
     expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
+    expect(document.cookie).not.toContain(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES);
     expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
     expect(localStorage.getItem("user_info")).toBeNull();
@@ -621,6 +625,9 @@ describe("handleAuthentication", () => {
 
     expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
     expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
+
+    // Also verify cookie is set
+    expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
   it("stores refresh_token_time when rememberMe=true", async () => {
@@ -774,6 +781,9 @@ describe("handleGoogleAuthentication", () => {
 
     expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
     expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
+
+    // Also verify cookie is set
+    expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
   it("stores refresh_token_time when rememberMe=true", async () => {
@@ -827,5 +837,20 @@ describe("handleGoogleAuthentication", () => {
     const tokens = await handleGoogleAuthentication("google-code-123");
     expect(tokens.access_token).toBe("");
     expect(document.cookie).not.toContain(COOKIE_NAMES.ACCESS_TOKEN);
+  });
+
+  it("skips refresh token time cookie when response has no refresh_token", async () => {
+    vi.mocked(authGoogle).mockResolvedValue({
+      tokens: {
+        access_token: GOOGLE_ACCESS_TOKEN,
+        refresh_token: "",
+        expires_in: 3600,
+      },
+    });
+
+    const tokens = await handleGoogleAuthentication("google-code-123", true);
+    expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
+    // REFRESH_TOKEN_TIME should not be set when refresh_token is falsy
+    expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
   });
 });

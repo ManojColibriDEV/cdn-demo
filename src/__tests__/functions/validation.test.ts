@@ -198,9 +198,11 @@ describe("Validation and Authentication Functions", () => {
 
     it("should return true when valid tokens exist and Remember Me enabled", () => {
       const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      const expiresAt = (Date.now() + 3600000).toString();
 
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiresAt);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAt);
       document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=${mockValidToken}; path=/`;
 
       vi.mocked(jwtDecode).mockReturnValue({
@@ -215,9 +217,11 @@ describe("Validation and Authentication Functions", () => {
     });
 
     it("should return false when token is expired", () => {
-      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
-      localStorage.setItem("access_token_expires", (Date.now() - 3600000).toString());
+      const expiredTime = (Date.now() - 3600000).toString();
 
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem("access_token_expires", expiredTime);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiredTime);
       document.cookie = `access_token=${mockValidToken}; path=/`;
 
       const result = checkTokenAndRedirect();
@@ -227,10 +231,12 @@ describe("Validation and Authentication Functions", () => {
 
     it("should work with tokens in cookies", () => {
       const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      const expiresAt = (Date.now() + 3600000).toString();
 
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
       setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, mockValidToken);
-      localStorage.setItem("access_token_expires", (Date.now() + 3600000).toString());
+      localStorage.setItem("access_token_expires", expiresAt);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAt);
 
       vi.mocked(jwtDecode).mockReturnValue({
         exp: futureTime,
@@ -646,6 +652,17 @@ describe("Validation and Authentication Functions", () => {
 
     it("checkTokenAndRedirectWithRefresh returns false when remember-me is not enabled", async () => {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when session age exceeds one day", async () => {
+      // Set timestamp to more than 1 day ago
+      const beyondOneDay = Date.now() - 25 * 60 * 60 * 1000; // 25 hours ago
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, beyondOneDay.toString());
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-old");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, beyondOneDay.toString());
+
       await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
     });
 

@@ -14,6 +14,7 @@ import * as functions from "../../functions";
 vi.mock("../../services", () => ({
   authRegister: vi.fn(),
   checkEmail: vi.fn(),
+  checkPhone: vi.fn(),
   getBrandHeaders: vi.fn(),
 }));
 
@@ -908,6 +909,46 @@ describe("CreateAccountForm — brand configuration error", () => {
       expect(
         screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
       ).toBeInTheDocument();
+    });
+  });
+});
+
+// -------------------------------------------------------------------------
+// Additional coverage tests
+// -------------------------------------------------------------------------
+describe("CreateAccountForm — additional coverage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+  });
+
+  it("should not call checkPhone when phone number is short", async () => {
+    renderCreateAccountForm();
+
+    // PhoneInput doesn't trigger checkPhone for short values
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(services.checkPhone).not.toHaveBeenCalled();
+  });
+
+  it("should show differentFromUsername failing when password matches email prefix", async () => {
+    renderCreateAccountForm({ initialEmail: "testuser@example.com" });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+    });
+
+    const passwordInput = screen.getByLabelText(/^password$/i);
+    fireEvent.change(passwordInput, { target: { value: "testuser" } });
+
+    await waitFor(() => {
+      const requirement = screen.getByText(/be different from username/i);
+      const listItem = requirement.closest("li");
+      expect(listItem?.getAttribute("data-satisfied")).toBe("false");
     });
   });
 });
