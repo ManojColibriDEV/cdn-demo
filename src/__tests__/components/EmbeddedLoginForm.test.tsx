@@ -401,7 +401,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should close email-not-found banner", async () => {
+  it("should show email-not-found banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
@@ -411,13 +411,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/No account found with this email address/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/No account found with this email address/i)
-      ).not.toBeInTheDocument();
     });
   });
 
@@ -527,7 +520,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should show and close email check error banner", async () => {
+  it("should show email check error banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue(new Error("Email check failed"));
 
@@ -537,12 +530,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Email check failed")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Email check failed")).not.toBeInTheDocument();
     });
   });
 
@@ -1875,5 +1862,157 @@ describe("EmbeddedLoginForm — brand configuration error", () => {
         screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
       ).toBeInTheDocument();
     });
+  });
+});
+
+// -------------------------------------------------------------------------
+// Weak Password Modal flow
+// -------------------------------------------------------------------------
+describe("EmbeddedLoginForm — Weak Password Modal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+    // Default: validatePassword returns all checks passing
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: true,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+  });
+
+  it("should show WeakPasswordModal when password is weak after successful login", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false, // weak password
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // onSuccess should NOT have been called yet
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("should call onSuccess with pending tokens when Continue is clicked in WeakPasswordModal", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // Click Continue button
+    const continueBtn = screen.getByRole("button", { name: /no, continue/i });
+    fireEvent.click(continueBtn);
+
+    expect(onSuccess).toHaveBeenCalledWith(mockTokens);
+  });
+
+  it("should show reset password form when Reset Password is clicked in WeakPasswordModal", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // Click Reset Password button
+    const resetBtn = screen.getByRole("button", { name: /yes, reset password/i });
+    fireEvent.click(resetBtn);
+
+    // Modal should disappear and reset password form should show
+    await waitFor(() => {
+      expect(screen.queryByText(/weak password detected/i)).not.toBeInTheDocument();
+    });
+
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 });

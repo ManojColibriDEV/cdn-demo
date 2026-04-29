@@ -600,23 +600,13 @@ const EmbeddedLoginForm = ({
                 setShowBanner(false);
                 setShowCreateAccount(true);
               }}
-              onClose={() => setShowBanner(false)}
               className="mb-4!"
             />
           )}
 
           {/* Banner for API error */}
           {!brandConfigError && showBanner && emailCheckError && (
-            <Banner
-              type={MessageType.ERROR}
-              message={emailCheckErrorMessage}
-              onClose={() => {
-                setShowBanner(false);
-                setEmailCheckError(false);
-                setEmailCheckErrorMessage("");
-              }}
-              className="mb-4!"
-            />
+            <Banner type={MessageType.ERROR} message={emailCheckErrorMessage} className="mb-4!" />
           )}
 
           <div

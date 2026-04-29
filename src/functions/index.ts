@@ -82,10 +82,9 @@ export const refreshAuthenticationState = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp);
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
 
     if (tokens.refresh_token) {
       const refreshTokenExpiry = 30 * 24 * 60 * 60;
@@ -388,6 +387,7 @@ export const isRefreshTokenValid = (): boolean => {
 export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
   clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
+  clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES);
   clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
 
   // Clear Remember Me cookie
@@ -454,10 +454,9 @@ export const handleAuthentication = async (
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // === MANDATORY STORAGE ===
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp);
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
     const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
@@ -515,10 +514,9 @@ export const handleGoogleAuthentication = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp);
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
 
     const refreshTokenExpiry = 30 * 24 * 60 * 60;
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);

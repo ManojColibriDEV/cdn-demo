@@ -112,6 +112,71 @@ describe("ThemeWidget Service", () => {
 
       expect(brandToken).toBeNull();
     });
+
+    it("should use bloom-theme-brand from localStorage on localhost", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "localhost" },
+        writable: true,
+      });
+      localStorage.setItem("bloom-theme-brand", "elite");
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBe("elite");
+    });
+
+    it("should use clx_brand_folder from localStorage on localhost when bloom-theme-brand is absent", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "localhost" },
+        writable: true,
+      });
+      localStorage.setItem("clx_brand_folder", "cebroker");
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBe("cebroker");
+    });
+
+    it("should strip quotes from localStorage brand override on localhost", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "localhost" },
+        writable: true,
+      });
+      localStorage.setItem("bloom-theme-brand", '"elite"');
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBe("elite");
+    });
+
+    it("should return null on localhost when localStorage brand override is empty after stripping", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "127.0.0.1" },
+        writable: true,
+      });
+      localStorage.setItem("bloom-theme-brand", '""');
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBeNull();
+    });
+
+    it("should return null on localhost when no brand override exists in localStorage", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "localhost" },
+        writable: true,
+      });
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBeNull();
+    });
+
+    it("should detect IP address as localhost", async () => {
+      Object.defineProperty(window, "location", {
+        value: { hostname: "192.168.1.100" },
+        writable: true,
+      });
+      localStorage.setItem("clx_brand_folder", "mckissock");
+
+      const brandToken = await themeWidget.detectBrandFromDomain();
+      expect(brandToken).toBe("mckissock");
+    });
   });
 
   describe("loadTheme", () => {
@@ -203,6 +268,60 @@ describe("ThemeWidget Service", () => {
       await themeWidget.loadTheme("ELITE");
 
       expect(localStorage.getItem("subsidiary")).toBe("dev-elite");
+    });
+
+    it("should apply RGB theme styles to document root in TEST mode", async () => {
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockBrandsResponse,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            styles: [
+              { name: "color-primary", value: "255 87 51" },
+              { name: "color-secondary", value: "#FF0000" },
+            ],
+          }),
+        });
+
+      await themeWidget.loadTheme("elite");
+
+      const root = document.documentElement;
+      expect(root.style.getPropertyValue("--color-primary")).toBe("rgb(255 87 51)");
+      expect(root.style.getPropertyValue("--color-secondary")).toBe("#FF0000");
+    });
+
+    it("should apply theme to shadow DOM when shadowRoot is available", async () => {
+      const host = document.createElement("div");
+      const shadowRoot = host.attachShadow({ mode: "open" });
+      const widgetWithShadow = new ThemeWidget(mockCdnUrl, shadowRoot);
+
+      global.fetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockBrandsResponse,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            styles: [
+              { name: "color-primary", value: "255 87 51" },
+              { name: "color-hex", value: "#0066CC" },
+            ],
+          }),
+        });
+
+      await widgetWithShadow.loadTheme("elite");
+
+      const styleEl = shadowRoot.querySelector("style[data-theme-widget='true']");
+      expect(styleEl).toBeTruthy();
+      expect(styleEl!.textContent).toContain(":host");
+      expect(styleEl!.textContent).toContain("rgb(255 87 51)");
+      expect(styleEl!.textContent).toContain("--color-hex: #0066CC");
     });
   });
 
