@@ -401,7 +401,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should close email-not-found banner", async () => {
+  it("should show email-not-found banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
@@ -411,13 +411,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/No account found with this email address/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/No account found with this email address/i)
-      ).not.toBeInTheDocument();
     });
   });
 
@@ -527,7 +520,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should show and close email check error banner", async () => {
+  it("should show email check error banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue(new Error("Email check failed"));
 
@@ -537,12 +530,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Email check failed")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Email check failed")).not.toBeInTheDocument();
     });
   });
 

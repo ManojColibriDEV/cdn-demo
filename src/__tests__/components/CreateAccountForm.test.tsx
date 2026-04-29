@@ -435,7 +435,7 @@ describe("CreateAccountForm Component", () => {
     expect(onSignIn).toHaveBeenCalledWith("existing@example.com");
   });
 
-  it("should dismiss existing account banner", async () => {
+  it("should show existing account banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: true });
 
@@ -446,14 +446,9 @@ describe("CreateAccountForm Component", () => {
     await waitFor(() => {
       expect(screen.getByText(/We found an existing account/i)).toBeInTheDocument();
     });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-    await waitFor(() => {
-      expect(screen.queryByText(/We found an existing account/i)).not.toBeInTheDocument();
-    });
   });
 
-  it("should show and dismiss email-check API error banner", async () => {
+  it("should show email-check API error banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue(new Error("Email API down"));
 
@@ -463,12 +458,6 @@ describe("CreateAccountForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Email API down")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Email API down")).not.toBeInTheDocument();
     });
   });
 

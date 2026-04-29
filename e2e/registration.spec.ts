@@ -291,7 +291,7 @@ test.describe("Auth Widget — Registration Form", () => {
       await expect(page.locator(REG_SELECTORS.submitButton)).toBeDisabled();
     });
 
-    test("dismisses existing email banner when clicking close on the banner", async ({ page }) => {
+    test("shows existing email banner (no dismiss button)", async ({ page }) => {
       await mockCheckEmail(page, true);
       await gotoCreateAccountForm(page);
 
@@ -299,11 +299,8 @@ test.describe("Auth Widget — Registration Form", () => {
       await page.waitForResponse("**/api/check-email");
       await expect(page.locator(REG_SELECTORS.existingEmailBanner)).toBeVisible();
 
-      // Click the banner close button (×); the Banner component renders it with part="identity-widget-banner-close"
-      const bannerCloseBtn = page.locator('button[part~="identity-widget-banner-close"]');
-      await bannerCloseBtn.click();
-
-      await expect(page.locator(REG_SELECTORS.existingEmailBanner)).not.toBeVisible();
+      // Banner no longer has a dismiss (×) button
+      await expect(page.locator('button[part~="identity-widget-banner-close"]')).not.toBeVisible();
     });
 
     test("shows error banner when check-email API call fails", async ({ page }) => {

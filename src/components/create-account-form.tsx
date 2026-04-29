@@ -599,7 +599,6 @@ const CreateAccountForm = ({
                   setShowBanner(false);
                   onSignIn(email);
                 }}
-                onClose={() => setShowBanner(false)}
                 className="identity-widget-create-account-existing-banner mb-4!"
               />
             )}
@@ -607,11 +606,6 @@ const CreateAccountForm = ({
               <Banner
                 type={MessageType.ERROR}
                 message={emailCheckErrorMessage}
-                onClose={() => {
-                  setShowBanner(false);
-                  setEmailCheckError(false);
-                  setEmailCheckErrorMessage("");
-                }}
                 className="identity-widget-create-account-error-banner mb-4!"
               />
             )}
