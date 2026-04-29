@@ -92,6 +92,7 @@ describe("App Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    window.location.href = "http://localhost:5173";
 
     // Safe defaults — user is NOT authenticated
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
@@ -315,14 +316,17 @@ describe("App Component", () => {
   // autoRedirection — window.location.href redirect after login
   // -------------------------------------------------------------------------
 
-  it("redirects via window.location.href when login succeeds with redirectDashboardUrl", async () => {
+  it("calls onRedirect with redirectDashboardUrl when login succeeds", async () => {
     const fakeToken = "fake-access-token";
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
 
+    const onRedirect = vi.fn();
+
     renderApp({
       showLogin: true,
       redirectDashboardUrl: "https://dev-learn.example.com/courses",
+      onRedirect,
     });
 
     await waitFor(() => {
@@ -333,9 +337,11 @@ describe("App Component", () => {
       screen.getByTestId("login-submit").click();
     });
 
-    // Wait for the setTimeout(..., 100) inside handleEmbeddedLoginSuccess
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 150));
+    await waitFor(() => {
+      expect(onRedirect).toHaveBeenCalledWith(
+        "https://dev-learn.example.com/courses",
+        mockUserSession
+      );
     });
 
     expect(window.location.href).toBe("https://dev-learn.example.com/courses");
