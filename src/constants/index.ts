@@ -95,6 +95,7 @@ export const STORAGE_KEYS = {
  */
 export const COOKIE_NAMES = {
   ACCESS_TOKEN: "access_token",
+  ACCESS_TOKEN_EXPIRES: "access_token_expires",
   REFRESH_TOKEN: "refresh_token",
   REFRESH_TOKEN_TIME: "refresh_token_time",
 } as const;
@@ -117,8 +118,10 @@ export const HTTP_HEADERS = {
 export const API_ENDPOINTS = {
   AUTH: "/api/auth",
   GOOGLE_AUTH: "/api/auth/google",
+  APPLE_AUTH: "/api/auth/apple",
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
+  CHECK_PHONE: "/api/check-phone",
   FORGOT_PASSWORD: "/api/forgot-password",
   FORGOT_USERNAME: "/api/forgot-username",
   REFRESH_TOKEN: "/api/refresh",

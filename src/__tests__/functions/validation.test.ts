@@ -198,9 +198,11 @@ describe("Validation and Authentication Functions", () => {
 
     it("should return true when valid tokens exist and Remember Me enabled", () => {
       const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      const expiresAt = (Date.now() + 3600000).toString();
 
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, expiresAt);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAt);
       document.cookie = `${COOKIE_NAMES.ACCESS_TOKEN}=${mockValidToken}; path=/`;
 
       vi.mocked(jwtDecode).mockReturnValue({
@@ -215,9 +217,11 @@ describe("Validation and Authentication Functions", () => {
     });
 
     it("should return false when token is expired", () => {
-      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
-      localStorage.setItem("access_token_expires", (Date.now() - 3600000).toString());
+      const expiredTime = (Date.now() - 3600000).toString();
 
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
+      localStorage.setItem("access_token_expires", expiredTime);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiredTime);
       document.cookie = `access_token=${mockValidToken}; path=/`;
 
       const result = checkTokenAndRedirect();
@@ -227,10 +231,12 @@ describe("Validation and Authentication Functions", () => {
 
     it("should work with tokens in cookies", () => {
       const futureTime = Math.floor(Date.now() / 1000) + 3600;
+      const expiresAt = (Date.now() + 3600000).toString();
 
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
       setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, mockValidToken);
-      localStorage.setItem("access_token_expires", (Date.now() + 3600000).toString());
+      localStorage.setItem("access_token_expires", expiresAt);
+      setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAt);
 
       vi.mocked(jwtDecode).mockReturnValue({
         exp: futureTime,
@@ -540,7 +546,7 @@ describe("Validation and Authentication Functions", () => {
       vi.useRealTimers();
     });
 
-    it("silentTokenRefresh returns true when no usable refresh token exists", async () => {
+    it("silentTokenRefresh returns a cleanup function when no usable refresh token exists", async () => {
       setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access-present");
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "bad-refresh-token");
 
@@ -548,14 +554,16 @@ describe("Validation and Authentication Functions", () => {
         throw new Error("bad-refresh-token");
       });
 
-      await expect(silentTokenRefresh()).resolves.toBe(true);
+      const result = await silentTokenRefresh();
+      expect(typeof result).toBe("function");
     });
 
-    it("silentTokenRefresh returns true when access token is missing", async () => {
+    it("silentTokenRefresh returns a cleanup function when access token is missing", async () => {
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
       setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-present");
 
-      await expect(silentTokenRefresh()).resolves.toBe(true);
+      const result = await silentTokenRefresh();
+      expect(typeof result).toBe("function");
     });
 
     it("silentTokenRefresh does not call refresh when tokens are still valid", async () => {
@@ -646,6 +654,17 @@ describe("Validation and Authentication Functions", () => {
 
     it("checkTokenAndRedirectWithRefresh returns false when remember-me is not enabled", async () => {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
+    });
+
+    it("checkTokenAndRedirectWithRefresh returns false when session age exceeds one day", async () => {
+      // Set timestamp to more than 1 day ago
+      const beyondOneDay = Date.now() - 25 * 60 * 60 * 1000; // 25 hours ago
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, beyondOneDay.toString());
+      setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh-old");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, "refresh-old");
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, beyondOneDay.toString());
+
       await expect(checkTokenAndRedirectWithRefresh()).resolves.toBe(false);
     });
 
@@ -808,8 +827,8 @@ describe("Validation and Authentication Functions", () => {
       expect(tokens.access_token).toBe("access-token");
       expect(document.cookie).toContain(COOKIE_NAMES.ACCESS_TOKEN);
       expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
-      expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeTruthy();
+      expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
+      expect(document.cookie).toContain(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES);
     });
 
     it("handleAuthentication removes rememberMe timestamp when rememberMe false", async () => {
@@ -828,9 +847,8 @@ describe("Validation and Authentication Functions", () => {
 
       await handleAuthentication("user@example.com", "Password123$", false);
 
-      // When Remember Me is false, timestamp is still stored but with 1-day expiry
-      // So it should still be in localStorage for backward compatibility
-      expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+      // When Remember Me is false, timestamp is still stored in cookie with 1-day expiry
+      expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
     });
 
     it("handleAuthentication should continue when auth response is minimal", async () => {

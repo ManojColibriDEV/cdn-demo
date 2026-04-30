@@ -5,7 +5,12 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication, handleGoogleAuthentication, validatePassword } from "../functions";
+import {
+  handleAuthentication,
+  handleGoogleAuthentication,
+  handleAppleAuthentication,
+  validatePassword,
+} from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import WeakPasswordModal from "../common/ui/weak-password-modal";
@@ -108,11 +113,12 @@ const EmbeddedLoginForm = ({
         usePopup: true,
       });
 
-      await AppleID.auth.signIn();
-      setToastMessage(
-        "Apple sign-in completed. Connect this credential to your backend login flow."
-      );
-      setToastType(MessageType.INFO);
+      const appleResponse = await AppleID.auth.signIn();
+      const code = appleResponse?.authorization?.code;
+      if (!code) throw new Error("Apple sign-in did not return an authorization code.");
+      const appleUser = appleResponse?.user;
+      const tokens = await handleAppleAuthentication(code, appleUser, rememberMe);
+      onSuccess(tokens);
       setErrorMessage("");
     } catch (error: any) {
       // User cancelled or error occurred
@@ -489,7 +495,7 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-apple-section"
-                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center!"
               >
                 <Button
                   type={ButtonType.BUTTON}
@@ -600,23 +606,13 @@ const EmbeddedLoginForm = ({
                 setShowBanner(false);
                 setShowCreateAccount(true);
               }}
-              onClose={() => setShowBanner(false)}
               className="mb-4!"
             />
           )}
 
           {/* Banner for API error */}
           {!brandConfigError && showBanner && emailCheckError && (
-            <Banner
-              type={MessageType.ERROR}
-              message={emailCheckErrorMessage}
-              onClose={() => {
-                setShowBanner(false);
-                setEmailCheckError(false);
-                setEmailCheckErrorMessage("");
-              }}
-              className="mb-4!"
-            />
+            <Banner type={MessageType.ERROR} message={emailCheckErrorMessage} className="mb-4!" />
           )}
 
           <div

@@ -1,7 +1,7 @@
 import type { UpgradeUser, PasswordChecks, AuthenticationTokens } from "../types/index";
 import { jwtDecode } from "jwt-decode";
 import { setAuthCookie, clearAuthCookie, getCookie } from "../utils/cookieHelper";
-import { authLogin, authRefresh, authGoogle } from "../services";
+import { authLogin, authRefresh, authGoogle, authApple } from "../services";
 import {
   STORAGE_KEYS,
   COOKIE_NAMES,
@@ -46,11 +46,11 @@ const isRefreshTokenUsable = (refreshToken: string): boolean => {
   return !isJwtExpired(refreshToken);
 };
 
-let silentRefreshTimer: ReturnType<typeof setInterval> | null = null;
+let silentRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const stopSilentRefreshTimer = (): void => {
   if (silentRefreshTimer) {
-    clearInterval(silentRefreshTimer);
+    clearTimeout(silentRefreshTimer);
     silentRefreshTimer = null;
   }
 };
@@ -82,10 +82,8 @@ export const refreshAuthenticationState = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
 
     if (tokens.refresh_token) {
       const refreshTokenExpiry = 30 * 24 * 60 * 60;
@@ -108,8 +106,6 @@ export const refreshAuthenticationState = async (
             Math.ceil(TOKEN_EXPIRY.ONE_DAY_MS / 1000),
             true
           );
-          // Also update localStorage for backward compatibility
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, newTimestamp);
         }
       }
     }
@@ -121,47 +117,59 @@ export const refreshAuthenticationState = async (
   }
 };
 
-// Function to handle silent token refresh in the background
+// Function to handle silent token refresh in the background.
+// Schedules a one-shot timeout timed to fire 2 minutes before the access token expires.
+// After a successful refresh the timer is rescheduled using the new token's expiry.
 export const silentTokenRefresh = async () => {
   const refreshToken = getStoredRefreshToken();
   const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
 
-  if (!accessToken) {
+  if (!accessToken || !refreshToken || !isRefreshTokenUsable(refreshToken)) {
     stopSilentRefreshTimer();
-    return true;
+    return () => stopSilentRefreshTimer();
   }
 
-  if (!refreshToken || !isRefreshTokenUsable(refreshToken)) {
-    stopSilentRefreshTimer();
-    return true;
-  }
-
-  // Keep exactly one active timer; restart to avoid stale timer instances across lifecycles/tests
+  // Keep exactly one active timer; restart to avoid stale instances across lifecycles.
   stopSilentRefreshTimer();
 
-  const intervalMs = 3 * 60 * 1000;
-  silentRefreshTimer = setInterval(async () => {
-    const currentRefreshToken = getStoredRefreshToken();
-    const currentAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+  const REFRESH_BUFFER_SECONDS = 2 * 60; // refresh 2 minutes before expiry
 
-    if (!currentAccessToken) {
-      stopSilentRefreshTimer();
-      return;
+  const scheduleRefresh = (token: string) => {
+    try {
+      const decoded: any = jwtDecode(token);
+      if (!decoded.exp) return;
+
+      const now = Math.floor(Date.now() / 1000);
+      const timeToExpiry = decoded.exp - now;
+      // e.g. 5-min token (exp-iat=300s) → fires at 3 min mark (2 min remaining)
+      const delayMs = Math.max(0, (timeToExpiry - REFRESH_BUFFER_SECONDS) * 1000);
+
+      silentRefreshTimer = setTimeout(async () => {
+        const currentRefreshToken = getStoredRefreshToken();
+        const currentAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+
+        if (
+          !currentAccessToken ||
+          !currentRefreshToken ||
+          !isRefreshTokenUsable(currentRefreshToken)
+        ) {
+          return;
+        }
+
+        const refreshed = await refreshAuthenticationState(currentRefreshToken);
+        if (refreshed) {
+          const newAccessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
+          if (newAccessToken) {
+            scheduleRefresh(newAccessToken);
+          }
+        }
+      }, delayMs);
+    } catch {
+      // If the token cannot be decoded, skip scheduling
     }
+  };
 
-    if (!currentRefreshToken || !isRefreshTokenUsable(currentRefreshToken)) {
-      stopSilentRefreshTimer();
-      return;
-    }
-
-    const accessToken = getCookie(COOKIE_NAMES.ACCESS_TOKEN, false);
-
-    const shouldRecoverSession = !accessToken || isJwtExpired(accessToken);
-
-    if (shouldRecoverSession) {
-      await refreshAuthenticationState(currentRefreshToken);
-    }
-  }, intervalMs);
+  scheduleRefresh(accessToken);
 
   return () => stopSilentRefreshTimer();
 };
@@ -258,8 +266,8 @@ export const checkTokenAndRedirect = (redirectUrl?: string): boolean => {
       return false;
     }
 
-    // Check expiration from localStorage first (faster than JWT decode)
-    const expiresAt = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+    // Check expiration from cookie
+    const expiresAt = getCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, false);
     if (expiresAt && Date.now() >= parseInt(expiresAt)) {
       return false;
     }
@@ -388,6 +396,7 @@ export const isRefreshTokenValid = (): boolean => {
 export const clearAuthTokens = (): void => {
   // Clear specific auth cookies using the helper function
   clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN);
+  clearAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES);
   clearAuthCookie(COOKIE_NAMES.REFRESH_TOKEN);
 
   // Clear Remember Me cookie
@@ -454,10 +463,8 @@ export const handleAuthentication = async (
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
     // === MANDATORY STORAGE ===
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
     const refreshTokenExpiry = 30 * 24 * 60 * 60; // 30 days in seconds
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
 
@@ -486,8 +493,6 @@ export const handleAuthentication = async (
         );
         console.log(`${LOG_PREFIX.AUTH} Remember Me disabled - auto-login will work for 1 day`);
       }
-      // Keep for backward compatibility
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, timestamp);
     }
   }
 
@@ -515,10 +520,8 @@ export const handleGoogleAuthentication = async (
 
     setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
 
-    localStorage.setItem(
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      (Date.now() + expiresIn * 1000).toString()
-    );
+    const expiresAtTimestamp = (Date.now() + expiresIn * 1000).toString();
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, expiresAtTimestamp, expiresIn, true);
 
     const refreshTokenExpiry = 30 * 24 * 60 * 60;
     setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
@@ -544,8 +547,42 @@ export const handleGoogleAuthentication = async (
         );
         console.log(`${LOG_PREFIX.AUTH} Google login - auto-login will work for 1 day`);
       }
-      // Keep for backward compatibility
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, timestamp);
+    }
+  }
+
+  return tokens;
+};
+
+export const handleAppleAuthentication = async (
+  code: string,
+  user?: Record<string, any>,
+  rememberMe: boolean = true
+): Promise<AuthenticationTokens> => {
+  const authResponse = await authApple(code, user);
+  const { tokens } = authResponse;
+
+  if (tokens.access_token) {
+    const decoded: any = jwtDecode(tokens.access_token);
+    const expiresIn = (decoded.exp || 0) - Math.floor(Date.now() / 1000);
+
+    setAuthCookie(COOKIE_NAMES.ACCESS_TOKEN, tokens.access_token, expiresIn, true);
+
+    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.access_token);
+    localStorage.setItem(
+      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+      (Date.now() + expiresIn * 1000).toString()
+    );
+
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refresh_token);
+    const refreshTokenExpiry = 30 * 24 * 60 * 60;
+    setAuthCookie(COOKIE_NAMES.REFRESH_TOKEN, tokens.refresh_token, refreshTokenExpiry, true);
+
+    if (rememberMe && tokens.refresh_token) {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, Date.now().toString());
+      console.log(`${LOG_PREFIX.AUTH} Apple login - Remember Me enabled`);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_TIME);
+      console.log(`${LOG_PREFIX.AUTH} Apple login - Remember Me disabled`);
     }
   }
 

@@ -126,6 +126,8 @@ function getBaseUrlForService(path: string): string {
   // Route to correct service based on path
   if (path.startsWith("/global")) {
     return GLOBAL_API_URLS[authority];
+  } else if (path.startsWith("/learner")) {
+    return GLOBAL_API_URLS[authority];
   } else if (path.startsWith("/core/ecommerce")) {
     return ECOMMERCE_API_URLS[authority];
   } else {
@@ -283,6 +285,35 @@ export const checkEmail = async (email: string): Promise<CheckEmailResponse> => 
 };
 
 /**
+ * Check Phone API - Check if phone number is already linked to another account
+ */
+export const checkPhone = async (phoneNumber: string): Promise<CheckEmailResponse> => {
+  const url = apiUrl(API_ENDPOINTS.CHECK_PHONE);
+  try {
+    const response = await axios.post<CheckEmailResponse>(
+      url,
+      { DayPhone: phoneNumber },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error checking phone:", error);
+
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.message) {
+      throw new Error(`Phone verification failed: ${error.message}`);
+    }
+
+    throw new Error("Unable to verify phone number. Please try again.");
+  }
+};
+
+/**
  * Forgot Password API - Send password reset link to email
  */
 export const forgotPassword = async (email: string): Promise<any> => {
@@ -362,6 +393,35 @@ export const authGoogle = async (code: string): Promise<any> => {
       throw new Error(error.response.data.message);
     } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
       throw new Error("Google authentication failed. Please try again.");
+    } else if (error.message) {
+      throw new Error(error.message);
+    }
+    throw new Error(ERROR_MESSAGES.AUTH_FAILED);
+  }
+};
+
+/**
+ * Apple Auth API - Exchange Apple authorization code for Keycloak tokens
+ */
+export const authApple = async (code: string, user?: Record<string, any>): Promise<any> => {
+  const url = apiUrl(API_ENDPOINTS.APPLE_AUTH);
+  try {
+    const response = await axios.post(
+      url,
+      { code, user },
+      {
+        headers: await getBrandHeaders(),
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error during Apple auth:", error);
+    if (error.response?.data?.error) {
+      throw new Error(error.response.data.error);
+    } else if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      throw new Error("Apple authentication failed. Please try again.");
     } else if (error.message) {
       throw new Error(error.message);
     }

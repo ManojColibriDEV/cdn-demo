@@ -401,7 +401,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should close email-not-found banner", async () => {
+  it("should show email-not-found banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockResolvedValue({ exists: false });
 
@@ -411,13 +411,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/No account found with this email address/i)).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/No account found with this email address/i)
-      ).not.toBeInTheDocument();
     });
   });
 
@@ -527,7 +520,7 @@ describe("EmbeddedLoginForm Component", () => {
     expect(services.checkEmail).not.toHaveBeenCalled();
   });
 
-  it("should show and close email check error banner", async () => {
+  it("should show email check error banner", async () => {
     const user = userEvent.setup();
     vi.mocked(services.checkEmail).mockRejectedValue(new Error("Email check failed"));
 
@@ -537,12 +530,6 @@ describe("EmbeddedLoginForm Component", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Email check failed")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /dismiss banner/i }));
-
-    await waitFor(() => {
-      expect(screen.queryByText("Email check failed")).not.toBeInTheDocument();
     });
   });
 
@@ -878,7 +865,7 @@ describe("App Component", () => {
     expect(stopRefresh).toHaveBeenCalled();
   });
 
-  it("auto redirects when valid access token exists and redirectDashboardUrl is set", async () => {
+  it("does not auto redirect when valid access token exists on revisit", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
 
@@ -889,11 +876,14 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(window.location.href).toBe("https://example.com/target");
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(window.location.href).not.toBe("https://example.com/target");
   });
 
-  it("calls onRedirect when valid access token exists", async () => {
+  it("does not call onRedirect when valid access token exists on revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
@@ -914,11 +904,14 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalled();
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT call onRedirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("uses default redirect URL when onRedirect callback is provided without explicit redirectUrl prop", async () => {
+  it("does not call onRedirect on revisit even with redirectDashboardUrl", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(true);
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "token-value");
@@ -939,11 +932,11 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalledWith(
-        "https://dev-learn.example.com/courses",
-        expect.objectContaining({ access_token: "token-value" })
-      );
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
     });
+
+    // Should NOT call onRedirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("does not call onRedirect when redirectUrl exists but access token is missing", async () => {
@@ -992,7 +985,7 @@ describe("App Component", () => {
     expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("refreshes tokens and invokes onRedirect when refresh flow succeeds", async () => {
+  it("does not invoke onRedirect on refresh flow revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
@@ -1018,11 +1011,13 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(functions.refreshAuthenticationState).toHaveBeenCalled();
-      expect(onRedirect).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
-  it("uses default redirect URL during refresh flow when redirectUrl prop is missing", async () => {
+  it("does not redirect during refresh flow on revisit", async () => {
     const onRedirect = vi.fn();
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
@@ -1037,11 +1032,11 @@ describe("App Component", () => {
     renderApp({ onRedirect, redirectDashboardUrl: "https://dev-learn.example.com/courses" });
 
     await waitFor(() => {
-      expect(onRedirect).toHaveBeenCalledWith(
-        "https://dev-learn.example.com/courses",
-        expect.objectContaining({ access_token: "new-access-default-url" })
-      );
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("stops refresh flow when session creation fails", async () => {
@@ -1137,7 +1132,7 @@ describe("App Component", () => {
     );
   });
 
-  it("auto redirects after refresh flow when autoRedirection is true", async () => {
+  it("does not auto redirect after refresh flow on revisit", async () => {
     vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
@@ -1152,12 +1147,6 @@ describe("App Component", () => {
       userInfo: {},
     } as any);
 
-    const originalLocation = window.location;
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: { href: "http://localhost/" },
-    });
-
     render(
       <MemoryRouter>
         <App showLogin={true} redirectDashboardUrl="https://example.com/refresh-redirect" />
@@ -1165,13 +1154,11 @@ describe("App Component", () => {
     );
 
     await waitFor(() => {
-      expect((window.location as any).href).toBe("https://example.com/refresh-redirect");
+      expect(functions.refreshAuthenticationState).toHaveBeenCalled();
     });
 
-    Object.defineProperty(window, "location", {
-      writable: true,
-      value: originalLocation,
-    });
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(window.location.href).not.toBe("https://example.com/refresh-redirect");
   });
 
   it("handles embedded login success through app callback and onRedirect", async () => {
@@ -1256,7 +1243,7 @@ describe("App Component", () => {
     });
   });
 
-  it("calls onTokenValidityCheck(true) after successful refresh login", async () => {
+  it("calls onTokenValidityCheck(true) after successful refresh without redirecting", async () => {
     const onTokenValidityCheck = vi.fn();
     const onRedirect = vi.fn();
 
@@ -1280,8 +1267,10 @@ describe("App Component", () => {
 
     await waitFor(() => {
       expect(onTokenValidityCheck).toHaveBeenCalledWith(true);
-      expect(onRedirect).toHaveBeenCalled();
     });
+
+    // Should NOT redirect on revisit - redirects only happen after explicit login
+    expect(onRedirect).not.toHaveBeenCalled();
   });
 
   it("returns early when refresh succeeds but access token is still missing", async () => {
@@ -1873,5 +1862,157 @@ describe("EmbeddedLoginForm — brand configuration error", () => {
         screen.getByText(/it looks like this sign-in form isn't set up correctly/i)
       ).toBeInTheDocument();
     });
+  });
+});
+
+// -------------------------------------------------------------------------
+// Weak Password Modal flow
+// -------------------------------------------------------------------------
+describe("EmbeddedLoginForm — Weak Password Modal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(services.getBrandHeaders).mockResolvedValue({
+      "X-Brand-Id": "Elite Learning",
+      "X-Subsidiary-Id": "1",
+      "X-Brand-Domain": "elitelearning.com",
+    });
+    // Default: validatePassword returns all checks passing
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: true,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+  });
+
+  it("should show WeakPasswordModal when password is weak after successful login", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false, // weak password
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // onSuccess should NOT have been called yet
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
+
+  it("should call onSuccess with pending tokens when Continue is clicked in WeakPasswordModal", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // Click Continue button
+    const continueBtn = screen.getByRole("button", { name: /no, continue/i });
+    fireEvent.click(continueBtn);
+
+    expect(onSuccess).toHaveBeenCalledWith(mockTokens);
+  });
+
+  it("should show reset password form when Reset Password is clicked in WeakPasswordModal", async () => {
+    const onSuccess = vi.fn();
+    const mockTokens = { access_token: "token123", refresh_token: "refresh123" };
+
+    vi.mocked(functions.handleAuthentication).mockResolvedValue(mockTokens);
+    vi.mocked(functions.validatePassword).mockReturnValue({
+      length: true,
+      upper: true,
+      lower: true,
+      number: true,
+      noSpaces: true,
+      noTriple: true,
+      special: false,
+      noNameParts: true,
+      noEmailParts: true,
+    } as any);
+
+    renderLoginForm({ onSuccess });
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/enter email/i)).toBeInTheDocument();
+    });
+
+    const emailInput = screen.getByPlaceholderText(/enter email/i);
+    const passwordInput = screen.getByPlaceholderText(/enter password/i);
+
+    fireEvent.change(emailInput, { target: { value: "user@example.com" } });
+    fireEvent.change(passwordInput, { target: { value: "WeakPass1" } });
+    fireEvent.submit(screen.getByRole("form", { name: /login form/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/weak password detected/i)).toBeInTheDocument();
+    });
+
+    // Click Reset Password button
+    const resetBtn = screen.getByRole("button", { name: /yes, reset password/i });
+    fireEvent.click(resetBtn);
+
+    // Modal should disappear and reset password form should show
+    await waitFor(() => {
+      expect(screen.queryByText(/weak password detected/i)).not.toBeInTheDocument();
+    });
+
+    expect(onSuccess).not.toHaveBeenCalled();
   });
 });
