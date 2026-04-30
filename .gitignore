@@ -37,3 +37,7 @@ test-run-results.txt
 test-output.txt
 playwright-report/
 test-results/
+
+# Lint/format caches
+.eslintcache
+.prettiercache

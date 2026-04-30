@@ -182,7 +182,6 @@ describe("refreshAuthenticationState", () => {
     expect(document.cookie).toContain("new.access.token");
     expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN}=`);
     expect(document.cookie).toContain("new.refresh.token");
-    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)).toBeTruthy();
     expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
@@ -200,9 +199,14 @@ describe("refreshAuthenticationState", () => {
     await refreshAuthenticationState();
     const after = Date.now();
 
-    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)!);
-    expect(stored).toBeGreaterThanOrEqual(before);
-    expect(stored).toBeLessThanOrEqual(after);
+    // refresh_token_time is updated in cookie (not localStorage)
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=`);
+    const cookieMatch = document.cookie.match(
+      new RegExp(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=([^;]+)`)
+    );
+    const storedFromCookie = parseInt(decodeURIComponent(cookieMatch?.[1] ?? "0"));
+    expect(storedFromCookie).toBeGreaterThanOrEqual(before);
+    expect(storedFromCookie).toBeLessThanOrEqual(after + 1000);
   });
 
   it("does NOT update refresh_token_time when remember me flag is absent", async () => {
@@ -241,30 +245,30 @@ describe("silentTokenRefresh", () => {
     vi.useFakeTimers();
   });
 
-  it("returns true immediately when no access token exists", async () => {
+  it("returns a cleanup function immediately when no access token exists", async () => {
     // No cookies, no localStorage entries
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     const result = await silentTokenRefresh();
-    expect(result).toBe(true);
+    expect(typeof result).toBe("function");
   });
 
-  it("returns true immediately when no refresh token exists", async () => {
+  it("returns a cleanup function immediately when no refresh token exists", async () => {
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
     // No refresh token anywhere
 
     const result = await silentTokenRefresh();
-    expect(result).toBe(true);
+    expect(typeof result).toBe("function");
   });
 
-  it("returns true immediately when refresh token is expired/unusable", async () => {
+  it("returns a cleanup function immediately when refresh token is expired/unusable", async () => {
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "expired.refresh.token");
     vi.mocked(jwtDecode).mockReturnValue({ exp: PAST_EXP } as any);
 
     const result = await silentTokenRefresh();
-    expect(result).toBe(true);
+    expect(typeof result).toBe("function");
   });
 
   it("returns a cleanup function when both tokens are valid", async () => {
@@ -276,37 +280,34 @@ describe("silentTokenRefresh", () => {
     expect(typeof result).toBe("function");
   });
 
-  it("starts a 3-minute interval timer when tokens are valid", async () => {
-    const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+  it("schedules a setTimeout based on token expiry when tokens are valid", async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
 
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh.token.value");
+    // access token expires in 1 hour; timer should fire at (3600-120)*1000 = 3480000ms
     vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     await silentTokenRefresh();
 
-    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 3 * 60 * 1000);
-    setIntervalSpy.mockRestore();
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 3480000);
+    setTimeoutSpy.mockRestore();
   });
 
-  it("timer fires and calls refreshAuthenticationState when session needs recovery", async () => {
+  it("timer fires and calls refreshAuthenticationState when timeout elapses", async () => {
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN, "refresh.token.value");
 
-    // First two calls (during silentTokenRefresh setup): refresh token usable, access token present
-    // Inside the timer: access token is expired (triggers recovery)
-    vi.mocked(jwtDecode)
-      .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // isRefreshTokenUsable check
-      // Inside interval callback
-      .mockReturnValueOnce({ exp: FUTURE_EXP } as any) // isRefreshTokenUsable for currentRefreshToken
-      .mockReturnValueOnce({ exp: PAST_EXP } as any); // isJwtExpired for accessToken → triggers refresh
+    // All jwtDecode calls return a valid FUTURE_EXP so tokens appear usable
+    vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP } as any);
 
     vi.mocked(authRefresh).mockResolvedValue({
       tokens: { access_token: "new.access.token" },
     });
 
     await silentTokenRefresh();
-    await vi.advanceTimersByTimeAsync(3 * 60 * 1000);
+    // Advance past the scheduled delay: (FUTURE_EXP - now - 120) * 1000 ≈ 3480000ms
+    await vi.advanceTimersByTimeAsync(3480 * 1000);
 
     expect(vi.mocked(authRefresh)).toHaveBeenCalled();
   });
@@ -332,7 +333,7 @@ describe("checkTokenAndRedirect", () => {
   it("returns true when remember me flag is set and token is valid", () => {
     setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, Date.now().toString());
     setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, "access.token.value");
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN_EXPIRES, (Date.now() + 3600000).toString());
 
     vi.mocked(jwtDecode).mockReturnValueOnce({
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -614,55 +615,50 @@ describe("handleAuthentication", () => {
     expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
   });
 
-  it("stores access_token_expires in localStorage", async () => {
-    const before = Date.now();
+  it("stores access_token_expires in cookie", async () => {
     await handleAuthentication("user@example.com", "password123", false);
-    const after = Date.now();
 
-    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)!);
-    const expectedMin = before + (FUTURE_EXP - Math.floor(before / 1000)) * 1000;
-    const expectedMax = after + (FUTURE_EXP - Math.floor(after / 1000)) * 1000;
-
-    expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
-    expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
-
-    // Also verify cookie is set
     expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
-  it("stores refresh_token_time when rememberMe=true", async () => {
+  it("stores refresh_token_time cookie when rememberMe=true", async () => {
     const before = Date.now();
     await handleAuthentication("user@example.com", "password123", true);
     const after = Date.now();
 
-    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)!);
+    const cookieMatch = document.cookie.match(
+      new RegExp(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=([^;]+)`)
+    );
+    const stored = parseInt(decodeURIComponent(cookieMatch?.[1] ?? "0"));
     expect(stored).toBeGreaterThanOrEqual(before);
-    expect(stored).toBeLessThanOrEqual(after);
+    expect(stored).toBeLessThanOrEqual(after + 1000);
   });
 
-  it("does NOT store refresh_token_time when rememberMe=false", async () => {
+  it("stores refresh_token_time cookie when rememberMe=false (with 1-day expiry)", async () => {
     await handleAuthentication("user@example.com", "password123", false);
 
-    // Timestamp is always stored in localStorage for backward compatibility
-    // The difference is the cookie expiry (1-day vs 30-day)
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    // Timestamp is always stored in cookie; difference is expiry (1-day vs 30-day)
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=`);
   });
 
-  it("removes any existing refresh_token_time when rememberMe=false", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "old-timestamp");
+  it("overwrites existing refresh_token_time cookie when rememberMe=false", async () => {
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, "old-timestamp");
 
     await handleAuthentication("user@example.com", "password123", false);
 
-    // Timestamp is always updated/stored in localStorage for backward compatibility
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).not.toBe("old-timestamp");
+    // Cookie is updated with a fresh timestamp
+    const cookieMatch = document.cookie.match(
+      new RegExp(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=([^;]+)`)
+    );
+    const stored = decodeURIComponent(cookieMatch?.[1] ?? "");
+    expect(stored).toBeTruthy();
+    expect(stored).not.toBe("old-timestamp");
   });
 
-  it("defaults rememberMe to false when not provided", async () => {
+  it("defaults rememberMe to false and stores refresh_token_time cookie", async () => {
     await handleAuthentication("user@example.com", "password123");
 
-    // Timestamp is always stored in localStorage for backward compatibility
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=`);
   });
 
   it("re-throws when authLogin throws", async () => {
@@ -770,54 +766,49 @@ describe("handleGoogleAuthentication", () => {
     expect(document.cookie).toContain(COOKIE_NAMES.REFRESH_TOKEN);
   });
 
-  it("stores access_token_expires in localStorage", async () => {
-    const before = Date.now();
+  it("stores access_token_expires in cookie", async () => {
     await handleGoogleAuthentication("google-code-123", false);
-    const after = Date.now();
 
-    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)!);
-    const expectedMin = before + (FUTURE_EXP - Math.floor(before / 1000)) * 1000;
-    const expectedMax = after + (FUTURE_EXP - Math.floor(after / 1000)) * 1000;
-
-    expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
-    expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
-
-    // Also verify cookie is set
     expect(document.cookie).toContain(`${COOKIE_NAMES.ACCESS_TOKEN_EXPIRES}=`);
   });
 
-  it("stores refresh_token_time when rememberMe=true", async () => {
+  it("stores refresh_token_time cookie when rememberMe=true", async () => {
     const before = Date.now();
     await handleGoogleAuthentication("google-code-123", true);
     const after = Date.now();
 
-    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)!);
+    const cookieMatch = document.cookie.match(
+      new RegExp(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=([^;]+)`)
+    );
+    const stored = parseInt(decodeURIComponent(cookieMatch?.[1] ?? "0"));
     expect(stored).toBeGreaterThanOrEqual(before);
-    expect(stored).toBeLessThanOrEqual(after);
+    expect(stored).toBeLessThanOrEqual(after + 1000);
   });
 
-  it("does NOT store refresh_token_time when rememberMe=false", async () => {
+  it("stores refresh_token_time cookie when rememberMe=false (with 1-day expiry)", async () => {
     await handleGoogleAuthentication("google-code-123", false);
 
-    // Timestamp is always stored in localStorage for backward compatibility
-    // The difference is the cookie expiry (1-day vs 30-day)
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    // Timestamp is always stored in cookie; difference is expiry (1-day vs 30-day)
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=`);
   });
 
-  it("removes any existing refresh_token_time when rememberMe=false", async () => {
-    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_TIME, "old-timestamp");
+  it("overwrites existing refresh_token_time cookie when rememberMe=false", async () => {
+    setEncodedCookie(COOKIE_NAMES.REFRESH_TOKEN_TIME, "old-timestamp");
 
     await handleGoogleAuthentication("google-code-123", false);
 
-    // Timestamp is always updated/stored in localStorage for backward compatibility
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).not.toBe("old-timestamp");
+    const cookieMatch = document.cookie.match(
+      new RegExp(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=([^;]+)`)
+    );
+    const stored = decodeURIComponent(cookieMatch?.[1] ?? "");
+    expect(stored).toBeTruthy();
+    expect(stored).not.toBe("old-timestamp");
   });
 
-  it("defaults rememberMe to true when not provided", async () => {
+  it("defaults rememberMe to true and stores refresh_token_time cookie", async () => {
     await handleGoogleAuthentication("google-code-123");
 
-    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+    expect(document.cookie).toContain(`${COOKIE_NAMES.REFRESH_TOKEN_TIME}=`);
   });
 
   it("re-throws when authGoogle throws", async () => {

@@ -107,3 +107,26 @@
   visibility: hidden;
   pointer-events: none;
 }
+
+/* Thin scrollbar — applied globally within the widget */
+.identity-widget-create-account-modal::-webkit-scrollbar,
+.identity-widget-login-modal::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.identity-widget-create-account-modal::-webkit-scrollbar-track,
+.identity-widget-login-modal::-webkit-scrollbar-track {
+  display: none;
+}
+
+.identity-widget-create-account-modal::-webkit-scrollbar-thumb,
+.identity-widget-login-modal::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 9999px;
+}
+
+.identity-widget-create-account-modal::-webkit-scrollbar-thumb:hover,
+.identity-widget-login-modal::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
