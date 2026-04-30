@@ -11,7 +11,7 @@ import { MemoryRouter } from "react-router-dom";
 import App from "../../App";
 import * as services from "../../services";
 import * as functions from "../../functions";
-import { STORAGE_KEYS } from "../../constants";
+import { COOKIE_NAMES } from "../../constants";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -24,20 +24,39 @@ vi.mock("../../functions", () => ({
   refreshAuthenticationState: vi.fn(),
   silentTokenRefresh: vi.fn(),
   createUserSessionFromToken: vi.fn(),
-  getDefaultRedirectUrl: vi.fn(),
 }));
 
 vi.mock("../../services", () => ({
   setAuthorityOverride: vi.fn(),
   clearAuthorityOverride: vi.fn(),
   getBrandHeaders: vi.fn(),
+  fetchEnrollments: vi.fn(),
+  fetchCheckout: vi.fn(),
 }));
 
 vi.mock("../../components/embedded-login-form", () => ({
-  default: ({ onSuccess, handleClose }: { onSuccess: () => void; handleClose: () => void }) => (
+  default: ({
+    onSuccess,
+    onError,
+    handleClose,
+  }: {
+    onSuccess: (tokens?: any) => void;
+    onError: (error: string) => void;
+    handleClose: () => void;
+  }) => (
     <form data-testid="embedded-login-form">
-      <button type="button" data-testid="login-submit" onClick={onSuccess}>
+      <button
+        type="button"
+        data-testid="login-submit"
+        onClick={() => onSuccess({ access_token: "fake-access-token" })}
+      >
         Sign In
+      </button>
+      <button type="button" data-testid="login-submit-no-token" onClick={() => onSuccess()}>
+        Sign In No Token
+      </button>
+      <button type="button" data-testid="login-error" onClick={() => onError("test login error")}>
+        Error
       </button>
       <button type="button" data-testid="login-close" onClick={handleClose}>
         Close
@@ -51,13 +70,20 @@ vi.mock("../../components/embedded-login-form", () => ({
 // ---------------------------------------------------------------------------
 
 const mockUserSession = {
-  email: "john.doe@example.com",
-  name: "John Doe",
-  given_name: "John",
-  family_name: "Doe",
-  preferred_username: "john.doe@example.com",
-  email_verified: true,
-  sub: "test-user-id",
+  access_token: "fake-access-token",
+  userInfo: {
+    studentId: undefined,
+    sub: "test-user-id",
+    email_verified: true,
+    name: "John Doe",
+    preferred_username: "john.doe@example.com",
+    given_name: "John",
+    family_name: "Doe",
+    email: "john.doe@example.com",
+  },
+  decoded: {
+    exp: 9999999999,
+  },
 };
 
 const renderApp = (props: Record<string, unknown> = {}) => {
@@ -70,6 +96,11 @@ const renderApp = (props: Record<string, unknown> = {}) => {
     </MemoryRouter>
   );
 };
+
+function setEncodedCookie(name: string, value: string): void {
+  const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+}
 
 // ---------------------------------------------------------------------------
 // Test suite
@@ -85,11 +116,10 @@ describe("App Component", () => {
     vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
     vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
     vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(false);
-    vi.mocked(functions.silentTokenRefresh).mockResolvedValue(undefined);
+    vi.mocked(functions.silentTokenRefresh).mockResolvedValue((() => {}) as any);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
-    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue(
-      "https://dev-learn.example.com/courses"
-    );
+    vi.mocked(services.fetchEnrollments).mockResolvedValue({ items: [], results: 0 });
+    vi.mocked(services.fetchCheckout).mockResolvedValue({ hasItems: false });
   });
 
   // -------------------------------------------------------------------------
@@ -227,14 +257,13 @@ describe("App Component", () => {
     const onRedirect = vi.fn();
     const fakeToken = "fake-access-token";
 
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, fakeToken);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
 
     renderApp({
       showLogin: true,
       onRedirect,
-      redirectUrl: "https://dev-learn.example.com/dashboard",
-      autoRedirection: false,
+      redirectDashboardUrl: "https://dev-learn.example.com/dashboard",
     });
 
     await waitFor(() => {
@@ -256,7 +285,7 @@ describe("App Component", () => {
   it("does not call onRedirect when no access token is stored after login", async () => {
     const onRedirect = vi.fn();
 
-    // No token in localStorage — createUserSessionFromToken returns null
+    // No token in cookies — createUserSessionFromToken returns null
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(null);
 
     renderApp({
@@ -304,18 +333,14 @@ describe("App Component", () => {
   // autoRedirection — window.location.href redirect after login
   // -------------------------------------------------------------------------
 
-  it("redirects via window.location.href when autoRedirection=true and login succeeds", async () => {
+  it("redirects via window.location.href when login succeeds with redirectDashboardUrl", async () => {
     const fakeToken = "fake-access-token";
-    localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, fakeToken);
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
     vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
-    vi.mocked(functions.getDefaultRedirectUrl).mockReturnValue(
-      "https://dev-learn.example.com/courses"
-    );
 
     renderApp({
       showLogin: true,
-      autoRedirection: true,
-      redirectUrl: "https://dev-learn.example.com/courses",
+      redirectDashboardUrl: "https://dev-learn.example.com/courses",
     });
 
     await waitFor(() => {
@@ -349,5 +374,248 @@ describe("App Component", () => {
     unmount();
 
     expect(services.clearAuthorityOverride).toHaveBeenCalledTimes(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // onSuccess callback after login
+  // -------------------------------------------------------------------------
+
+  it("calls onSuccess callback with userDetails, enrollments, and cart after login", async () => {
+    const onSuccess = vi.fn();
+    const fakeToken = "fake-access-token";
+
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
+    vi.mocked(services.fetchEnrollments).mockResolvedValue({ items: [{ id: 1 }], results: 1 });
+    vi.mocked(services.fetchCheckout).mockResolvedValue({ hasItems: false });
+
+    renderApp({
+      showLogin: true,
+      onSuccess,
+      redirectDashboardUrl: "https://dev-learn.example.com/dashboard",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-submit").click();
+    });
+
+    await waitFor(() => {
+      expect(onSuccess).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userDetails: expect.any(Object),
+          enrollments: expect.any(Object),
+          cart: expect.any(Object),
+        })
+      );
+    });
+  });
+
+  it("calls onFailure callback when determineRedirectUrl fails", async () => {
+    const onFailure = vi.fn();
+    const fakeToken = "fake-access-token";
+
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
+    vi.mocked(services.fetchEnrollments).mockRejectedValue(new Error("enrollment-failed"));
+    vi.mocked(services.fetchCheckout).mockRejectedValue(new Error("checkout-failed"));
+
+    renderApp({
+      showLogin: true,
+      onFailure,
+      redirectDashboardUrl: "https://dev-learn.example.com/dashboard",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-submit").click();
+    });
+
+    // determineRedirectUrl handles errors internally and still resolves; wait for resolution
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 150));
+    });
+  });
+
+  it("calls onFailure when handleEmbeddedLoginError is triggered", async () => {
+    const onFailure = vi.fn();
+
+    renderApp({
+      showLogin: true,
+      onFailure,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-error").click();
+    });
+
+    expect(onFailure).toHaveBeenCalledWith("test login error");
+  });
+
+  // -------------------------------------------------------------------------
+  // determineRedirectUrl — redirectCheckoutUrl when hasItems
+  // -------------------------------------------------------------------------
+
+  it("redirects to checkout URL when cart has items", async () => {
+    const fakeToken = "fake-access-token";
+
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
+    vi.mocked(services.fetchEnrollments).mockResolvedValue({ items: [], results: 0 });
+    vi.mocked(services.fetchCheckout).mockResolvedValue({ hasItems: true });
+
+    renderApp({
+      showLogin: true,
+      redirectCheckoutUrl: "https://dev-learn.example.com/checkout",
+      redirectDashboardUrl: "https://dev-learn.example.com/dashboard",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-submit").click();
+    });
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 150));
+    });
+
+    expect(window.location.href).toBe("https://dev-learn.example.com/checkout");
+  });
+
+  // -------------------------------------------------------------------------
+  // determineRedirectUrl — no redirect URLs provided
+  // -------------------------------------------------------------------------
+
+  it("skips enrollment/cart API calls when no redirect URLs provided", async () => {
+    const onSuccess = vi.fn();
+    const fakeToken = "fake-access-token";
+
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
+
+    renderApp({
+      showLogin: true,
+      onSuccess,
+      // no redirectDashboardUrl or redirectCheckoutUrl
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-submit").click();
+    });
+
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 150));
+    });
+
+    expect(services.fetchEnrollments).not.toHaveBeenCalled();
+    expect(services.fetchCheckout).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Auto-login — refresh token path
+  // -------------------------------------------------------------------------
+
+  it("auto-logins and calls onTokenValidityCheck when refresh token is valid", async () => {
+    const onTokenValidityCheck = vi.fn();
+
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(false);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(true);
+    vi.mocked(functions.refreshAuthenticationState).mockResolvedValue(true);
+
+    const fakeToken = "refreshed-access-token";
+    setEncodedCookie(COOKIE_NAMES.ACCESS_TOKEN, fakeToken);
+    vi.mocked(functions.createUserSessionFromToken).mockReturnValue(mockUserSession);
+
+    renderApp({
+      showLogin: true,
+      onTokenValidityCheck,
+    });
+
+    await waitFor(() => {
+      expect(onTokenValidityCheck).toHaveBeenCalledWith(true);
+    });
+  });
+
+  it("clears expired refresh token when isRefreshTokenValid returns false", async () => {
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockResolvedValue(false);
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
+    vi.mocked(functions.isRefreshTokenValid).mockReturnValue(false);
+
+    localStorage.setItem("refresh_token", "expired-token");
+    localStorage.setItem("refresh_token_time", "old-time");
+
+    renderApp({ showLogin: true });
+
+    await waitFor(() => {
+      expect(functions.isRefreshTokenValid).toHaveBeenCalled();
+    });
+
+    expect(localStorage.getItem("refresh_token")).toBeNull();
+    expect(localStorage.getItem("refresh_token_time")).toBeNull();
+  });
+
+  it("clears tokens when auto-login throws an error", async () => {
+    vi.mocked(functions.checkTokenAndRedirectWithRefresh).mockRejectedValue(
+      new Error("auto-login-crash")
+    );
+    vi.mocked(functions.isRefreshTokenExpiredFromCookie).mockReturnValue(true);
+
+    localStorage.setItem("refresh_token", "some-token");
+    localStorage.setItem("refresh_token_time", "some-time");
+
+    renderApp({ showLogin: true });
+
+    await waitFor(() => {
+      expect(functions.checkTokenAndRedirectWithRefresh).toHaveBeenCalled();
+    });
+
+    // Wait for the catch block to execute
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+
+    expect(localStorage.getItem("refresh_token")).toBeNull();
+    expect(localStorage.getItem("refresh_token_time")).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------
+  // handleEmbeddedLoginSuccess — handleClose called
+  // -------------------------------------------------------------------------
+
+  it("calls handleClose prop during handleEmbeddedLoginSuccess", async () => {
+    const handleClose = vi.fn();
+
+    renderApp({
+      showLogin: true,
+      handleClose,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("embedded-login-form")).toBeInTheDocument();
+    });
+
+    act(() => {
+      screen.getByTestId("login-submit").click();
+    });
+
+    expect(handleClose).toHaveBeenCalled();
   });
 });

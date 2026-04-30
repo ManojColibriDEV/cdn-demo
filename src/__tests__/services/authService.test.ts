@@ -10,12 +10,15 @@ import {
   authLogin,
   authRegister,
   checkEmail,
+  checkPhone,
   forgotPassword,
   forgotUsername,
   authRefresh,
   authLogout,
   authGoogle,
   fetchSubsidiaries,
+  fetchEnrollments,
+  fetchCheckout,
   getBrandHeaders,
   setAuthorityOverride,
   getAuthorityOverride,
@@ -735,6 +738,141 @@ describe("Authentication Service", () => {
       });
 
       await authGoogle("brand-code");
+    });
+  });
+
+  describe("checkPhone", () => {
+    it("should return available for new phone", async () => {
+      mockAxios.onPost(/\/api\/check-phone$/).reply(200, { exists: false });
+
+      const response = await checkPhone("5551234567");
+      expect(response.exists).toBe(false);
+    });
+
+    it("should return taken for existing phone", async () => {
+      mockAxios.onPost(/\/api\/check-phone$/).reply(200, { exists: true });
+
+      const response = await checkPhone("5551234567");
+      expect(response.exists).toBe(true);
+    });
+
+    it("should throw error field from response", async () => {
+      mockAxios.onPost(/\/api\/check-phone$/).reply(400, { error: "phone error" });
+      await expect(checkPhone("5551234567")).rejects.toThrow("phone error");
+    });
+
+    it("should throw message field from response", async () => {
+      mockAxios.onPost(/\/api\/check-phone$/).reply(400, { message: "phone message" });
+      await expect(checkPhone("5551234567")).rejects.toThrow("phone message");
+    });
+
+    it("should throw formatted message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce(new Error("network-phone-error"));
+      await expect(checkPhone("5551234567")).rejects.toThrow(
+        "Phone verification failed: network-phone-error"
+      );
+      spy.mockRestore();
+    });
+
+    it("should throw generic fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "post").mockRejectedValueOnce({});
+      await expect(checkPhone("5551234567")).rejects.toThrow(
+        "Unable to verify phone number. Please try again."
+      );
+      spy.mockRestore();
+    });
+  });
+
+  describe("fetchEnrollments", () => {
+    it("should successfully fetch enrollments", async () => {
+      const mockResponse = { items: [{ id: 1 }], results: 1 };
+      mockAxios.onGet(/\/learner\/enrollments/).reply(200, mockResponse);
+
+      const response = await fetchEnrollments("fake-access-token");
+      expect(response).toEqual(mockResponse);
+    });
+
+    it("should include brand headers and authorization in request", async () => {
+      localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
+      mockAxios.onGet(/\/learner\/enrollments/).reply((config) => {
+        expect(config.headers?.Authorization).toContain("Bearer ");
+        return [200, { items: [], results: 0 }];
+      });
+
+      await fetchEnrollments("my-access-token");
+    });
+
+    it("should return error response data when server returns 400 (validateStatus allows all)", async () => {
+      mockAxios.onGet(/\/learner\/enrollments/).reply(400, { error: "enrollment error" });
+      const result = await fetchEnrollments("token");
+      expect(result).toEqual({ error: "enrollment error" });
+    });
+
+    it("should return message response data when server returns 400 (validateStatus allows all)", async () => {
+      mockAxios.onGet(/\/learner\/enrollments/).reply(400, { message: "enrollment message" });
+      const result = await fetchEnrollments("token");
+      expect(result).toEqual({ message: "enrollment message" });
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "get").mockRejectedValueOnce(new Error("network-enrollment"));
+      await expect(fetchEnrollments("token")).rejects.toThrow("network-enrollment");
+      spy.mockRestore();
+    });
+
+    it("should throw generic fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "get").mockRejectedValueOnce({});
+      await expect(fetchEnrollments("token")).rejects.toThrow("Failed to fetch enrollments");
+      spy.mockRestore();
+    });
+  });
+
+  describe("fetchCheckout", () => {
+    it("should successfully fetch checkout data", async () => {
+      const mockResponse = { hasItems: true };
+      mockAxios.onGet(/\/core\/ecommerce\/cart\/items/).reply(200, mockResponse);
+
+      const response = await fetchCheckout("fake-access-token");
+      expect(response).toEqual(mockResponse);
+    });
+
+    it("should return hasItems false when cart is empty", async () => {
+      mockAxios.onGet(/\/core\/ecommerce\/cart\/items/).reply(200, { hasItems: false });
+
+      const response = await fetchCheckout("fake-access-token");
+      expect(response.hasItems).toBe(false);
+    });
+
+    it("should include access token in headers", async () => {
+      localStorage.setItem("brand_data", JSON.stringify(mockBrandData));
+      mockAxios.onGet(/\/core\/ecommerce\/cart\/items/).reply((config) => {
+        expect(config.headers?.["X-Access-Token"]).toBe("my-token");
+        return [200, { hasItems: false }];
+      });
+
+      await fetchCheckout("my-token");
+    });
+
+    it("should throw error field from response", async () => {
+      mockAxios.onGet(/\/core\/ecommerce\/cart\/items/).reply(400, { error: "checkout error" });
+      await expect(fetchCheckout("token")).rejects.toThrow("checkout error");
+    });
+
+    it("should throw message field from response", async () => {
+      mockAxios.onGet(/\/core\/ecommerce\/cart\/items/).reply(400, { message: "checkout message" });
+      await expect(fetchCheckout("token")).rejects.toThrow("checkout message");
+    });
+
+    it("should throw direct error message when axios throws Error", async () => {
+      const spy = vi.spyOn(axios, "get").mockRejectedValueOnce(new Error("network-checkout"));
+      await expect(fetchCheckout("token")).rejects.toThrow("network-checkout");
+      spy.mockRestore();
+    });
+
+    it("should throw generic fallback when error has no fields", async () => {
+      const spy = vi.spyOn(axios, "get").mockRejectedValueOnce({});
+      await expect(fetchCheckout("token")).rejects.toThrow("Failed to fetch checkout data");
+      spy.mockRestore();
     });
   });
 });

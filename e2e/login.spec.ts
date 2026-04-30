@@ -221,13 +221,13 @@ test.describe("Auth Widget — Login Form", () => {
       // Wait for login to complete and form to unmount
       await expect(page.locator(SELECTORS.loginTitle)).not.toBeVisible({ timeout: 5000 });
 
-      // handleAuthentication stores refresh_token always, but only sets refresh_token_time
-      // when rememberMe=true — this flag controls auto-login on revisit
-      const rememberMeFlag = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-      expect(rememberMeFlag).not.toBeNull();
+      // handleAuthentication stores refresh_token_time in a cookie (30-day expiry when rememberMe=true)
+      const cookies = await page.context().cookies();
+      const rememberMeFlag = cookies.find((c) => c.name === "refresh_token_time");
+      expect(rememberMeFlag?.value).toBeTruthy();
     });
 
-    test("does NOT store remember-me flag in localStorage when remember me is unchecked", async ({
+    test("stores session timestamp with 1-day expiry when remember me is unchecked", async ({
       page,
     }) => {
       await mockAuthLoginSuccess(page);
@@ -241,9 +241,11 @@ test.describe("Auth Widget — Login Form", () => {
       // Wait for login to complete
       await expect(page.locator(SELECTORS.loginTitle)).not.toBeVisible({ timeout: 5000 });
 
-      // refresh_token_time MUST be absent — its absence prevents auto-login on revisit
-      const rememberMeFlag = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-      expect(rememberMeFlag).toBeNull();
+      // refresh_token_time IS stored in a cookie even when Remember Me is unchecked
+      // The difference is the cookie expiry (1-day vs 30-day)
+      const cookies = await page.context().cookies();
+      const rememberMeFlag = cookies.find((c) => c.name === "refresh_token_time");
+      expect(rememberMeFlag?.value).toBeTruthy();
     });
 
     test("shows loading spinner while login API is in-flight", async ({ page }) => {

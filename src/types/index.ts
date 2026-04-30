@@ -62,15 +62,18 @@ export interface AppProps {
   authority?: string;
   subsidiary?: string;
   redirectUrl?: string;
+  redirectDashboardUrl?: string;
+  redirectCheckoutUrl?: string;
   onRedirect?: (url: string, userSession?: any) => void;
   onTokenValidityCheck?: (isTokenValid: boolean) => void;
+  onSuccess?: (payload: LoginSuccessPayload) => void;
+  onFailure?: (error: string) => void;
   loginTitle?: string;
   loginSubtitle?: string;
   showLogin?: boolean;
   handleClose?: () => void;
   logoutCounter?: number;
   customPrimaryColor?: string;
-  autoRedirection?: boolean;
   googleClientId?: string;
   appleClientId?: string;
 }
@@ -112,6 +115,9 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   password: string;
+  DayPhone?: string;
+  Country?: string;
+  isMarketingAgreed?: boolean;
 }
 
 export interface RegisterResponse {
@@ -138,6 +144,31 @@ export interface AuthenticationTokens {
 
 export interface CheckEmailResponse {
   exists: boolean;
+}
+
+// Enrollment and Checkout API Response Types
+export interface EnrollmentResponse {
+  items: any[];
+  results?: number;
+}
+
+export interface CheckoutResponse {
+  hasItems: boolean;
+}
+
+export interface LoginSuccessPayload {
+  userDetails: {
+    studentId?: string | number;
+    sub?: string;
+    email_verified?: boolean;
+    name?: string;
+    preferred_username?: string;
+    given_name?: string;
+    family_name?: string;
+    email?: string;
+  } | null;
+  enrollments: EnrollmentResponse | null;
+  cart: CheckoutResponse | null;
 }
 
 // ============================================================================
