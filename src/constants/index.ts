@@ -118,6 +118,7 @@ export const HTTP_HEADERS = {
 export const API_ENDPOINTS = {
   AUTH: "/api/auth",
   GOOGLE_AUTH: "/api/auth/google",
+  APPLE_AUTH: "/api/auth/apple",
   REGISTER: "/api/register",
   CHECK_EMAIL: "/api/check-email",
   CHECK_PHONE: "/api/check-phone",

@@ -16,6 +16,7 @@ import {
   clearAuthTokens,
   handleAuthentication,
   handleGoogleAuthentication,
+  handleAppleAuthentication,
   createUserSessionFromToken,
 } from "../../functions";
 import { STORAGE_KEYS, COOKIE_NAMES, TOKEN_EXPIRY } from "../../constants";
@@ -30,10 +31,11 @@ vi.mock("../../services", () => ({
   authLogin: vi.fn(),
   authRefresh: vi.fn(),
   authGoogle: vi.fn(),
+  authApple: vi.fn(),
 }));
 
 // Pull the mocked service functions so individual tests can configure them.
-import { authLogin, authRefresh, authGoogle } from "../../services";
+import { authLogin, authRefresh, authGoogle, authApple } from "../../services";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -843,5 +845,104 @@ describe("handleGoogleAuthentication", () => {
     expect(tokens.access_token).toBe(GOOGLE_ACCESS_TOKEN);
     // REFRESH_TOKEN_TIME should not be set when refresh_token is falsy
     expect(document.cookie).not.toContain(COOKIE_NAMES.REFRESH_TOKEN_TIME);
+  });
+});
+
+// ===========================================================================
+// 11. handleAppleAuthentication
+// ===========================================================================
+
+describe("handleAppleAuthentication", () => {
+  const APPLE_ACCESS_TOKEN = "apple.access.token.jwt";
+  const APPLE_REFRESH_TOKEN = "apple.refresh.token.jwt";
+  const APPLE_USER = { name: { firstName: "Jane", lastName: "Doe" }, email: "jane@privaterelay.appleid.com" };
+
+  beforeEach(() => {
+    vi.mocked(authApple).mockResolvedValue({
+      tokens: {
+        access_token: APPLE_ACCESS_TOKEN,
+        refresh_token: APPLE_REFRESH_TOKEN,
+      },
+    });
+    vi.mocked(jwtDecode).mockReturnValue({ exp: FUTURE_EXP, sub: "apple-user" } as any);
+  });
+
+  it("stores access_token in localStorage and returns tokens", async () => {
+    const tokens = await handleAppleAuthentication("apple-code-123", APPLE_USER, false);
+
+    expect(tokens.access_token).toBe(APPLE_ACCESS_TOKEN);
+    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBe(APPLE_ACCESS_TOKEN);
+  });
+
+  it("forwards user object to authApple", async () => {
+    await handleAppleAuthentication("apple-code-123", APPLE_USER, false);
+
+    expect(vi.mocked(authApple)).toHaveBeenCalledWith("apple-code-123", APPLE_USER);
+  });
+
+  it("works without user object (subsequent sign-ins)", async () => {
+    await handleAppleAuthentication("apple-code-123", undefined, false);
+
+    expect(vi.mocked(authApple)).toHaveBeenCalledWith("apple-code-123", undefined);
+  });
+
+  it("stores refresh_token in localStorage", async () => {
+    await handleAppleAuthentication("apple-code-123", undefined, false);
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)).toBe(APPLE_REFRESH_TOKEN);
+  });
+
+  it("stores access_token_expires in localStorage", async () => {
+    const before = Date.now();
+    await handleAppleAuthentication("apple-code-123", undefined, false);
+    const after = Date.now();
+
+    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES)!);
+    const expectedMin = before + (FUTURE_EXP - Math.floor(before / 1000)) * 1000;
+    const expectedMax = after + (FUTURE_EXP - Math.floor(after / 1000)) * 1000;
+
+    expect(stored).toBeGreaterThanOrEqual(expectedMin - 1000);
+    expect(stored).toBeLessThanOrEqual(expectedMax + 1000);
+  });
+
+  it("stores refresh_token_time when rememberMe=true", async () => {
+    const before = Date.now();
+    await handleAppleAuthentication("apple-code-123", undefined, true);
+    const after = Date.now();
+
+    const stored = parseInt(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)!);
+    expect(stored).toBeGreaterThanOrEqual(before);
+    expect(stored).toBeLessThanOrEqual(after);
+  });
+
+  it("does NOT store refresh_token_time when rememberMe=false", async () => {
+    await handleAppleAuthentication("apple-code-123", undefined, false);
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeNull();
+  });
+
+  it("defaults rememberMe to true when not provided", async () => {
+    await handleAppleAuthentication("apple-code-123");
+
+    expect(localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN_TIME)).toBeTruthy();
+  });
+
+  it("re-throws when authApple throws", async () => {
+    vi.mocked(authApple).mockRejectedValue(new Error("Apple auth failed"));
+
+    await expect(handleAppleAuthentication("bad-code")).rejects.toThrow("Apple auth failed");
+  });
+
+  it("skips token storage when access_token is missing from response", async () => {
+    vi.mocked(authApple).mockResolvedValue({
+      tokens: {
+        access_token: "",
+        refresh_token: APPLE_REFRESH_TOKEN,
+      },
+    });
+
+    const tokens = await handleAppleAuthentication("apple-code-123");
+    expect(tokens.access_token).toBe("");
+    expect(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)).toBeNull();
   });
 });
