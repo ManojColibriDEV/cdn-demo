@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import PhoneInput, { parsePhoneNumber } from "react-phone-number-input";
 import Button from "../common/ui/button";
 import Input from "../common/ui/input";
@@ -346,6 +346,10 @@ const CreateAccountForm = ({
     }
   };
 
+  const fetchCountryName = useMemo(() => {
+    return getCountryName(phoneValue);
+  }, [phoneValue]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -397,7 +401,7 @@ const CreateAccountForm = ({
       const nationalNumber = getNationalNumber(phoneValue);
       if (nationalNumber) {
         registrationData.DayPhone = nationalNumber;
-        registrationData.Country = getCountryName(phoneValue);
+        registrationData.Country = fetchCountryName;
         registrationData.isMarketingAgreed = smsOptIn;
       }
 
@@ -623,7 +627,7 @@ const CreateAccountForm = ({
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="First Name"
                 disabled={loading}
-                className="identity-widget-create-account-firstname-input w-full!"
+                className="identity-widget-create-account-firstname-input w-full min-w-0"
                 autoComplete="given-name"
                 error={touched && !firstName ? "Required" : ""}
               />
@@ -635,7 +639,7 @@ const CreateAccountForm = ({
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Last Name"
                 disabled={loading}
-                className="identity-widget-create-account-lastname-input w-full!"
+                className="identity-widget-create-account-lastname-input w-full min-w-0"
                 autoComplete="family-name"
                 error={touched && !lastName ? "Required" : ""}
               />
