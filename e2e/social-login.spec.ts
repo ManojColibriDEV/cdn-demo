@@ -558,15 +558,18 @@ test.describe("Auth Widget — Apple Sign In", () => {
   // -------------------------------------------------------------------------
 
   test.describe("Apple Auth Error Handling", () => {
-    test("Apple section is hidden in DOM when appleClientId is not configured", async ({
+    test("Apple section is visible and not hidden when appleClientId is configured", async ({
       page,
     }) => {
       await gotoLoginForm(page);
 
       await expect(page.locator(SELECTORS.appleButton)).toHaveCount(1);
 
+      // The Apple section is conditionally rendered — when appleClientId is
+      // provided it renders without a hidden class (not CSS-hidden, fully visible).
       const appleSection = page.locator(SELECTORS.appleSection);
-      await expect(appleSection).toHaveClass(/hidden/);
+      await expect(appleSection).toBeAttached();
+      await expect(appleSection).not.toHaveClass(/hidden/);
     });
 
     test("Apple API returns 401 and error message on authentication failure", async ({ page }) => {

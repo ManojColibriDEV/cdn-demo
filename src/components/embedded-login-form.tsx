@@ -109,7 +109,7 @@ const EmbeddedLoginForm = ({
       AppleID.auth.init({
         clientId: appleClientId,
         scope: "name email",
-        redirectURI: window.location.origin,
+        redirectURI: `${window.location.origin}/`,
         usePopup: true,
       });
 
