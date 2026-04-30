@@ -536,8 +536,10 @@ test.describe("Auth Widget — Registration Form", () => {
 
       await expect(page.locator(REG_SELECTORS.formTitle)).not.toBeVisible({ timeout: 7000 });
 
-      const rememberMeFlag = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-      expect(rememberMeFlag).not.toBeNull();
+      // refresh_token_time is stored in a cookie (30-day expiry when rememberMe=true)
+      const cookies = await page.context().cookies();
+      const rememberMeFlag = cookies.find((c) => c.name === "refresh_token_time");
+      expect(rememberMeFlag?.value).toBeTruthy();
     });
 
     test("stores session timestamp with 1-day expiry when remember me is unchecked", async ({
@@ -556,10 +558,11 @@ test.describe("Auth Widget — Registration Form", () => {
 
       await expect(page.locator(REG_SELECTORS.formTitle)).not.toBeVisible({ timeout: 7000 });
 
-      // refresh_token_time IS stored even when Remember Me is unchecked
+      // refresh_token_time IS stored in a cookie even when Remember Me is unchecked
       // The difference is the cookie expiry (1-day vs 30-day)
-      const rememberMeFlag = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-      expect(rememberMeFlag).not.toBeNull();
+      const cookies = await page.context().cookies();
+      const rememberMeFlag = cookies.find((c) => c.name === "refresh_token_time");
+      expect(rememberMeFlag?.value).toBeTruthy();
     });
   });
 

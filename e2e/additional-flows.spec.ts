@@ -254,30 +254,27 @@ test.describe("Auth Widget — Session Persistence", () => {
   test("tokens persist after a page reload", async ({ page }) => {
     await performSuccessfulLogin(page);
 
-    // After successful login, refresh_token_time is stored (metadata flag for remember me)
-    const refreshTokenTimeBeforeReload = await page.evaluate(() =>
-      localStorage.getItem("refresh_token_time")
-    );
-    expect(refreshTokenTimeBeforeReload).not.toBeNull();
+    // After successful login, refresh_token_time is stored in a cookie
+    const cookiesBefore = await page.context().cookies();
+    const flagBefore = cookiesBefore.find((c) => c.name === "refresh_token_time");
+    expect(flagBefore?.value).toBeTruthy();
 
-    // Reload and verify the metadata flag still exists
+    // Reload and verify the cookie still exists
     await page.reload();
     await page.waitForLoadState("networkidle");
 
-    const refreshTokenTimeAfterReload = await page.evaluate(() =>
-      localStorage.getItem("refresh_token_time")
-    );
-    expect(refreshTokenTimeAfterReload).toBe(refreshTokenTimeBeforeReload);
+    const cookiesAfter = await page.context().cookies();
+    const flagAfter = cookiesAfter.find((c) => c.name === "refresh_token_time");
+    expect(flagAfter?.value).toBe(flagBefore?.value);
   });
 
-  test("refresh_token_time flag is stored in localStorage after successful login", async ({
-    page,
-  }) => {
+  test("refresh_token_time flag is stored in a cookie after successful login", async ({ page }) => {
     await performSuccessfulLogin(page);
 
-    // After successful login, refresh_token_time metadata flag is stored for remember me logic
-    const refreshTokenTime = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-    expect(refreshTokenTime).not.toBeNull();
+    // After successful login, refresh_token_time is stored in a cookie (not localStorage)
+    const cookies = await page.context().cookies();
+    const refreshTokenTime = cookies.find((c) => c.name === "refresh_token_time");
+    expect(refreshTokenTime?.value).toBeTruthy();
   });
 
   test("login form is shown when localStorage has no auth data on load", async ({ page }) => {
@@ -335,9 +332,10 @@ test.describe("Auth Widget — Logout Flow", () => {
     await mockLogoutSuccess(page);
     await performSuccessfulLogin(page);
 
-    // After successful login, verify metadata flag exists
-    const refreshTokenTime = await page.evaluate(() => localStorage.getItem("refresh_token_time"));
-    expect(refreshTokenTime).not.toBeNull();
+    // After successful login, verify metadata flag exists in cookie
+    const cookiesBeforeLogout = await page.context().cookies();
+    const refreshTokenTime = cookiesBeforeLogout.find((c) => c.name === "refresh_token_time");
+    expect(refreshTokenTime?.value).toBeTruthy();
 
     // Simulate logout: clear auth data from localStorage and cookies
     await page.evaluate(() => {

@@ -270,7 +270,7 @@ Backend Authentication
     ↓
 JWT Token Received
     ↓
-localStorage/localStorage
+Cookies (access_token, refresh_token, refresh_token_time)
     ↓
 Redirect to redirectUrl
 ```
@@ -507,9 +507,9 @@ interface RegistrationPayload {
 ### Authentication
 
 - JWT token-based
-- Tokens stored in localStorage/localStorage
-- Automatic token refresh (if implemented)
-- Secure HTTP-only cookies (backend)
+- All auth tokens stored in **cookies only** (no localStorage)
+- Silent token refresh: scheduled via `setTimeout` timed to fire 2 minutes before JWT `exp`
+- Reschedules automatically after each successful refresh
 
 ### Cross-Site Scripting (XSS)
 

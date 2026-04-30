@@ -481,11 +481,11 @@ const CreateAccountForm = ({
       >
         <div
           part="identity-widget-create-account-modal"
-          className="identity-widget-create-account-modal bg-white! rounded-lg! p-8! w-full! max-w-lg! relative! max-h-[90vh]! overflow-y-auto! [&::-webkit-scrollbar]:w-2! [&::-webkit-scrollbar-track]:bg-gray-100! [&::-webkit-scrollbar-thumb]:bg-gray-300! [&::-webkit-scrollbar-thumb]:rounded-full! [&::-webkit-scrollbar-thumb:hover]:bg-gray-400!"
+          className="identity-widget-create-account-modal bg-white! rounded-lg! p-5! w-full! max-w-lg! relative! max-h-[90vh]! overflow-y-auto! [&::-webkit-scrollbar]:w-[3px]! [&::-webkit-scrollbar-track]:hidden! [&::-webkit-scrollbar-thumb]:bg-gray-200! [&::-webkit-scrollbar-thumb]:rounded-full! [&::-webkit-scrollbar-thumb:hover]:bg-gray-300!"
           role="document"
           style={{
             scrollbarWidth: "thin",
-            scrollbarColor: "#d1d5db #f3f4f6",
+            scrollbarColor: "#e5e7eb transparent",
           }}
         >
           <Button
