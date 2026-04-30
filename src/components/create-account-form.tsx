@@ -29,6 +29,7 @@ import {
   ButtonVariant,
 } from "../constants";
 import { isCapsLockEnabled } from "../utils/keyboard";
+import { mockGetCountriesResponse } from "../__tests__/mocks/mockCountryResponse";
 
 const CreateAccountForm = ({
   onSuccess,
@@ -258,12 +259,13 @@ const CreateAccountForm = ({
     if (!value) return "";
     try {
       const parsed = parsePhoneNumber(value);
+      console.log("parsed", parsed);
       if (parsed?.country) {
-        try {
-          const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
-          return displayNames.of(parsed.country) || "";
-        } catch {
-          return parsed.country;
+        const filterCountryName = mockGetCountriesResponse?.find(
+          (item: any) => item.code === parsed.country
+        );
+        if (filterCountryName) {
+          return filterCountryName.name;
         }
       }
       return "";
@@ -346,10 +348,6 @@ const CreateAccountForm = ({
     }
   };
 
-  const fetchCountryName = useMemo(() => {
-    return getCountryName(phoneValue);
-  }, [phoneValue]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -401,9 +399,11 @@ const CreateAccountForm = ({
       const nationalNumber = getNationalNumber(phoneValue);
       if (nationalNumber) {
         registrationData.DayPhone = nationalNumber;
-        registrationData.Country = fetchCountryName;
+        registrationData.Country = getCountryName(phoneValue);
         registrationData.isMarketingAgreed = smsOptIn;
       }
+
+      console.log("PHONE VALUE", { registrationData, phoneValue });
 
       const registrationResult = await authRegister(registrationData);
 
@@ -1062,14 +1062,6 @@ const CreateAccountForm = ({
                 {/* Status icon: loader or checkmark */}
                 <span className="flex! items-center! justify-center! absolute! right-2.5! top-1/2! -translate-y-1/2! pointer-events-none! z-2!">
                   {checkingPhone && <Loader />}
-                  {!checkingPhone && phoneValid && getNationalNumber(phoneValue).length >= 7 && (
-                    <img
-                      src={checkSuccessImg}
-                      alt="Phone available"
-                      aria-label="Phone number is available"
-                      style={{ width: 18, height: 18 }}
-                    />
-                  )}
                 </span>
               </div>
               {/* Phone exists error message */}
