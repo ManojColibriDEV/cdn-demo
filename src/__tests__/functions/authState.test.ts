@@ -855,7 +855,10 @@ describe("handleGoogleAuthentication", () => {
 describe("handleAppleAuthentication", () => {
   const APPLE_ACCESS_TOKEN = "apple.access.token.jwt";
   const APPLE_REFRESH_TOKEN = "apple.refresh.token.jwt";
-  const APPLE_USER = { name: { firstName: "Jane", lastName: "Doe" }, email: "jane@privaterelay.appleid.com" };
+  const APPLE_USER = {
+    name: { firstName: "Jane", lastName: "Doe" },
+    email: "jane@privaterelay.appleid.com",
+  };
 
   beforeEach(() => {
     vi.mocked(authApple).mockResolvedValue({

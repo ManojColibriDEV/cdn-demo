@@ -80,6 +80,36 @@ export async function mockAuthGoogleFailure(page: Page, message = "Google authen
   );
 }
 
+/** Mock the POST /api/auth/apple endpoint to return a successful token response */
+export async function mockAuthAppleSuccess(page: Page) {
+  await page.route("**/api/auth/apple", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        tokens: {
+          access_token: MOCK_ACCESS_TOKEN,
+          refresh_token: MOCK_REFRESH_TOKEN,
+          expires_in: 3600,
+          token_type: "Bearer",
+          scope: "openid",
+        },
+      }),
+    })
+  );
+}
+
+/** Mock the POST /api/auth/apple endpoint to return an error */
+export async function mockAuthAppleFailure(page: Page, message = "Apple authentication failed") {
+  await page.route("**/api/auth/apple", (route) =>
+    route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: message }),
+    })
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Shared Navigation Helpers
 // ---------------------------------------------------------------------------

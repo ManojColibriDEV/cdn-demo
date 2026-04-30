@@ -5,7 +5,12 @@ import Input from "../common/ui/input";
 import Banner from "../common/ui/banner";
 import Toast from "../common/ui/toast";
 import Loader from "../common/ui/loader";
-import { handleAuthentication, handleGoogleAuthentication, handleAppleAuthentication, validatePassword } from "../functions";
+import {
+  handleAuthentication,
+  handleGoogleAuthentication,
+  handleAppleAuthentication,
+  validatePassword,
+} from "../functions";
 import { checkEmail } from "../services";
 import type { EmbeddedLoginFormProps } from "../types";
 import WeakPasswordModal from "../common/ui/weak-password-modal";
@@ -490,7 +495,7 @@ const EmbeddedLoginForm = ({
             <>
               <div
                 part="identity-widget-apple-section"
-                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center! hidden!"
+                className="identity-widget-apple-section mt-0! mb-4! flex! justify-center!"
               >
                 <Button
                   type={ButtonType.BUTTON}

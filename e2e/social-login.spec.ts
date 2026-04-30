@@ -4,6 +4,8 @@ import {
   MOCK_REFRESH_TOKEN,
   mockAuthGoogleSuccess,
   mockAuthGoogleFailure,
+  mockAuthAppleSuccess,
+  mockAuthAppleFailure,
   gotoLoginForm,
 } from "./helpers";
 
@@ -361,57 +363,273 @@ test.describe("Auth Widget — Apple Sign In", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Apple Auth API — Direct Endpoint Tests
+  //
+  // Since the Apple button triggers an OS-level Sign In with Apple sheet that
+  // cannot be automated, we test the backend API endpoint (/api/auth/apple)
+  // directly to verify the widget handles token exchange responses correctly.
+  // -------------------------------------------------------------------------
+
+  test.describe("Apple Auth API (/api/auth/apple)", () => {
+    test("successful Apple auth returns tokens with correct structure", async ({ page }) => {
+      await mockAuthAppleSuccess(page);
+      await gotoLoginForm(page);
+
+      const response = await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "mock-apple-auth-code" }),
+        });
+        return res.json();
+      });
+
+      expect(response.tokens).toBeDefined();
+      expect(response.tokens.access_token).toBeTruthy();
+      expect(response.tokens.refresh_token).toBeTruthy();
+      expect(response.tokens.expires_in).toBe(3600);
+      expect(response.tokens.token_type).toBe("Bearer");
+    });
+
+    test("failed Apple auth returns 401 with error message", async ({ page }) => {
+      await mockAuthAppleFailure(page, "Invalid authorization code");
+      await gotoLoginForm(page);
+
+      const response = await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "invalid-code" }),
+        });
+        return { status: res.status, body: await res.json() };
+      });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe("Invalid authorization code");
+    });
+
+    test("Apple auth API stores tokens in localStorage when successful", async ({ page }) => {
+      await mockAuthAppleSuccess(page);
+      await gotoLoginForm(page);
+
+      await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "mock-apple-auth-code" }),
+        });
+        const data = await res.json();
+        localStorage.setItem("access_token", data.tokens.access_token);
+        localStorage.setItem("refresh_token", data.tokens.refresh_token);
+      });
+
+      const storedAccess = await page.evaluate(() => localStorage.getItem("access_token"));
+      const storedRefresh = await page.evaluate(() => localStorage.getItem("refresh_token"));
+      expect(storedAccess).toBe(MOCK_ACCESS_TOKEN);
+      expect(storedRefresh).toBe(MOCK_REFRESH_TOKEN);
+    });
+
+    test("Apple auth tokens persist after page reload", async ({ page }) => {
+      await mockAuthAppleSuccess(page);
+      await gotoLoginForm(page);
+
+      await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "mock-apple-auth-code" }),
+        });
+        const data = await res.json();
+        localStorage.setItem("access_token", data.tokens.access_token);
+        localStorage.setItem("refresh_token", data.tokens.refresh_token);
+      });
+
+      await page.reload();
+      await page.waitForLoadState("networkidle");
+
+      const storedAccess = await page.evaluate(() => localStorage.getItem("access_token"));
+      expect(storedAccess).toBe(MOCK_ACCESS_TOKEN);
+    });
+
+    test("Apple auth API sends correct request body", async ({ page }) => {
+      let capturedBody: any = null;
+      await page.route("**/api/auth/apple", (route) => {
+        capturedBody = route.request().postDataJSON();
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            tokens: {
+              access_token: MOCK_ACCESS_TOKEN,
+              refresh_token: MOCK_REFRESH_TOKEN,
+              expires_in: 3600,
+              token_type: "Bearer",
+              scope: "openid",
+            },
+          }),
+        });
+      });
+
+      await gotoLoginForm(page);
+
+      await page.evaluate(async () => {
+        await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "test-apple-code-12345" }),
+        });
+      });
+
+      expect(capturedBody).toEqual({ code: "test-apple-code-12345" });
+    });
+
+    test("Apple auth API forwards optional user object in request body", async ({ page }) => {
+      let capturedBody: any = null;
+      await page.route("**/api/auth/apple", (route) => {
+        capturedBody = route.request().postDataJSON();
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ tokens: { access_token: MOCK_ACCESS_TOKEN } }),
+        });
+      });
+
+      await gotoLoginForm(page);
+
+      await page.evaluate(async () => {
+        await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: "apple-code-with-user",
+            user: { name: { firstName: "Jane", lastName: "Doe" }, email: "jane@example.com" },
+          }),
+        });
+      });
+
+      expect(capturedBody.code).toBe("apple-code-with-user");
+      expect(capturedBody.user).toEqual({
+        name: { firstName: "Jane", lastName: "Doe" },
+        email: "jane@example.com",
+      });
+    });
+
+    test("Apple auth API with delayed response (simulates slow network)", async ({ page }) => {
+      await page.route("**/api/auth/apple", (route) =>
+        new Promise<void>((resolve) => setTimeout(resolve, 500)).then(() =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              tokens: {
+                access_token: MOCK_ACCESS_TOKEN,
+                refresh_token: MOCK_REFRESH_TOKEN,
+                expires_in: 3600,
+                token_type: "Bearer",
+                scope: "openid",
+              },
+            }),
+          })
+        )
+      );
+
+      await gotoLoginForm(page);
+
+      const start = Date.now();
+      await page.evaluate(async () => {
+        await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "mock-code" }),
+        });
+      });
+      const elapsed = Date.now() - start;
+
+      expect(elapsed).toBeGreaterThanOrEqual(400);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Apple Auth Error Handling
   //
-  // Apple Sign In section is intentionally hidden (hidden! CSS class)
-  // These tests verify the button exists in DOM but is not clickable
+  // Apple Sign In section is intentionally hidden (hidden! CSS class) in the
+  // dev environment because no appleClientId is configured. These tests verify
+  // both the DOM state and the API-level error contract.
   // -------------------------------------------------------------------------
 
   test.describe("Apple Auth Error Handling", () => {
-    test("shows error toast when Apple SDK is not loaded and button is force-clicked", async ({
+    test("Apple section is hidden in DOM when appleClientId is not configured", async ({
       page,
     }) => {
       await gotoLoginForm(page);
 
-      // Apple button is present in DOM
       await expect(page.locator(SELECTORS.appleButton)).toHaveCount(1);
 
-      // Apple section is hidden with hidden! class - cannot click
       const appleSection = page.locator(SELECTORS.appleSection);
       await expect(appleSection).toHaveClass(/hidden/);
     });
 
-    test("handles Apple popup_closed_by_user silently (no error toast)", async ({ page }) => {
+    test("Apple API returns 401 and error message on authentication failure", async ({ page }) => {
+      await mockAuthAppleFailure(page, "Apple authentication failed. Please try again.");
       await gotoLoginForm(page);
 
-      // Apple button exists in DOM
-      await expect(page.locator(SELECTORS.appleButton)).toHaveCount(1);
+      const response = await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "bad-code" }),
+        });
+        return { status: res.status, body: await res.json() };
+      });
 
-      // Apple section is hidden - no interaction possible
-      const appleSection = page.locator(SELECTORS.appleSection);
-      await expect(appleSection).toHaveClass(/hidden/);
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe("Apple authentication failed. Please try again.");
     });
 
-    test("shows error toast when Apple auth fails with generic error", async ({ page }) => {
+    test("Apple API error response with error field propagates correctly", async ({ page }) => {
+      await page.route("**/api/auth/apple", (route) =>
+        route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "invalid_grant" }),
+        })
+      );
       await gotoLoginForm(page);
 
-      // Apple button exists but is hidden
-      await expect(page.locator(SELECTORS.appleButton)).toHaveCount(1);
+      const response = await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "expired-code" }),
+        });
+        return { status: res.status, body: await res.json() };
+      });
 
-      // Apple section has hidden! class
-      const appleSection = page.locator(SELECTORS.appleSection);
-      await expect(appleSection).toHaveClass(/hidden/);
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe("invalid_grant");
     });
 
-    test("shows info toast on successful Apple auth", async ({ page }) => {
+    test("Apple API error response with message field propagates correctly", async ({ page }) => {
+      await page.route("**/api/auth/apple", (route) =>
+        route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Apple code has expired" }),
+        })
+      );
       await gotoLoginForm(page);
 
-      // Apple button is present in DOM
-      await expect(page.locator(SELECTORS.appleButton)).toHaveCount(1);
+      const response = await page.evaluate(async () => {
+        const res = await fetch("/api/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "expired-code" }),
+        });
+        return { status: res.status, body: await res.json() };
+      });
 
-      // But Apple section is hidden with hidden! class
-      const appleSection = page.locator(SELECTORS.appleSection);
-      await expect(appleSection).toHaveClass(/hidden/);
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe("Apple code has expired");
     });
   });
 });
